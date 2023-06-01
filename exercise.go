@@ -6,9 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"math/rand"
-	"os"
 	"path"
-	"strings"
 
 	"github.com/charmbracelet/lipgloss"
 )
@@ -25,19 +23,12 @@ func GetRandomExercise() (string, string, error) {
 
 // Gets an exercise for the matching lang file extension
 func GetExerciseForLang(lang string) (string, string, error) {
-	dirPath := path.Join(".", "exercises")
-	contents, err := os.ReadDir(dirPath)
+	dirPath := path.Join(".", "exercises", lang)
+	exPath, err := getRandomFilePathFromDirectory(dirPath)
 	if err != nil {
-		return "", "", err
+		return "", "", errors.New("Failed to find exercise of type " + lang)
 	}
-	for _, c := range contents {
-		if c.Name() == lang {
-			fullPath := strings.Join([]string{dirPath, "/", c.Name(), "/hello.", lang}, "")
-			fmt.Println(fullPath)
-			return GetExerciseFromFile(fullPath)
-		}
-	}
-	return "fileName", "exercise", errors.New("Failed to find exercise of type " + lang)
+	return GetExerciseFromFile(exPath)
 }
 
 func GetExerciseFromFile(fileName string) (string, string, error) {

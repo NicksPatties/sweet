@@ -7,6 +7,7 @@ import (
 
 const (
 	gafpid = "getAllFilePathsInDirectory"
+	grfpfd = "getRandomFilePathFromDirectory"
 )
 
 func check(e error) {
@@ -197,4 +198,76 @@ func TestGetAllFilePathsInDirectory_FilesInsideMultipleChildDirectories(t *testi
 			t.Fatalf("%s: couldn't find %s in results", gafpid, ex)
 		}
 	}
+}
+
+func TestGetRandomFilePathFromDirectory_EmptyDirectoryReturnsEmptyString(t *testing.T) {
+
+	expected := ""
+
+	wd, err := os.Getwd()
+	check(err)
+
+	root, err := os.MkdirTemp(wd, "root")
+	check(err)
+	defer os.Remove(root)
+	actual, err := getRandomFilePathFromDirectory(root)
+
+	if err != nil {
+		t.Fatalf("%s: expected %s, but found error %s", grfpfd, expected, err)
+	}
+
+	// need to search inside of the files that were created in the root directory
+	if expected != actual {
+		t.Fatalf("%s: expected %s, got %s", grfpfd, expected, actual)
+	}
+}
+
+func TestGetRandomFilePathFromDirectory_ReturnsAFilePathInTheDirectory(t *testing.T) {
+	wd, err := os.Getwd()
+	check(err)
+
+	root, err := os.MkdirTemp(wd, "root")
+	check(err)
+
+	// create files
+	fileNames := []string{
+		"a",
+		"b",
+		"c",
+	}
+	filePathNames := []string{}
+	files := []*os.File{}
+
+	for _, fn := range fileNames {
+		f, err := os.CreateTemp(root, fn)
+		check(err)
+		filePathNames = append(filePathNames, f.Name())
+		files = append(files, f)
+	}
+
+	removeFiles := func(files []*os.File) error {
+		for _, f := range files {
+			err := os.Remove(f.Name())
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
+	// run the test
+	actual, err := getRandomFilePathFromDirectory(root)
+
+	if err != nil {
+		t.Errorf("%s: supposed to return pathname, but got error instead: %s", grfpfd, err)
+	}
+
+	if !find(actual, filePathNames) {
+		t.Errorf("%s: couldn't find %s in temporary directory", grfpfd, actual)
+	}
+
+	t.Cleanup(func() {
+		removeFiles(files)
+		os.Remove(root)
+	})
 }

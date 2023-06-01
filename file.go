@@ -1,30 +1,31 @@
 package main
 
 import (
+	"math/rand"
 	"os"
 	"path"
 	"strings"
 )
 
 // Returns all the pathnames of files in the given root directory.
-func getAllFilePathsInDirectory(root string) ([]string, error) {
+func getAllFilePathsInDirectory(dirPath string) ([]string, error) {
 	filePaths := []string{}
-	if !path.IsAbs(root) {
+	if !path.IsAbs(dirPath) {
 		wd, err := os.Getwd()
 		if err != nil {
 			return filePaths, err
 		}
-		root = strings.Replace(root, ".", wd, 1)
+		dirPath = strings.Replace(dirPath, ".", wd, 1)
 	}
 
 	// read the contents of the current directory
-	currDirContents, err := os.ReadDir(root)
+	currDirContents, err := os.ReadDir(dirPath)
 	if err != nil {
 		return filePaths, err
 	}
 
 	for _, c := range currDirContents {
-		fileName := path.Join(root, c.Name())
+		fileName := path.Join(dirPath, c.Name())
 		if c.IsDir() {
 			subPaths, err := getAllFilePathsInDirectory(fileName)
 			if err != nil {
@@ -42,6 +43,23 @@ func getAllFilePathsInDirectory(root string) ([]string, error) {
 	return filePaths, nil
 }
 
-func getRandomFilePathFromDirectory(root string) string {
-	return "string"
+// Gets a random file from within a directory as specified by dirPath
+func getRandomFilePathFromDirectory(dirPath string) (string, error) {
+	contents, err := os.ReadDir(dirPath)
+	if err != nil {
+		return "", err
+	}
+	filePathNames := []string{}
+	if len(contents) == 0 {
+		return "", nil
+	}
+	for _, c := range contents {
+		if c.IsDir() {
+			continue
+		}
+		filePathNames = append(filePathNames, path.Join(dirPath, c.Name()))
+	}
+	randI := rand.Intn(len(filePathNames))
+
+	return filePathNames[randI], nil
 }
