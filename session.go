@@ -1,5 +1,5 @@
 /*
-ttcli - a touch typing command line interface to practice writing code
+sweet - a touch typing command line interface to practice writing code
 
 There isn't much that this package does yet, but this here is an example
 of a doc comment for an entire package. I can put options in here as well!
@@ -8,7 +8,7 @@ relevant file
 
 Usage:
 
-	ttcli [-js|-go|...]
+	sweet [-js|-go|...]
 
 Flags:
 

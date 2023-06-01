@@ -1,4 +1,4 @@
-module nickspatties.com/ttcli
+module nickspatties.com/sweet
 
 go 1.20
 

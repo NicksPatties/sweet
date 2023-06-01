@@ -1,9 +1,10 @@
 /*
-ttcli is a programmer focused touch typing training program
+Sweet is a Software Engineering Exercise for Typing. In other words, it's a touch typing
+exercise command line interface specifically designed for programmers.
 
 Usage:
 
-	ttcli [subCommand] [flags]
+	sweet [subCommand] [flags]
 
 Subcommands:
 
@@ -32,7 +33,7 @@ import (
 )
 
 func printHelpMessage() {
-	name := "ttcli - a programmer focused touch typing program"
+	name := "sweet - a Software Engineering Exercise for Typing"
 	type row struct {
 		name        string
 		description string
