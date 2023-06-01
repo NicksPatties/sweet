@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// Use dfs so you can easily maintain the path names while searching for files
+// Returns all the pathnames of files in the given root directory.
 func getAllFilePathsInDirectory(root string) ([]string, error) {
 	filePaths := []string{}
 	if !path.IsAbs(root) {
@@ -26,7 +26,13 @@ func getAllFilePathsInDirectory(root string) ([]string, error) {
 	for _, c := range currDirContents {
 		fileName := path.Join(root, c.Name())
 		if c.IsDir() {
-			filePaths, err = getAllFilePathsInDirectory(fileName)
+			subPaths, err := getAllFilePathsInDirectory(fileName)
+			if err != nil {
+				return filePaths, err
+			}
+			for _, sp := range subPaths {
+				filePaths = append(filePaths, sp)
+			}
 			continue
 		}
 		// this is a file, so I should add the path to the array
@@ -34,4 +40,8 @@ func getAllFilePathsInDirectory(root string) ([]string, error) {
 	}
 
 	return filePaths, nil
+}
+
+func getRandomFilePathFromDirectory(root string) string {
+	return "string"
 }

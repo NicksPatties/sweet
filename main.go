@@ -40,7 +40,7 @@ func printHelpMessage() {
 	}
 
 	commands := []row{
-		{"help, h", "Opens this help menu"},
+		{"help", "Opens this help menu"},
 		{"js, ts, go, ...", "Starts an exercise using the chosen language"},
 	}
 
@@ -69,12 +69,12 @@ func main() {
 
 	if len(os.Args) > 1 {
 		switch arg := os.Args[1]; arg {
-		case "help", "h":
+		case "help":
 			printHelpMessage()
 			os.Exit(0)
 		default:
 			fmt.Printf("made a %s command\n", arg)
-			name, exercise, err = GetExerciseFromDir(arg)
+			name, exercise, err = GetExerciseForLang(arg)
 		}
 	} else {
 		name, exercise, err = GetRandomExercise()

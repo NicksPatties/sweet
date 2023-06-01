@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"math/rand"
 	"os"
 	"path"
@@ -13,42 +14,30 @@ import (
 )
 
 func GetRandomExercise() (string, string, error) {
-	dirPath := []string{"."}
-	dirPath = append(dirPath, "exercises")
-
-	contents, err := os.ReadDir(path.Join(".", "exercises"))
+	paths, err := getAllFilePathsInDirectory("./exercises")
 	if err != nil {
-		return "", "", error(err)
+		log.Fatalf("not sweet... an error ocurred: %s", err)
 	}
-	i := rand.Intn(len(contents))
-	dirPath = append(dirPath, contents[i].Name())
+	randI := rand.Intn(len(paths))
 
-	for contents[i].IsDir() {
-		contents, err = os.ReadDir(strings.Join(dirPath, "/"))
-		if err != nil {
-			return "", "", error(err)
-		}
-		i = rand.Intn(len(contents))
-		dirPath = append(dirPath, contents[i].Name())
-	}
-
-	return GetExerciseFromFile(strings.Join(dirPath, "/"))
+	return GetExerciseFromFile(paths[randI])
 }
 
-func GetExerciseFromDir(dirName string) (string, string, error) {
-	dirPath := "./exercises"
+// Gets an exercise for the matching lang file extension
+func GetExerciseForLang(lang string) (string, string, error) {
+	dirPath := path.Join(".", "exercises")
 	contents, err := os.ReadDir(dirPath)
 	if err != nil {
 		return "", "", err
 	}
 	for _, c := range contents {
-		if c.Name() == dirName {
-			fullPath := strings.Join([]string{dirPath, "/", c.Name(), "/hello.", dirName}, "")
+		if c.Name() == lang {
+			fullPath := strings.Join([]string{dirPath, "/", c.Name(), "/hello.", lang}, "")
 			fmt.Println(fullPath)
 			return GetExerciseFromFile(fullPath)
 		}
 	}
-	return "fileName", "exercise", errors.New("Failed to find exercise of type " + dirName)
+	return "fileName", "exercise", errors.New("Failed to find exercise of type " + lang)
 }
 
 func GetExerciseFromFile(fileName string) (string, string, error) {

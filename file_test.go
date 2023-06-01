@@ -15,6 +15,15 @@ func check(e error) {
 	}
 }
 
+func find(pathName string, expected []string) bool {
+	for _, e := range expected {
+		if pathName == e {
+			return true
+		}
+	}
+	return false
+}
+
 func TestGetAllFilePathsInDirectory_EmptyDirectory(t *testing.T) {
 	// create a temp directory
 	root, err := os.MkdirTemp(".", "tmp")
@@ -120,13 +129,57 @@ func TestGetAllFilePathsInDirectory_FilesInsideRootAndChildDirectories(t *testin
 		childFilePath,
 	}
 
-	find := func(pathName string, expected []string) bool {
-		for _, e := range expected {
-			if pathName == e {
-				return true
-			}
+	actual, err := getAllFilePathsInDirectory(root)
+
+	if err != nil {
+		t.Fatalf("%s: wanted []string, got error instead: %s", gafpid, err)
+	}
+
+	if len(expected) != len(actual) {
+		t.Fatalf("%s: wanted %d total files, but only found %d", gafpid, len(expected), len(actual))
+	}
+
+	for _, ex := range expected {
+		if !find(ex, actual) {
+			t.Fatalf("%s: couldn't find %s in results", gafpid, ex)
 		}
-		return false
+	}
+}
+
+func TestGetAllFilePathsInDirectory_FilesInsideMultipleChildDirectories(t *testing.T) {
+	wd, err := os.Getwd()
+	check(err)
+
+	// root directory
+	root, err := os.MkdirTemp(wd, "root")
+	check(err)
+	defer os.Remove(root)
+
+	// child1 directory
+	child1, err := os.MkdirTemp(root, "child1")
+	check(err)
+	defer os.Remove(child1)
+
+	// tmp file in child directory
+	child1File, err := os.CreateTemp(child1, "childtmp")
+	check(err)
+	child1FilePath := child1File.Name()
+	defer os.Remove(child1FilePath)
+
+	// child2 directory
+	child2, err := os.MkdirTemp(root, "child2")
+	check(err)
+	defer os.Remove(child2)
+
+	// tmp file in child directory
+	child2File, err := os.CreateTemp(child2, "childtmp")
+	check(err)
+	child2FilePath := child2File.Name()
+	defer os.Remove(child2FilePath)
+
+	expected := []string{
+		child1FilePath,
+		child2FilePath,
 	}
 
 	actual, err := getAllFilePathsInDirectory(root)
@@ -135,9 +188,13 @@ func TestGetAllFilePathsInDirectory_FilesInsideRootAndChildDirectories(t *testin
 		t.Fatalf("%s: wanted []string, got error instead: %s", gafpid, err)
 	}
 
-	for _, a := range actual {
-		if !find(a, expected) {
-			t.Fatalf("%s: couldn't find %s in results", gafpid, a)
+	if len(expected) != len(actual) {
+		t.Fatalf("%s: wanted %d total files, but only found %d", gafpid, len(expected), len(actual))
+	}
+
+	for _, ex := range expected {
+		if !find(ex, actual) {
+			t.Fatalf("%s: couldn't find %s in results", gafpid, ex)
 		}
 	}
 }
