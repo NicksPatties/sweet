@@ -1,28 +1,9 @@
-/*
-sweet - a touch typing command line interface to practice writing code
-
-There isn't much that this package does yet, but this here is an example
-of a doc comment for an entire package. I can put options in here as well!
-It's pretty nice to just have all the documentation written in here in the
-relevant file
-
-Usage:
-
-	sweet [-js|-go|...]
-
-Flags:
-
-	-js
-	  Practice a random JavaScript file
-
-	-go
-	  Practice a random Go file
-*/
 package main
 
 import (
 	"fmt"
 	"os"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -32,6 +13,9 @@ type Model struct {
 	title         string
 	exercise      string
 	typedExercise string
+	quitEarly     bool
+	startTime     time.Time
+	endTime       time.Time
 }
 
 func initialModel(t string, ex string) Model {
@@ -39,6 +23,9 @@ func initialModel(t string, ex string) Model {
 		title:         t,
 		exercise:      ex,
 		typedExercise: "",
+		quitEarly:     false,
+		startTime:     time.Time{},
+		endTime:       time.Time{},
 	}
 }
 
@@ -66,16 +53,21 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyCtrlC:
+			m.quitEarly = true
 			return m, tea.Quit
 		case tea.KeyBackspace:
 			m = m.DeleteCharacter()
 		case tea.KeyRunes, tea.KeySpace, tea.KeyEnter:
+			if m.startTime.IsZero() {
+				m.startTime = time.Now()
+			}
 			if msg.Type == tea.KeyEnter {
 				m = m.AddRuneToExercise(Enter)
 			} else {
 				m = m.AddRuneToExercise(msg.Runes[0])
 			}
 			if m.finished() {
+				m.endTime = time.Now()
 				return m, tea.Quit
 			}
 		}
@@ -107,13 +99,16 @@ func (m Model) nameView() string {
 }
 
 func (m Model) View() string {
-	s := "\n"
-	s += m.nameView()
-	s += "\n\n"
-	s += m.ExerciseView()
-	s += "\n\n"
-	s += m.currentCharacterView()
-	s += "\n"
+	s := ""
+	if !m.finished() {
+		s += "\n"
+		s += m.nameView()
+		s += "\n\n"
+		s += m.ExerciseView()
+		s += "\n\n"
+		s += m.currentCharacterView()
+		s += "\n"
+	}
 	return s
 }
 

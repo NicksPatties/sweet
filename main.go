@@ -87,6 +87,11 @@ func main() {
 	// run the session
 	m := RunSession(name, exercise)
 
+	if m.quitEarly {
+		fmt.Println("Goodbye!")
+		os.Exit(0)
+	}
+
 	// show the results
 	ShowResults(m)
 }

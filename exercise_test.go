@@ -2,6 +2,7 @@ package main
 
 import (
 	"testing"
+	"time"
 )
 
 func TestDeleteCharacter(t *testing.T) {
@@ -139,6 +140,9 @@ func TestAddRuneToExercise(t *testing.T) {
 			tc.title,
 			tc.exercise,
 			tc.initialTyped,
+			false,
+			time.Time{},
+			time.Time{},
 		}
 		actual := m.AddRuneToExercise(tc.rn)
 		if actual.typedExercise != tc.expectedTyped {
@@ -158,6 +162,9 @@ func TestExerciseView(t *testing.T) {
 				"Percent sign, stop (NOVERB) bug",
 				`Hello % this is the percent sign`,
 				"Hello %",
+				false,
+				time.Time{},
+				time.Time{},
 			},
 			`Hello % this is the percent sign`,
 		},
@@ -166,6 +173,9 @@ func TestExerciseView(t *testing.T) {
 				"Render the newline character",
 				"new\nline",
 				"new",
+				false,
+				time.Time{},
+				time.Time{},
 			},
 			"new" + Arrow + "\nline",
 		},
@@ -174,6 +184,9 @@ func TestExerciseView(t *testing.T) {
 				"Render incorrectly typed newline correctly",
 				"What's going on?\nHahah",
 				"What's going on?H",
+				false,
+				time.Time{},
+				time.Time{},
 			},
 			"What's going on?" + Arrow + "\nHahah",
 		},
@@ -229,8 +242,4 @@ func TestGetExerciseRuneCount(t *testing.T) {
 			t.Fatalf("%s Model.GetExerciseRuneCount() got %d expected %d", tc.title, actualCount, tc.expectedCount)
 		}
 	}
-}
-
-func TestGetRandomExercise(t *testing.T) {
-	t.Skip("Not implemented yet")
 }

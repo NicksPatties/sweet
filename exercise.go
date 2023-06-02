@@ -12,7 +12,8 @@ import (
 )
 
 func GetRandomExercise() (string, string, error) {
-	paths, err := getAllFilePathsInDirectory("./exercises")
+	dirPath := path.Join(".", "exercises")
+	paths, err := getAllFilePathsInDirectory(dirPath)
 	if err != nil {
 		log.Fatalf("not sweet... an error ocurred: %s", err)
 	}
