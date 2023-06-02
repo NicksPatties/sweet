@@ -157,3 +157,11 @@ func TestAccuracy(t *testing.T) {
 		}
 	}
 }
+
+func testWPM(t *testing.T) {
+	t.Skip("tests not written yet o_o")
+}
+
+func testCPM(t *testing.T) {
+	t.Skip("not implemented yet :/")
+}

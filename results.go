@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 )
 
 func min(a int, b int) int {
@@ -24,8 +25,22 @@ func requiredRunes(s string) []rune {
 	return arr
 }
 
-func (m Model) WPM() int {
-	return 50
+// Calculates the https://www.speedtypingonline.com/typing-equations
+func WPM(start time.Time, end time.Time, typed string, exercise string) float64 {
+	if start.After(end) {
+		end = time.Now()
+	}
+	minLengthString := exercise
+	if len(typed) < len(exercise) {
+		minLengthString = typed
+	}
+	mins := end.Sub(start).Minutes()
+	mistakes := float64(NumMistakes(typed, exercise))
+	typedEntries := len(requiredRunes(minLengthString))
+	words := float64(typedEntries / 5)
+	// words = len of typed characters / 5
+	// t = time in minutes
+	return (words - mistakes) / mins
 }
 
 func (m Model) CPM() int {
@@ -47,7 +62,7 @@ func Accuracy(typed string, exercise string) float32 {
 	l := float32(len(requiredRunes(minLengthString)))
 	accuracy = (l - m) / l
 
-	return accuracy
+	return accuracy * 100
 }
 
 // Counts the number of mistakes made in an exercise. Only counts up to the number
@@ -69,6 +84,7 @@ func NumMistakes(typed string, exercise string) int {
 
 func ShowResults(m Model) {
 	fmt.Printf("Results of %s:\n", m.title)
+	fmt.Printf("WPM: %.f\n", WPM(m.startTime, m.endTime, m.typedExercise, m.exercise))
 	fmt.Printf("Mistakes: %d\n", NumMistakes(m.typedExercise, m.exercise))
 	fmt.Printf("Accuracy: %.2f\n", Accuracy(m.typedExercise, m.exercise))
 }
