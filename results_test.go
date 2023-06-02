@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"testing"
+	"time"
 )
 
 func TestRequiredRunes(t *testing.T) {
@@ -127,25 +128,25 @@ func TestAccuracy(t *testing.T) {
 			"partly completed exercise, no mistakes",
 			"exercise",
 			"exer",
-			format(float32(1)),
+			format(float32(100)),
 		},
 		{
 			"partly completed exercise, some mistakes",
 			"exercise",
 			"oxer",
-			format(float32(.75)),
+			format(float32(75)),
 		},
 		{
 			"over typed, no mistakes",
 			"exercise",
 			"exercise that is so cool",
-			format(float32(1)),
+			format(float32(100)),
 		},
 		{
 			"over typed, some mistakes",
 			"1234",
 			"2234 wowowowo",
-			format(float32(.75)),
+			format(float32(75)),
 		},
 	}
 
@@ -158,10 +159,37 @@ func TestAccuracy(t *testing.T) {
 	}
 }
 
-func testWPM(t *testing.T) {
-	t.Skip("tests not written yet o_o")
+func TestWPM(t *testing.T) {
+	format := func(x float64) string {
+		return fmt.Sprintf("%.f", x)
+	}
+
+	startTime := time.Now()
+	endTime := startTime.Add(1 * time.Minute) // one minute duration
+	exercise := "12345"
+	typedExercise := "12345"
+	expected := "1"
+	actual := WPM(startTime, endTime, typedExercise, exercise, WORD_SIZE)
+	formattedActual := format(actual)
+	if expected != formattedActual {
+		t.Errorf("WPM: wanted %s, got %s", expected, formattedActual)
+	}
+
 }
 
-func testCPM(t *testing.T) {
-	t.Skip("not implemented yet :/")
+func TestCPM(t *testing.T) {
+	format := func(x float64) string {
+		return fmt.Sprintf("%.f", x)
+	}
+
+	startTime := time.Now()
+	endTime := startTime.Add(1 * time.Minute) // one minute duration
+	exercise := "12345"
+	typedExercise := "12345"
+	expected := "5"
+	actual := CPM(startTime, endTime, typedExercise, exercise)
+	formattedActual := format(actual)
+	if expected != formattedActual {
+		t.Errorf("WPM: wanted %s, got %s", expected, formattedActual)
+	}
 }

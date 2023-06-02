@@ -5,6 +5,10 @@ import (
 	"time"
 )
 
+const (
+	WORD_SIZE = 5
+)
+
 func min(a int, b int) int {
 	if a < b {
 		return a
@@ -25,8 +29,9 @@ func requiredRunes(s string) []rune {
 	return arr
 }
 
-// Calculates the https://www.speedtypingonline.com/typing-equations
-func WPM(start time.Time, end time.Time, typed string, exercise string) float64 {
+// Calculates the words per minute based on the calculations in this link:
+// https://www.speedtypingonline.com/typing-equations
+func WPM(start time.Time, end time.Time, typed string, exercise string, wordSize int) float64 {
 	if start.After(end) {
 		end = time.Now()
 	}
@@ -37,14 +42,12 @@ func WPM(start time.Time, end time.Time, typed string, exercise string) float64 
 	mins := end.Sub(start).Minutes()
 	mistakes := float64(NumMistakes(typed, exercise))
 	typedEntries := len(requiredRunes(minLengthString))
-	words := float64(typedEntries / 5)
-	// words = len of typed characters / 5
-	// t = time in minutes
+	words := float64(typedEntries / wordSize)
 	return (words - mistakes) / mins
 }
 
-func (m Model) CPM() int {
-	return 100
+func CPM(start time.Time, end time.Time, typed string, exercise string) float64 {
+	return WPM(start, end, typed, exercise, 1)
 }
 
 // Gives a percentage accuracy of the typed exercise
@@ -84,7 +87,7 @@ func NumMistakes(typed string, exercise string) int {
 
 func ShowResults(m Model) {
 	fmt.Printf("Results of %s:\n", m.title)
-	fmt.Printf("WPM: %.f\n", WPM(m.startTime, m.endTime, m.typedExercise, m.exercise))
+	fmt.Printf("WPM: %.f\n", WPM(m.startTime, m.endTime, m.typedExercise, m.exercise, WORD_SIZE))
 	fmt.Printf("Mistakes: %d\n", NumMistakes(m.typedExercise, m.exercise))
 	fmt.Printf("Accuracy: %.2f\n", Accuracy(m.typedExercise, m.exercise))
 }
