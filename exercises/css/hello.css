@@ -1,8 +1,0 @@
-.hello {
-  background: red;
-  color: white;
-}
-
-.hello::after {
-  content: "Hello, World!"
-}
