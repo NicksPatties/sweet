@@ -65,12 +65,12 @@ func TestDeleteCharacter(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		m := Model{
+		m := sessionModel{
 			title:         tc.title,
 			exercise:      tc.exercise,
 			typedExercise: tc.initialTyped,
 		}
-		m = m.DeleteCharacter()
+		m = m.deleteCharacter()
 		if m.typedExercise != tc.expectedTyped {
 			t.Fatalf("%s Model.DeleteCharacter() got %s, wanted %s", tc.title, m.typedExercise, tc.expectedTyped)
 		}
@@ -136,7 +136,7 @@ func TestAddRuneToExercise(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		m := Model{
+		m := sessionModel{
 			tc.title,
 			tc.exercise,
 			tc.initialTyped,
@@ -144,7 +144,7 @@ func TestAddRuneToExercise(t *testing.T) {
 			time.Time{},
 			time.Time{},
 		}
-		actual := m.AddRuneToExercise(tc.rn)
+		actual := m.addRuneToExercise(tc.rn)
 		if actual.typedExercise != tc.expectedTyped {
 			t.Fatalf(`Model.AddRuneToExercise() %s  %s, want to match %s`, tc.title, actual.typedExercise, tc.expectedTyped)
 		}
@@ -153,12 +153,12 @@ func TestAddRuneToExercise(t *testing.T) {
 
 func TestExerciseView(t *testing.T) {
 	type testCase struct {
-		m        Model
+		m        sessionModel
 		expected string
 	}
 	testCases := []testCase{
 		{
-			Model{
+			sessionModel{
 				"Percent sign, stop (NOVERB) bug",
 				`Hello % this is the percent sign`,
 				"Hello %",
@@ -169,7 +169,7 @@ func TestExerciseView(t *testing.T) {
 			`Hello % this is the percent sign`,
 		},
 		{
-			Model{
+			sessionModel{
 				"Render the newline character",
 				"new\nline",
 				"new",
@@ -180,7 +180,7 @@ func TestExerciseView(t *testing.T) {
 			"new" + Arrow + "\nline",
 		},
 		{
-			Model{
+			sessionModel{
 				"Render incorrectly typed newline correctly",
 				"What's going on?\nHahah",
 				"What's going on?H",
@@ -192,7 +192,7 @@ func TestExerciseView(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-		actual := tc.m.ExerciseView()
+		actual := tc.m.exerciseView()
 		if actual != tc.expected {
 			t.Fatalf(`%s Model.ExerciseView() "%s", want to match "%s"`, tc.m.title, actual, tc.expected)
 		}
@@ -230,13 +230,13 @@ func TestGetExerciseRuneCount(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		m := Model{
+		m := sessionModel{
 			title:         tc.title,
 			exercise:      tc.exercise,
 			typedExercise: "",
 		}
 
-		actualCount := m.GetExerciseRuneCount()
+		actualCount := m.getExerciseRuneCount()
 
 		if actualCount != tc.expectedCount {
 			t.Fatalf("%s Model.GetExerciseRuneCount() got %d expected %d", tc.title, actualCount, tc.expectedCount)

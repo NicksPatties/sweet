@@ -9,7 +9,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-type Model struct {
+type sessionModel struct {
 	title         string
 	exercise      string
 	typedExercise string
@@ -18,8 +18,8 @@ type Model struct {
 	endTime       time.Time
 }
 
-func initialModel(t string, ex string) Model {
-	return Model{
+func initialModel(t string, ex string) sessionModel {
+	return sessionModel{
 		title:         t,
 		exercise:      ex,
 		typedExercise: "",
@@ -29,7 +29,7 @@ func initialModel(t string, ex string) Model {
 	}
 }
 
-func (m Model) finished() bool {
+func (m sessionModel) finished() bool {
 	l := len(m.exercise)
 	if len(m.typedExercise) < l {
 		return false
@@ -44,11 +44,11 @@ func (m Model) finished() bool {
 	return true
 }
 
-func (m Model) Init() tea.Cmd {
+func (m sessionModel) Init() tea.Cmd {
 	return nil
 }
 
-func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m sessionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.Type {
@@ -56,15 +56,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.quitEarly = true
 			return m, tea.Quit
 		case tea.KeyBackspace:
-			m = m.DeleteCharacter()
+			m = m.deleteCharacter()
 		case tea.KeyRunes, tea.KeySpace, tea.KeyEnter:
 			if m.startTime.IsZero() {
 				m.startTime = time.Now()
 			}
 			if msg.Type == tea.KeyEnter {
-				m = m.AddRuneToExercise(Enter)
+				m = m.addRuneToExercise(Enter)
 			} else {
-				m = m.AddRuneToExercise(msg.Runes[0])
+				m = m.addRuneToExercise(msg.Runes[0])
 			}
 			if m.finished() {
 				m.endTime = time.Now()
@@ -76,7 +76,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m Model) currentCharacterView() string {
+func (m sessionModel) currentCharacterView() string {
 	min := func(a int, b int) int {
 		if a <= b {
 			return a
@@ -92,19 +92,19 @@ func (m Model) currentCharacterView() string {
 	return fmt.Sprintf("Curr character: %#U %d %s", currChar, currChar, charString)
 }
 
-func (m Model) nameView() string {
+func (m sessionModel) nameView() string {
 	commentStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("7")).Italic(true)
 	commentPrefix := "//"
 	return commentStyle.Render(fmt.Sprintf("%s %s", commentPrefix, m.title))
 }
 
-func (m Model) View() string {
+func (m sessionModel) View() string {
 	s := ""
 	if !m.finished() {
 		s += "\n"
 		s += m.nameView()
 		s += "\n\n"
-		s += m.ExerciseView()
+		s += m.exerciseView()
 		s += "\n\n"
 		s += m.currentCharacterView()
 		s += "\n"
@@ -112,7 +112,7 @@ func (m Model) View() string {
 	return s
 }
 
-func RunSession(t string, ex string) (m Model) {
+func RunSession(t string, ex string) (m sessionModel) {
 	title := t
 	exercise := ex
 	model, err := tea.NewProgram(initialModel(title, exercise)).Run()
@@ -120,5 +120,5 @@ func RunSession(t string, ex string) (m Model) {
 		fmt.Printf("Alas, there's been an error: %v", err)
 		os.Exit(1)
 	}
-	return model.(Model)
+	return model.(sessionModel)
 }

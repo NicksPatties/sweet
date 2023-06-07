@@ -31,7 +31,7 @@ func requiredRunes(s string) []rune {
 
 // Calculates the words per minute based on the calculations in this link:
 // https://www.speedtypingonline.com/typing-equations
-func WPM(start time.Time, end time.Time, typed string, exercise string, wordSize int) float64 {
+func wpm(start time.Time, end time.Time, typed string, exercise string, wordSize int) float64 {
 	if start.After(end) {
 		end = time.Now()
 	}
@@ -40,18 +40,18 @@ func WPM(start time.Time, end time.Time, typed string, exercise string, wordSize
 		minLengthString = typed
 	}
 	mins := end.Sub(start).Minutes()
-	mistakes := float64(NumMistakes(typed, exercise))
+	mistakes := float64(numMistakes(typed, exercise))
 	typedEntries := len(requiredRunes(minLengthString))
 	words := float64(typedEntries / wordSize)
 	return (words - mistakes) / mins
 }
 
-func CPM(start time.Time, end time.Time, typed string, exercise string) float64 {
-	return WPM(start, end, typed, exercise, 1)
+func cpm(start time.Time, end time.Time, typed string, exercise string) float64 {
+	return wpm(start, end, typed, exercise, 1)
 }
 
 // Gives a percentage accuracy of the typed exercise
-func Accuracy(typed string, exercise string) float32 {
+func accuracy(typed string, exercise string) float32 {
 	if len(typed) == 0 || len(exercise) == 0 {
 		return float32(0)
 	}
@@ -61,7 +61,7 @@ func Accuracy(typed string, exercise string) float32 {
 		minLengthString = typed
 	}
 
-	m := float32(NumMistakes(typed, exercise))
+	m := float32(numMistakes(typed, exercise))
 	l := float32(len(requiredRunes(minLengthString)))
 	accuracy = (l - m) / l
 
@@ -72,7 +72,7 @@ func Accuracy(typed string, exercise string) float32 {
 // of characters typed into the exercise. If the number of characters typed exceeds
 // the length of the exercise, then this function only counts up to the length of
 // the exercise, and the remaining characters are discarded
-func NumMistakes(typed string, exercise string) int {
+func numMistakes(typed string, exercise string) int {
 	mistakes := 0
 	r := min(len(typed), len(exercise))
 
@@ -85,9 +85,9 @@ func NumMistakes(typed string, exercise string) int {
 	return mistakes
 }
 
-func ShowResults(m Model) {
+func showResults(m sessionModel) {
 	fmt.Printf("Results of %s:\n", m.title)
-	fmt.Printf("WPM: %.f\n", WPM(m.startTime, m.endTime, m.typedExercise, m.exercise, WORD_SIZE))
-	fmt.Printf("Mistakes: %d\n", NumMistakes(m.typedExercise, m.exercise))
-	fmt.Printf("Accuracy: %.2f\n", Accuracy(m.typedExercise, m.exercise))
+	fmt.Printf("WPM: %.f\n", wpm(m.startTime, m.endTime, m.typedExercise, m.exercise, WORD_SIZE))
+	fmt.Printf("Mistakes: %d\n", numMistakes(m.typedExercise, m.exercise))
+	fmt.Printf("Accuracy: %.2f\n", accuracy(m.typedExercise, m.exercise))
 }

@@ -12,11 +12,11 @@ func oneOfTheseCmdsIsNil(a tea.Cmd, b tea.Cmd) bool {
 	return (a == nil && b != nil) || (a != nil && b == nil)
 }
 
-func modelsAreTheSame(a Model, b Model) bool {
+func modelsAreTheSame(a sessionModel, b sessionModel) bool {
 	return a.typedExercise == b.typedExercise
 }
 
-func (m Model) String() string {
+func (m sessionModel) String() string {
 	c := "\n"
 	c += fmt.Sprintf("title: %s\n", m.title)
 	c += fmt.Sprintf("exercise: %s\n", m.exercise)
@@ -29,11 +29,11 @@ func (m Model) String() string {
 
 func TestUpdate(t *testing.T) {
 	type input struct {
-		model Model
+		model sessionModel
 		msg   tea.Msg
 	}
 	type output struct {
-		model Model
+		model sessionModel
 		cmd   tea.Cmd
 	}
 	type check func(output, output) bool
@@ -51,7 +51,7 @@ func TestUpdate(t *testing.T) {
 		{
 			"Handle Enter key message",
 			input{
-				Model{
+				sessionModel{
 					"",
 					"a test\nwith a newline",
 					"a test",
@@ -66,7 +66,7 @@ func TestUpdate(t *testing.T) {
 				},
 			},
 			output{
-				Model{
+				sessionModel{
 					"",
 					"a test\nwith a newline",
 					"a test\n",
@@ -86,7 +86,7 @@ func TestUpdate(t *testing.T) {
 		{
 			"Start the timer when the user begins typing",
 			input{
-				Model{
+				sessionModel{
 					"timer test",
 					"a test",
 					"",
@@ -101,7 +101,7 @@ func TestUpdate(t *testing.T) {
 				},
 			},
 			output{
-				Model{
+				sessionModel{
 					"timer test",
 					"a test",
 					"a",
@@ -121,7 +121,7 @@ func TestUpdate(t *testing.T) {
 		{
 			"Save the end time when the user finished the exercise",
 			input{
-				Model{
+				sessionModel{
 					"",
 					"exercise",
 					"exercis",
@@ -136,7 +136,7 @@ func TestUpdate(t *testing.T) {
 				},
 			},
 			output{
-				Model{
+				sessionModel{
 					"",
 					"exercise",
 					"exercise",
@@ -158,7 +158,7 @@ func TestUpdate(t *testing.T) {
 		{
 			"End the exercise early when pressing Ctrl+c",
 			input{
-				Model{
+				sessionModel{
 					"",
 					"a test",
 					"",
@@ -173,7 +173,7 @@ func TestUpdate(t *testing.T) {
 				},
 			},
 			output{
-				Model{
+				sessionModel{
 					"",
 					"a test\nwith a newline",
 					"",
@@ -201,7 +201,7 @@ func TestUpdate(t *testing.T) {
 
 	for _, tc := range testCases {
 		m, actualCmd := tc.input.model.Update(tc.input.msg)
-		actualModel := m.(Model)
+		actualModel := m.(sessionModel)
 		if oneOfTheseCmdsIsNil(tc.expected.cmd, actualCmd) {
 			t.Errorf("Update: %s: tea commands don't match, one is nil!", tc.name)
 		}

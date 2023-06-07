@@ -19,7 +19,7 @@ func getExercisesDirectory() (string, error) {
 	return path.Join(hd, ".sweet", "exercises"), nil
 }
 
-func GetRandomExercise() (string, string, error) {
+func getRandomExercise() (string, string, error) {
 	dirPath, err := getExercisesDirectory()
 	paths, err := getAllFilePathsInDirectory(dirPath)
 	if err != nil {
@@ -27,11 +27,11 @@ func GetRandomExercise() (string, string, error) {
 	}
 	randI := rand.Intn(len(paths))
 
-	return GetExerciseFromFile(paths[randI])
+	return getExerciseFromFile(paths[randI])
 }
 
 // Gets an exercise for the matching lang file extension
-func GetExerciseForLang(lang string) (string, string, error) {
+func getExerciseForLang(lang string) (string, string, error) {
 	dirPath, err := getExercisesDirectory()
 	// get all the files in the exercises directory
 	r, err := regexp.Compile("[[:alnum:]]+." + lang)
@@ -46,10 +46,10 @@ func GetExerciseForLang(lang string) (string, string, error) {
 	if err != nil {
 		return "", "", fmt.Errorf("Failed to find exercise of type %s", lang)
 	}
-	return GetExerciseFromFile(exPath)
+	return getExerciseFromFile(exPath)
 }
 
-func GetExerciseFromFile(fileName string) (string, string, error) {
+func getExerciseFromFile(fileName string) (string, string, error) {
 	exercise, err := os.ReadFile(fileName)
 	return fileName, string(exercise), err
 }
@@ -58,7 +58,7 @@ func isWhitespace(rn rune) bool {
 	return rn == Tab || rn == Space
 }
 
-func (m Model) AddRuneToExercise(rn rune) Model {
+func (m sessionModel) addRuneToExercise(rn rune) sessionModel {
 	if len(m.typedExercise) == len(m.exercise) {
 		return m
 	}
@@ -77,7 +77,7 @@ func (m Model) AddRuneToExercise(rn rune) Model {
 	return m
 }
 
-func (m Model) DeleteCharacter() Model {
+func (m sessionModel) deleteCharacter() sessionModel {
 	tex := m.typedExercise
 	l := len(tex)
 
@@ -107,15 +107,15 @@ func (m Model) DeleteCharacter() Model {
 	return m
 }
 
-type Theme struct {
+type theme struct {
 	typedStyle     lipgloss.Style
 	untypedStyle   lipgloss.Style
 	cursorStyle    lipgloss.Style
 	incorrectStyle lipgloss.Style
 }
 
-func DefaultTheme() Theme {
-	return Theme{
+func defaultTheme() theme {
+	return theme{
 		typedStyle:     lipgloss.NewStyle().Foreground(lipgloss.Color("#FFFFFF")),
 		untypedStyle:   lipgloss.NewStyle().Foreground(lipgloss.Color("7")),
 		cursorStyle:    lipgloss.NewStyle().Background(lipgloss.Color("14")),
@@ -126,10 +126,10 @@ func DefaultTheme() Theme {
 // Returns the exercise string with the typed string overlaid on top of it. Renders
 // correctly typed characters with white text, incorrectly typed characters with a
 // red background, and characters that haven't been typed yet with gray text.
-func (m Model) ExerciseView(args ...Theme) string {
-	var t Theme
+func (m sessionModel) exerciseView(args ...theme) string {
+	var t theme
 	if len(args) == 0 {
-		t = DefaultTheme()
+		t = defaultTheme()
 	} else {
 		t = args[0]
 	}
@@ -178,7 +178,7 @@ func (m Model) ExerciseView(args ...Theme) string {
 	return s
 }
 
-func (m Model) GetExerciseRuneCount() int {
+func (m sessionModel) getExerciseRuneCount() int {
 	ex := m.exercise
 	c := 0
 	hitNewline := false

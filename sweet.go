@@ -23,13 +23,13 @@ be provided for you.
 Not sure what exercises are available to use? Use the "list" command to see which exercises
 are available to practice. Then, run "sweet <exercise-name>" to begin your exercise!
 
-	Subcommands
+Subcommands
 
-	  help                            Opens this help menu
-	  add [path]                      Adds a file to the exercise list
-		lang [go|js|ts|java...]	        Finds a random exercise with the specified extension
-		list                            Lists the available exercises to run
-	  [exercise name]                 Runs this exercise
+	help                            Opens this help menu
+	add [path]                      Adds a file to the exercise list
+	lang [go|js|ts|java...]	        Finds a random exercise with the specified extension
+	list                            Lists the available exercises to run
+	[exercise name]                 Runs this exercise
 */
 package main
 
@@ -136,7 +136,7 @@ func main() {
 				fmt.Printf("Something went wrong adding the exercise... %s", err)
 				os.Exit(1)
 			}
-			name, exercise, err = GetExerciseFromFile(exPath)
+			name, exercise, err = getExerciseFromFile(exPath)
 		case "list":
 			exs, err := listExercises()
 			if err != nil {
@@ -150,7 +150,7 @@ func main() {
 				fmt.Println("Print usage message for lang command")
 				os.Exit(1)
 			}
-			name, exercise, err = GetExerciseForLang(args[1])
+			name, exercise, err = getExerciseForLang(args[1])
 		default:
 			exName := arg
 			exPath, err := getDefaultExercisesPath()
@@ -158,14 +158,14 @@ func main() {
 				fmt.Printf("Something went wrong with getting this exercise\n")
 				os.Exit(1)
 			}
-			name, exercise, err = GetExerciseFromFile(path.Join(exPath, exName))
+			name, exercise, err = getExerciseFromFile(path.Join(exPath, exName))
 			if err != nil {
 				fmt.Printf("Something went wrong with getting this exercise\n")
 				os.Exit(1)
 			}
 		}
 	} else {
-		name, exercise, err = GetRandomExercise()
+		name, exercise, err = getRandomExercise()
 	}
 
 	if err != nil {
@@ -181,5 +181,5 @@ func main() {
 	}
 
 	// show the results
-	ShowResults(m)
+	showResults(m)
 }

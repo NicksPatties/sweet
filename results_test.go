@@ -94,7 +94,7 @@ func TestNumMistakes(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		actual := NumMistakes(tc.typed, tc.exercise)
+		actual := numMistakes(tc.typed, tc.exercise)
 		if tc.expected != actual {
 			t.Errorf("NumMistakes: %s: wanted %d, got %d", tc.name, tc.expected, actual)
 		}
@@ -151,7 +151,7 @@ func TestAccuracy(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		actual := Accuracy(tc.typed, tc.exercise)
+		actual := accuracy(tc.typed, tc.exercise)
 		actualFormatted := format(actual)
 		if tc.expected != actualFormatted {
 			t.Errorf("TestAccuracy: %s: wanted %s, got %s", tc.name, tc.expected, actualFormatted)
@@ -169,7 +169,7 @@ func TestWPM(t *testing.T) {
 	exercise := "12345"
 	typedExercise := "12345"
 	expected := "1"
-	actual := WPM(startTime, endTime, typedExercise, exercise, WORD_SIZE)
+	actual := wpm(startTime, endTime, typedExercise, exercise, WORD_SIZE)
 	formattedActual := format(actual)
 	if expected != formattedActual {
 		t.Errorf("WPM: wanted %s, got %s", expected, formattedActual)
@@ -187,7 +187,7 @@ func TestCPM(t *testing.T) {
 	exercise := "12345"
 	typedExercise := "12345"
 	expected := "5"
-	actual := CPM(startTime, endTime, typedExercise, exercise)
+	actual := cpm(startTime, endTime, typedExercise, exercise)
 	formattedActual := format(actual)
 	if expected != formattedActual {
 		t.Errorf("WPM: wanted %s, got %s", expected, formattedActual)
