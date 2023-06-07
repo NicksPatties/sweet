@@ -20,10 +20,7 @@ import (
 	"log"
 	"os"
 	"path"
-)
-
-const (
-	EXERCISES_DIR_NAME = "exercises"
+	"strings"
 )
 
 func printHelpMessage() {
@@ -71,6 +68,25 @@ func addExercise(srcPath string) (string, error) {
 	return addedPath, err
 }
 
+// lists all of the available exercises in the exercises directory
+func listExercises() error {
+	ePath, err := getDefaultExercisesPath()
+	if err != nil {
+		return err
+	}
+
+	paths, err := getAllFilePathsInDirectory(ePath)
+	if err != nil {
+		return err
+	}
+
+	for _, path := range paths {
+		str := strings.Replace(path, ePath, "", 1)
+		fmt.Println(str[1:])
+	}
+	return nil
+}
+
 func main() {
 
 	var name string
@@ -104,11 +120,24 @@ func main() {
 			}
 			name, exercise, err = GetExerciseFromFile(exPath)
 		case "list":
-			fmt.Print("This is the list command\n")
+			err := listExercises()
+			if err != nil {
+				fmt.Printf("Something went wrong with listing the exercises")
+				os.Exit(1)
+			}
 			os.Exit(0)
 		default:
-			fmt.Printf("Search for the %s exercise in the .sweet directory\n", arg)
-			os.Exit(0)
+			exName := arg
+			exPath, err := getDefaultExercisesPath()
+			if err != nil {
+				fmt.Printf("Something went wrong with getting this exercise")
+				os.Exit(1)
+			}
+			name, exercise, err = GetExerciseFromFile(path.Join(exPath, exName))
+			if err != nil {
+				fmt.Printf("Something went wrong with getting this exercise")
+				os.Exit(1)
+			}
 		}
 	} else {
 		name, exercise, err = GetRandomExercise()

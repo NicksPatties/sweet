@@ -8,7 +8,8 @@ import (
 )
 
 const (
-	CONFIG_DIR_NAME = ".sweet"
+	CONFIG_DIR_NAME    = ".sweet"
+	EXERCISES_DIR_NAME = "exercises"
 )
 
 // Copies a file defined in the srcFilePath to the destDirPath, and returns the full
@@ -42,6 +43,14 @@ func getDefaultConfigPath() (string, error) {
 
 	// check if the .sweet config directory exists
 	return path.Join(homeDir, CONFIG_DIR_NAME), nil
+}
+
+func getDefaultExercisesPath() (string, error) {
+	defaultPath, err := getDefaultConfigPath()
+	if err != nil {
+		return "", err
+	}
+	return path.Join(defaultPath, EXERCISES_DIR_NAME), nil
 }
 
 func createDefaultConfigDirectory() (string, error) {
