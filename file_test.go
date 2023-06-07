@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"path"
 	"testing"
 )
 
@@ -270,4 +271,53 @@ func TestGetRandomFilePathFromDirectory_ReturnsAFilePathInTheDirectory(t *testin
 		removeFiles(files)
 		os.Remove(root)
 	})
+}
+
+func TestAddFileToDirectory(t *testing.T) {
+	wd, err := os.Getwd()
+	check(err)
+
+	// mock directory one
+	m1, err := os.MkdirTemp(wd, "m1")
+	check(err)
+
+	// tmp file inside mock directory one
+	tmp, err := os.CreateTemp(m1, "tmp")
+	tmpFileName := path.Base(tmp.Name())
+	check(err)
+
+	// mock directory two
+	m2, err := os.MkdirTemp(wd, "m2")
+	check(err)
+
+	expectedContents := "Hello"
+	expectedPath := path.Join(m2, tmpFileName)
+
+	tmp.WriteString(expectedContents)
+
+	srcFilePath := path.Join(m1, tmpFileName)
+	destDirPath := m2
+
+	actualPath, err := addFileToDirectory(srcFilePath, destDirPath)
+	check(err)
+
+	actualContents, err := os.ReadFile(path.Join(m2, tmpFileName))
+	check(err)
+
+	if err != nil {
+		t.Fatalf("addFileToDirectory: %s\n", err)
+	}
+	if expectedContents != string(actualContents) {
+		t.Fatalf("addFileToDirectory: wanted %s, got %s", expectedContents, string(actualContents))
+	}
+
+	if expectedPath != actualPath {
+		t.Fatalf("addFileToDirectory: wanted %s path, got %s path", expectedPath, actualPath)
+	}
+
+	// remove tmp files and folders
+	os.Remove(tmp.Name())
+	os.Remove(path.Join(m2, tmpFileName))
+	os.Remove(m1)
+	os.Remove(m2)
 }

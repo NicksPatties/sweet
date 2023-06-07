@@ -1,4 +1,4 @@
-module nickspatties.com/sweet
+module github.com/NicksPatties/sweet
 
 go 1.20
 

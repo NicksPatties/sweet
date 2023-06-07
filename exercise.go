@@ -3,16 +3,24 @@ package main
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"math/rand"
+	"os"
 	"path"
 
 	"github.com/charmbracelet/lipgloss"
 )
 
+func getExercisesDirectory() (string, error) {
+	hd, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	return path.Join(hd, ".sweet", "exercises"), nil
+}
+
 func GetRandomExercise() (string, string, error) {
-	dirPath := path.Join(".", "exercises")
+	dirPath, err := getExercisesDirectory()
 	paths, err := getAllFilePathsInDirectory(dirPath)
 	if err != nil {
 		log.Fatalf("not sweet... an error ocurred: %s", err)
@@ -24,8 +32,8 @@ func GetRandomExercise() (string, string, error) {
 
 // Gets an exercise for the matching lang file extension
 func GetExerciseForLang(lang string) (string, string, error) {
-	dirPath := path.Join(".", "exercises", lang)
-	exPath, err := getRandomFilePathFromDirectory(dirPath)
+	dirPath, err := getExercisesDirectory()
+	exPath, err := getRandomFilePathFromDirectory(dirPath + "/" + lang)
 	if err != nil {
 		return "", "", errors.New("Failed to find exercise of type " + lang)
 	}
@@ -33,7 +41,7 @@ func GetExerciseForLang(lang string) (string, string, error) {
 }
 
 func GetExerciseFromFile(fileName string) (string, string, error) {
-	exercise, err := ioutil.ReadFile(fileName)
+	exercise, err := os.ReadFile(fileName)
 	return fileName, string(exercise), err
 }
 
