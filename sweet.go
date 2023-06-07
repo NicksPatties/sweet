@@ -2,16 +2,34 @@
 Sweet is a Software Engineering Exercise for Typing. In other words, it's a touch typing
 exercise command line interface specifically designed for programmers.
 
+Upon first execution, Sweet will create a configuration folder at $HOME/.sweet. Some sample
+exercises will also be created in the $HOME/.sweet/exercises directory, and the typing game
+will begin, selecting a random exercise from the aforementioned directory.
+
+Type the letters that are highlighted by the cursor, following along with the code that
+appears in the exercise. Once the final character of the exercise is inputted correctly,
+your WPM (words per minute), mistakes, and accuracy are printed in the console, and the
+program ends.
+
+If you'd like some more exercises, you can use the "add" command! Provide a path to "add",
+and the file will be added to the exercises directory and available to use. Additionally,
+sweet will immediately run an exercise with the provided file.
+
+You can focus on only testing specific languages by using the "lang" command. Provide a
+file extension corresponding to the kind of file you'd like to practice. For instance, want
+to practice writing go code? Try using `sweet lang go`, and a random go exercise will
+be provided for you.
+
+Not sure what exercises are available to use? Use the "list" command to see which exercises
+are available to practice. Then, run "sweet <exercise-name>" to begin your exercise!
+
 	Subcommands
 
-	  help, h              Opens this help menu
-	  add, a [path]        Adds a file to the exercise list
-	  list, l              Lists the available exercises to run
-	  [exercise name]      Runs this exercise
-
-	Flags
-
-	  [-go|-js|-ts|...]    Runs an exercise of the given file extension
+	  help                            Opens this help menu
+	  add [path]                      Adds a file to the exercise list
+		lang [go|js|ts|java...]	        Finds a random exercise with the specified extension
+		list                            Lists the available exercises to run
+	  [exercise name]                 Runs this exercise
 */
 package main
 
@@ -69,22 +87,23 @@ func addExercise(srcPath string) (string, error) {
 }
 
 // lists all of the available exercises in the exercises directory
-func listExercises() error {
+func listExercises() (string, error) {
 	ePath, err := getDefaultExercisesPath()
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	paths, err := getAllFilePathsInDirectory(ePath)
 	if err != nil {
-		return err
+		return "", err
 	}
 
+	exercises := ""
 	for _, path := range paths {
 		str := strings.Replace(path, ePath, "", 1)
-		fmt.Println(str[1:])
+		exercises += fmt.Sprintln(str[1:])
 	}
-	return nil
+	return exercises, nil
 }
 
 func main() {
@@ -101,7 +120,6 @@ func main() {
 
 	args := os.Args[1:]
 
-	// making a command
 	if len(args) > 0 {
 		switch arg := args[0]; arg {
 		case "help":
@@ -120,22 +138,29 @@ func main() {
 			}
 			name, exercise, err = GetExerciseFromFile(exPath)
 		case "list":
-			err := listExercises()
+			exs, err := listExercises()
 			if err != nil {
 				fmt.Printf("Something went wrong with listing the exercises")
 				os.Exit(1)
 			}
+			fmt.Print(exs)
 			os.Exit(0)
+		case "lang":
+			if len(args) != 2 {
+				fmt.Println("Print usage message for lang command")
+				os.Exit(1)
+			}
+			name, exercise, err = GetExerciseForLang(args[1])
 		default:
 			exName := arg
 			exPath, err := getDefaultExercisesPath()
 			if err != nil {
-				fmt.Printf("Something went wrong with getting this exercise")
+				fmt.Printf("Something went wrong with getting this exercise\n")
 				os.Exit(1)
 			}
 			name, exercise, err = GetExerciseFromFile(path.Join(exPath, exName))
 			if err != nil {
-				fmt.Printf("Something went wrong with getting this exercise")
+				fmt.Printf("Something went wrong with getting this exercise\n")
 				os.Exit(1)
 			}
 		}

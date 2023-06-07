@@ -1,12 +1,12 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"math/rand"
 	"os"
 	"path"
+	"regexp"
 
 	"github.com/charmbracelet/lipgloss"
 )
@@ -33,9 +33,18 @@ func GetRandomExercise() (string, string, error) {
 // Gets an exercise for the matching lang file extension
 func GetExerciseForLang(lang string) (string, string, error) {
 	dirPath, err := getExercisesDirectory()
-	exPath, err := getRandomFilePathFromDirectory(dirPath + "/" + lang)
+	// get all the files in the exercises directory
+	r, err := regexp.Compile("[[:alnum:]]+." + lang)
+	exercisesList, err := listExercises()
+	exercises := r.FindAllString(exercisesList, -1)
+	if exercises == nil {
+		return "", "", fmt.Errorf("Failed to find exercise of type %s", lang)
+	}
+	randI := rand.Intn(len(exercises))
+	ex := exercises[randI]
+	exPath := path.Join(dirPath, ex)
 	if err != nil {
-		return "", "", errors.New("Failed to find exercise of type " + lang)
+		return "", "", fmt.Errorf("Failed to find exercise of type %s", lang)
 	}
 	return GetExerciseFromFile(exPath)
 }
