@@ -1,4 +1,17 @@
 /*
+Hey! That's
+
+	      ,gg,                                                  gg
+	     i8""8i                                        I8      ,gg,
+	     `8,,8'                                        I8      i88i
+	      `88'                                      88888888   i88i
+	      dP"8,                                        I8      i88i
+	     dP' `8a  gg    gg    gg    ,ggg,    ,ggg,     I8      ,gg,
+	    dP'   `Yb I8    I8    88bg i8" "8i  i8" "8i    I8       gg
+	_ ,dP'     I8 I8    I8    8I   I8, ,8I  I8, ,8I   ,I8,
+	"888,,____,dP,d8,  ,d8,  ,8I   `YbadP'  `YbadP'  ,d88b,     aa
+	a8P"Y88888P" P""Y88P""Y88P"   888P"Y888888P"Y88888P""Y88    88
+
 Sweet is a Software Engineering Exercise for Typing. In other words, it's a touch typing
 exercise command line interface specifically designed for programmers.
 
@@ -23,10 +36,14 @@ be provided for you.
 Not sure what exercises are available to use? Use the "list" command to see which exercises
 are available to practice. Then, run "sweet <exercise-name>" to begin your exercise!
 
+Usage:
+
+	sweet [subcommand]
+
 Subcommands
 
 	help                            Opens this help menu
-	add [path]                      Adds a file to the exercise list
+	add [path]                      Adds the file tat this path to the exercise list
 	lang [go|js|ts|java...]	        Finds a random exercise with the specified extension
 	list                            Lists the available exercises to run
 	[exercise name]                 Runs this exercise
@@ -49,26 +66,21 @@ func printHelpMessage() {
 	}
 
 	subcommands := []row{
-		{"help, h", "Opens this help menu"},
-		{"add, a [path]", "Adds a file to the exercise list"},
-		{"list, l", "Lists the available exercises to run"},
+		{"help", "Opens this help menu"},
+		{"add [path]", "Adds the file at this path to the exercise list"},
+		{"lang [go|js|ts|java...]", "Finds a random exercise with the specified extension"},
+		{"list", "Lists the available exercises to run"},
 		{"[exercise name]", "Runs this exercise"},
 	}
 
-	flags := []row{
-		{"[-go|-js|-ts|...]", "Runs an exercise of the given file extension"},
-	}
-
 	fmt.Printf("%s\n\n", name)
-	fmt.Printf("  Subcommands\n\n")
+	fmt.Printf("Usage:\n\n")
+	fmt.Printf("    %-30s\n\n", "sweet [subcommand]")
+	fmt.Printf("Subcommands:\n\n")
 	for _, scmd := range subcommands {
-		fmt.Printf("    %-20s %s\n", scmd.name, scmd.description)
+		fmt.Printf("    %-30s %s\n", scmd.name, scmd.description)
 	}
 
-	fmt.Printf("\n  Flags\n\n")
-	for _, f := range flags {
-		fmt.Printf("    %-20s %s\n", f.name, f.description)
-	}
 	fmt.Printf("\n")
 }
 
