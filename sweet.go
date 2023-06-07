@@ -19,6 +19,11 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path"
+)
+
+const (
+	EXERCISES_DIR_NAME = "exercises"
 )
 
 func printHelpMessage() {
@@ -53,20 +58,17 @@ func printHelpMessage() {
 }
 
 // Adds an exercise from the specified path into sweet's exercise directory, making
-// it available to use for the exercises. If an exercise is already present, then
-// it will just return the given exercise.
-func addExercise(srcPath string) (string, string, error) {
-	destPath, err := getDefaultConfigPath()
+// it available to use for the exercises. This function returns the path of the exercises
+// once it's created, and a possible error if something goes wrong.
+func addExercise(srcPath string) (string, error) {
+	sweetPath, err := getDefaultConfigPath()
 	if err != nil {
-		return "", "", err
+		return "", err
 	}
+	destPath := path.Join(sweetPath, EXERCISES_DIR_NAME)
+	addedPath, err := addFileToDirectory(srcPath, destPath)
 
-	exPath, err := addFileToDirectory(srcPath, destPath)
-	if err != nil {
-		return "", "", err
-	}
-
-	return GetExerciseFromFile(exPath)
+	return addedPath, err
 }
 
 func main() {
@@ -81,14 +83,26 @@ func main() {
 		log.Fatalf("Whoops! %s", err.Error())
 	}
 
+	args := os.Args[1:]
+
 	// making a command
-	if len(os.Args) > 1 {
-		switch arg := os.Args[1]; arg {
+	if len(args) > 0 {
+		switch arg := args[0]; arg {
 		case "help":
 			printHelpMessage()
 			os.Exit(0)
 		case "add":
-			name, exercise, err = addExercise(arg)
+			if len(args) != 2 {
+				fmt.Println("Print usage message for add command")
+				os.Exit(1)
+			}
+			srcPath := args[1]
+			exPath, err := addExercise(srcPath)
+			if err != nil {
+				fmt.Printf("Something went wrong adding the exercise... %s", err)
+				os.Exit(1)
+			}
+			name, exercise, err = GetExerciseFromFile(exPath)
 		case "list":
 			fmt.Print("This is the list command\n")
 			os.Exit(0)

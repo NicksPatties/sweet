@@ -17,7 +17,7 @@ func addFileToDirectory(srcFilePath string, destDirPath string) (string, error) 
 	// open the source file
 	sData, err := os.ReadFile(srcFilePath)
 	if err != nil {
-		return "", nil
+		return "", err
 	}
 	// create the new file
 	dFileName := path.Join(destDirPath, path.Base(srcFilePath))
