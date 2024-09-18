@@ -1,8 +1,8 @@
-package main
+package exercise
 
 import "fmt"
 
-func RunExercise(lang string, topic string) {
+func Run(lang string, topic string) {
 	if lang == "" {
 		lang = "any"
 	}

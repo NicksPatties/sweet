@@ -1,4 +1,4 @@
-package commands
+package help
 
 import (
 	"fmt"
@@ -32,7 +32,7 @@ func RunHelp(subcommand string) {
 }
 
 func PrintSweetUsage() {
-	program := GetCommandSweet()
+	program := "sweet"
 	p := fmt.Printf
 	p("\n")
 	p("Usage: %s", program)

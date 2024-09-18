@@ -5,65 +5,44 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/NicksPatties/sweet/commands"
-	"github.com/NicksPatties/sweet/util"
+	"github.com/NicksPatties/sweet/exercise"
+	_ "github.com/NicksPatties/sweet/help"
+	_ "github.com/NicksPatties/sweet/util"
 )
 
-func actualMain() {
+func main() {
 
-	sweetName := commands.GetCommandSweet()
+	sweetName := "sweet"
 
 	// DEFAULT FLAGS
 	sweetCmd := flag.NewFlagSet(sweetName, flag.ExitOnError)
-	sweetCmd.Usage = commands.PrintSweetUsage
 	sweetLang := sweetCmd.String("l", "", "The programming language to practice, based on extension name")
 	sweetTopic := sweetCmd.String("t", "", "Do an exercise related to a given topic")
 
 	// SUB-COMMANDS
-	versionCmd := flag.NewFlagSet(commands.CommandVersion, flag.ExitOnError)
-	versionCmd.Usage = commands.PrintVersionUsage
+	versionCmd := flag.NewFlagSet("version", flag.ExitOnError)
 
-	helpCmd := flag.NewFlagSet(commands.CommandHelp, flag.ExitOnError)
-	helpCmd.Usage = commands.PrintHelpUsage
+	helpCmd := flag.NewFlagSet("help", flag.ExitOnError)
 
 	if len(os.Args) == 1 {
 		// Default command
-		RunExercise(*sweetLang, *sweetTopic)
+		exercise.Run(*sweetLang, *sweetTopic)
 	} else {
 		args := os.Args[1:]
 		switch args[0] {
-		case commands.CommandVersion:
+		case "version":
 			versionCmd.Parse(args[1:])
-			commands.PrintVersion()
-		case commands.CommandHelp:
+
+		case "help":
 			helpCmd.Parse(args[1:])
 			if len(helpCmd.Args()) > 1 {
 				fmt.Println("Too many arguments")
 			}
-			commands.RunHelp(helpCmd.Arg(0))
+
 		default:
 			// Default command with flags
 			sweetCmd.Parse(args)
-			RunExercise(*sweetLang, *sweetTopic)
+			exercise.Run(*sweetLang, *sweetTopic)
 		}
 	}
-}
-
-func main() {
-	filePath := "./one.txt"
-	checksum1, err := util.HashFile(filePath)
-	if err != nil {
-		fmt.Printf("Error hashing file: %v\n", err)
-		return
-	}
-
-	otherFilePath := "./two.txt"
-	checksum2, err := util.HashFile(otherFilePath)
-	if err != nil {
-		fmt.Printf("Error hashing file: %v\n", err)
-		return
-	}
-
-	fmt.Printf("CRC-32 checksum for one.txt: %08x\n", checksum1)
-	fmt.Printf("CRC-32 checksum for two.txt: %08x\n", checksum2)
 }
