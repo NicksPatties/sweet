@@ -2,30 +2,6 @@
 sweet - The Software Engineer's Exercise in Typing.
 Runs an interactive typing exercise.
 Once complete, it displays statistics, including words per minute (WPM), accuracy, and number of mistakes.
-
-Usage:
-
-	sweet [sub-command] [flags] [exercise]
-
-Sub-commands:
-
-	help
-		Prints a help message.
-	version
-		Prints the version of the application.
-	about
-		Prints general information about sweet.
-
-For more information on sweet's subcommands, use sweet help [sub-command]
-
-Flags:
-
-	-l
-		The language of the exercise. When given, sweet selects a random exercise that matches the given language. Examples: go, ts, rs
-	-t
-		The topic of the exercise. When given, sweet selects a random exercise that matches the give topic. Examples: sorting, algorithms, search
-	-f
-		The name of the exersize file
 */
 package main
 
@@ -36,7 +12,6 @@ import (
 
 	"github.com/NicksPatties/sweet/about"
 	"github.com/NicksPatties/sweet/exercise"
-	"github.com/NicksPatties/sweet/help"
 	"github.com/NicksPatties/sweet/version"
 )
 
@@ -62,7 +37,6 @@ const supportLink string = "support-link"
 // Afterwards, pass whatever parameters you'd like into the function.
 type Commands struct {
 	exercise func(string, string, string) int
-	help     func([]string, string) int
 	version  func([]string, string, string) int
 	about    func([]string, string, string, string, string) int
 }
@@ -92,8 +66,6 @@ func Run(executableName string, args []string, commands Commands) int {
 		switch subCommand {
 		case version.CommandName:
 			code = commands.version(args[1:], sweetName, getVersion())
-		case help.CommandName:
-			code = commands.help(args[1:], sweetName)
 		case about.CommandName:
 			code = commands.about(
 				args[1:],
@@ -113,7 +85,6 @@ func Run(executableName string, args []string, commands Commands) int {
 func main() {
 	defaultCommands := Commands{
 		exercise: exercise.Run,
-		help:     help.Run,
 		version:  version.Run,
 		about:    about.Run,
 	}

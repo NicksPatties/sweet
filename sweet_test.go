@@ -9,9 +9,6 @@ func TestRun(t *testing.T) {
 		exercise: func(string, string, string) int {
 			return 0
 		},
-		help: func([]string, string) int {
-			return 0
-		},
 		version: func([]string, string, string) int {
 			return 0
 		},
@@ -39,15 +36,6 @@ func TestRun(t *testing.T) {
 			name:           "sweet command with valid flags",
 			executableName: dex,
 			args:           []string{"-l", "go"},
-			want:           0,
-		},
-		// The "sweet command with invalid flags" case is already
-		// handled by the flag module's behavior,
-		// so it's skipped here.
-		{
-			name:           "help happy path",
-			executableName: dex,
-			args:           []string{"help"},
 			want:           0,
 		},
 		{
