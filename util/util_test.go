@@ -1,19 +1,17 @@
 package util
 
 import (
-	"bytes"
 	"testing"
 )
 
-type makeUsageTestCase struct {
-	testName       string
-	executableName string
-	subCommand     string
-	usage          string
-	want           string
-}
-
 func TestMakeUsage(t *testing.T) {
+	type makeUsageTestCase struct {
+		testName       string
+		executableName string
+		subCommand     string
+		usage          string
+		want           string
+	}
 
 	testCases := []makeUsageTestCase{
 		{
@@ -24,13 +22,22 @@ func TestMakeUsage(t *testing.T) {
 			want: "Usage: sweet version \n" +
 				"For more information, run: sweet help version",
 		},
+		{
+			testName:       "all variables",
+			executableName: "./sweet",
+			subCommand:     "help",
+			usage:          "[sub-command]",
+			want: "Usage: ./sweet help [sub-command]\n" +
+				"For more information, run: ./sweet help help",
+		},
 	}
 
 	for _, tc := range testCases {
-		var buf bytes.Buffer
-		// Remember to call the function returned by MakeUsage!
-		MakeUsage(&buf, tc.executableName, tc.subCommand, tc.usage)()
-		got := buf.String()
+		got := GetStringFromStdout(
+			// Don't forget that MakeUsage returns a function,
+			// so I can pass it here
+			MakeUsage(tc.executableName, tc.subCommand, tc.usage),
+		)
 
 		if got != tc.want {
 			t.Errorf("%s:\ngot\n%s\nwant\n%s", tc.testName, got, tc.want)
