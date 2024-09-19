@@ -9,17 +9,19 @@ import (
 func TestRun(t *testing.T) {
 
 	type testCase struct {
-		name         string
-		args         []string
-		wantFilename string
-		codeWant     int
+		name           string
+		args           []string
+		executableName string
+		wantFilename   string
+		codeWant       int
 	}
 	testCases := []testCase{
 		{
-			name:         "No sub-commands",
-			args:         []string{},
-			wantFilename: "sweet_help_want.txt",
-			codeWant:     0,
+			name:           "No sub-commands",
+			args:           []string{},
+			executableName: "sweet",
+			wantFilename:   "sweet_help_want.txt",
+			codeWant:       0,
 		},
 	}
 
@@ -28,7 +30,7 @@ func TestRun(t *testing.T) {
 		var codeGot int
 
 		got := util.GetStringFromStdout(func() {
-			codeGot = Run(tc.args)
+			codeGot = Run(tc.args, tc.executableName)
 		})
 		if got != want {
 			t.Errorf("%s: got\n%s\nwant\n%s", tc.name, got, want)

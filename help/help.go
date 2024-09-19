@@ -10,7 +10,6 @@ package help
 import (
 	"flag"
 	"fmt"
-	"os"
 
 	"github.com/NicksPatties/sweet/about"
 	"github.com/NicksPatties/sweet/util"
@@ -21,16 +20,15 @@ const CommandName = "help"
 
 // Runs the help command and returns the status code.
 // The status code should follow the conventions of os.Exit()
-func Run(args []string) int {
+func Run(args []string, executableName string) int {
+
+	helpCmd := flag.NewFlagSet("help", flag.ExitOnError)
+	helpCmd.Usage = util.MakeUsage(executableName, CommandName, "[sub-command]")
 
 	if len(args) == 0 {
-		printSweetHelpMessage()
+		printSweetHelpMessage(executableName)
 		return 0
 	}
-
-	// command parsing
-	helpCmd := flag.NewFlagSet("help", flag.ExitOnError)
-	helpCmd.Usage = util.MakeUsage(os.Args[0], CommandName, "[sub-command]")
 
 	err := helpCmd.Parse(args)
 	if err != nil {
@@ -39,6 +37,7 @@ func Run(args []string) int {
 
 	if len(helpCmd.Args()) > 1 {
 		fmt.Println("Too many arguments")
+		return 1
 	}
 
 	subcommand := args[0]
@@ -46,24 +45,23 @@ func Run(args []string) int {
 	// interpret arguments
 	switch subcommand {
 	case CommandName:
-		printHelpHelpMessage()
+		printHelpHelpMessage(executableName)
 		return 0
 	case version.CommandName:
-		printVersionHelpMessage()
+		printVersionHelpMessage(executableName)
 		return 0
 	case about.CommandName:
-		printAboutHelpMessage()
+		printAboutHelpMessage(executableName)
 		return 0
 	default:
 		fmt.Printf("Unrecognized sub-command: %s\n", subcommand)
-		printSweetHelpMessage()
+		printSweetHelpMessage(executableName)
 		return 1
 	}
 }
 
 // Prints help message for the main application
-func printSweetHelpMessage() {
-	executableName := "sweet"
+func printSweetHelpMessage(executableName string) {
 	fmt.Printf(`Usage: %s [sub-command] [flags] [exercise]
 
 Sub-commands:
@@ -77,24 +75,24 @@ Flags:
 `, executableName)
 }
 
-func Usage() {
-	fmt.Printf("Usage: %s [sub-command]\n", CommandName)
-	fmt.Printf("Run %s %s [sub-command] for more information", "sweet", CommandName)
+func Usage(executableName string) {
+	fmt.Printf("Usage: %s %s [sub-command]\n", executableName, CommandName)
+	fmt.Printf("Run %s %s [sub-command] for more information", executableName, CommandName)
 }
 
 // Prints help message for the help subcommand
-func printHelpHelpMessage() {
-	msg := "help - Displays help information\n"
+func printHelpHelpMessage(executableName string) {
+	msg := "%s help - Displays help information\n"
 
-	fmt.Print(msg)
+	fmt.Printf(msg, executableName)
 }
 
-func printVersionHelpMessage() {
-	msg := "version - Displays version of the application"
+func printVersionHelpMessage(executableName string) {
+	msg := "%s version - Displays version of the application"
 
-	fmt.Print(msg)
+	fmt.Printf(msg, executableName)
 }
 
-func printAboutHelpMessage() {
-	fmt.Print("about - Shows details and the creators of sweet")
+func printAboutHelpMessage(executableName string) {
+	fmt.Printf("%s about - Shows details and the creators of sweet", executableName)
 }

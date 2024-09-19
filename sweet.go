@@ -53,10 +53,17 @@ const supportLink string = "support-link"
 
 // Function types for each of the commands.
 // Primarily used for dependency injection during tests.
+//
+// By convention, these functions accept the following parameters:
+//
+//	args []string - The arguments required to run the command.
+//	executableName string - The name of the calling executable. Usually "sweet."
+//
+// Afterwards, pass whatever parameters you'd like into the function.
 type Commands struct {
 	exercise func(string, string, string) int
-	help     func([]string) int
-	version  func([]string, string) int
+	help     func([]string, string) int
+	version  func([]string, string, string) int
 	about    func([]string, string, string, string, string) int
 }
 
@@ -84,9 +91,9 @@ func Run(executableName string, args []string, commands Commands) int {
 		subCommand := args[0]
 		switch subCommand {
 		case version.CommandName:
-			code = commands.version(args[1:], getVersion())
+			code = commands.version(args[1:], sweetName, getVersion())
 		case help.CommandName:
-			code = commands.help(args[1:])
+			code = commands.help(args[1:], sweetName)
 		case about.CommandName:
 			code = commands.about(
 				args[1:],

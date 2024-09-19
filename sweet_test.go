@@ -9,10 +9,10 @@ func TestRun(t *testing.T) {
 		exercise: func(string, string, string) int {
 			return 0
 		},
-		help: func([]string) int {
+		help: func([]string, string) int {
 			return 0
 		},
-		version: func([]string, string) int {
+		version: func([]string, string, string) int {
 			return 0
 		},
 		about: func([]string, string, string, string, string) int {

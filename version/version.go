@@ -10,16 +10,15 @@ package version
 import (
 	"flag"
 	"fmt"
-	"os"
 
 	"github.com/NicksPatties/sweet/util"
 )
 
 const CommandName = "version"
 
-func Run(args []string, version string) int {
+func Run(args []string, executableName string, version string) int {
 	cmd := flag.NewFlagSet(CommandName, flag.ExitOnError)
-	cmd.Usage = util.MakeUsage(os.Args[0], CommandName, "")
+	cmd.Usage = util.MakeUsage(executableName, CommandName, "")
 
 	cmd.Parse(args)
 
@@ -29,6 +28,6 @@ func Run(args []string, version string) int {
 		return 1
 	}
 
-	fmt.Println(version)
+	fmt.Print(version)
 	return 0
 }
