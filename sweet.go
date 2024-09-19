@@ -24,11 +24,14 @@ Flags:
 		The language of the exercise. When given, sweet selects a random exercise that matches the given language. Examples: go, ts, rs
 	-t
 		The topic of the exercise. When given, sweet selects a random exercise that matches the give topic. Examples: sorting, algorithms, search
+	-f
+		The name of the exersize file
 */
 package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 
 	"github.com/NicksPatties/sweet/exercise"
@@ -36,34 +39,58 @@ import (
 	"github.com/NicksPatties/sweet/version"
 )
 
-func main() {
+// Function types for each of the commands.
+// Primarily used for dependency injection during tests.
+type Commands struct {
+	exercise func(string, string, string) int
+	help     func([]string) int
+	version  func([]string) int
+}
 
-	sweetName := "sweet"
+// Runs the sweet top level command.
+// Parses the arguments and runs the appropriate subcommands.
+func Run(executableName string, args []string, commands Commands) int {
+	sweetName := executableName
 
-	// DEFAULT FLAGS
 	sweetCmd := flag.NewFlagSet(sweetName, flag.ExitOnError)
 	sweetLang := sweetCmd.String("l", "", "The programming language to practice, based on extension name")
 	sweetTopic := sweetCmd.String("t", "", "Do an exercise related to a given topic")
+	sweetFile := sweetCmd.String("f", "", "A specific file to practice")
 
-	// SUB-COMMANDS
+	err := sweetCmd.Parse(args)
+	if err != nil {
+		return 1
+	}
 
 	code := 1
-	if len(os.Args) == 1 {
-		// Default command
-		exercise.Run(*sweetLang, *sweetTopic)
+	if len(sweetCmd.Args()) == 0 {
+
+		code = commands.exercise(*sweetLang, *sweetTopic, *sweetFile)
 	} else {
-		args := os.Args[1:]
+		args := sweetCmd.Args()
 		subCommand := args[0]
 		switch subCommand {
 		case version.CommandName:
-			version.Run(args[1:])
+			code = commands.version(args[1:])
 		case help.CommandName:
-			code = help.Run(args[1:])
+			code = commands.help(args[1:])
 		default:
-			// Default command with flags
-			sweetCmd.Parse(args)
-			exercise.Run(*sweetLang, *sweetTopic)
+			fmt.Printf("Unregognized command")
 		}
 	}
-	os.Exit(code)
+
+	return code
+}
+
+func main() {
+	defaultCommands := Commands{
+		exercise: exercise.Run,
+		help:     help.Run,
+		version:  version.Run,
+	}
+	code := Run(os.Args[0], os.Args[1:], defaultCommands)
+
+	if code != 0 {
+		os.Exit(code)
+	}
 }

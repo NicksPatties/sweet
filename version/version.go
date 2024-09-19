@@ -18,7 +18,7 @@ import (
 const CommandName = "version"
 const version = "v0.0.2"
 
-func Run(args []string) {
+func Run(args []string) int {
 	cmd := flag.NewFlagSet(CommandName, flag.ExitOnError)
 	cmd.Usage = util.MakeUsage(os.Args[0], CommandName, "")
 
@@ -27,10 +27,11 @@ func Run(args []string) {
 	if len(cmd.Args()) > 0 {
 		fmt.Println("Error: Too many arguments")
 		cmd.Usage()
-		os.Exit(1)
+		return 1
 	}
 
 	fmt.Println(version)
+	return 0
 }
 
 func Usage() {

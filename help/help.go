@@ -19,6 +19,7 @@ import (
 const CommandName = "help"
 
 // Runs the help command and returns the status code.
+// The status code should follow the conventions of os.Exit()
 func Run(args []string) int {
 
 	if len(args) == 0 {
