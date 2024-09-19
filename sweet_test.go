@@ -15,6 +15,9 @@ func TestRun(t *testing.T) {
 		version: func([]string) int {
 			return 0
 		},
+		about: func([]string) int {
+			return 0
+		},
 	}
 	type testCase struct {
 		name           string
@@ -53,7 +56,12 @@ func TestRun(t *testing.T) {
 			args:           []string{"version"},
 			want:           0,
 		},
-		// TODO: Implement "about" path
+		{
+			name:           "about happy path",
+			executableName: dex,
+			args:           []string{"about"},
+			want:           0,
+		},
 		{
 			name:           "incorrect sub-command",
 			executableName: dex,

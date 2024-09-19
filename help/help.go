@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/NicksPatties/sweet/about"
 	"github.com/NicksPatties/sweet/util"
 	"github.com/NicksPatties/sweet/version"
 )
@@ -50,9 +51,12 @@ func Run(args []string) int {
 	case version.CommandName:
 		printVersionHelpMessage()
 		return 0
+	case about.CommandName:
+		printAboutHelpMessage()
+		return 0
 	default:
-		fmt.Printf("Unrecognized sub command: %s", subcommand)
-		PrintSweetUsage()
+		fmt.Printf("Unrecognized sub-command: %s\n", subcommand)
+		printSweetHelpMessage()
 		return 1
 	}
 }
@@ -91,25 +95,6 @@ func printVersionHelpMessage() {
 	fmt.Print(msg)
 }
 
-func PrintSweetUsage() {
-	program := "sweet"
-	p := fmt.Printf
-	p("\n")
-	p("Usage: %s", program)
-}
-
-func PrintHelpUsage() {
-	fmt.Println("Help usage")
-}
-
-func PrintVersionUsage() {
-	fmt.Println("version usage")
-}
-
-func PrintAddUsage() {
-	fmt.Println("add usage")
-}
-
-func GetMessage() string {
-	return "hey from help"
+func printAboutHelpMessage() {
+	fmt.Print("about - Shows details and the creators of sweet")
 }

@@ -34,6 +34,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/NicksPatties/sweet/about"
 	"github.com/NicksPatties/sweet/exercise"
 	"github.com/NicksPatties/sweet/help"
 	"github.com/NicksPatties/sweet/version"
@@ -45,6 +46,7 @@ type Commands struct {
 	exercise func(string, string, string) int
 	help     func([]string) int
 	version  func([]string) int
+	about    func([]string) int
 }
 
 // Runs the sweet top level command.
@@ -74,6 +76,8 @@ func Run(executableName string, args []string, commands Commands) int {
 			code = commands.version(args[1:])
 		case help.CommandName:
 			code = commands.help(args[1:])
+		case about.CommandName:
+			code = commands.about(args[1:])
 		default:
 			fmt.Printf("Unregognized command")
 		}
@@ -87,6 +91,7 @@ func main() {
 		exercise: exercise.Run,
 		help:     help.Run,
 		version:  version.Run,
+		about:    about.Run,
 	}
 	code := Run(os.Args[0], os.Args[1:], defaultCommands)
 
