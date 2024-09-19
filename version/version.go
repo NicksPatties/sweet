@@ -1,3 +1,10 @@
+/*
+version - Prints the installed version of sweet.
+
+Usage:
+
+	sweet version
+*/
 package version
 
 import (
@@ -13,7 +20,7 @@ const version = "v0.0.2"
 
 func Run(args []string) {
 	cmd := flag.NewFlagSet(CommandName, flag.ExitOnError)
-	cmd.Usage = util.MakeUsage(os.Stdout, os.Args[0], CommandName, "")
+	cmd.Usage = util.MakeUsage(os.Args[0], CommandName, "")
 
 	cmd.Parse(args)
 

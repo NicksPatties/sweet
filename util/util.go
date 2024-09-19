@@ -4,12 +4,13 @@ import (
 	"fmt"
 )
 
-// Creates a usage function given a format string and a sub command.
-// The output should be assigned to the Usage field of a *flag.FlagSet variable.
+// Creates a usage function. This function should be assigned to
+// the Usage property of a *flag.FlagSet variable.
 //
 // Example:
 //
-//	cmd.Usage = MakeUsage("%s -p [port]", "open")
+//	cmd := flag.NewFlagSet("open", flag.ExitOnError)
+//	cmd.Usage = MakeUsage(os.Args[0], "open", "-p [port]")
 func MakeUsage(executableName string, subCommand string, usage string) func() {
 	return func() {
 		fmt.Printf("Usage: %s %s "+usage+"\n", executableName, subCommand)
