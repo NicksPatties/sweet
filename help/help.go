@@ -1,34 +1,76 @@
 package help
 
 import (
+	"flag"
 	"fmt"
+	"os"
+
+	"github.com/NicksPatties/sweet/version"
 )
 
-// help command flowchart
+const CommandName = "help"
 
-// sweet help
-// - prints sweet help message
+func Run(args []string) {
 
-// sweet help [subcommand]
-// - does the subcommand exist?
-//   - No
-//     - `"Subcommand not found: [subcommand]"`
-//     - Print sweet help message
-//   - Yes
-//     - Print subcommand help message
+	if len(args) == 0 {
+		printHelpMessage()
+		os.Exit(0)
+	}
 
-// sweet help [random flags]
-// - Error from flags module
-// - prints sweet help message
-func RunHelp(subcommand string) {
+	// command parsing
+	helpCmd := flag.NewFlagSet("help", flag.ExitOnError)
+	helpCmd.Usage = Usage
+
+	helpCmd.Parse(args)
+
+	if len(helpCmd.Args()) > 1 {
+		fmt.Println("Too many arguments")
+	}
+
+	subcommand := args[0]
+
 	// interpret arguments
 	switch subcommand {
-	case "help":
-		PrintHelpUsage()
+	case CommandName:
+		printHelpHelpMessage()
+	case version.CommandName:
+		printVersionHelpMessage()
 	default:
 		fmt.Printf("Unrecognized sub command: %s", subcommand)
 		PrintSweetUsage()
 	}
+}
+
+// Prints help message for the main application
+func printHelpMessage() {
+	msg := "Sweet - The Software Engineer's Exercise for Typing\n" +
+		"\n" +
+		"SUB-COMMANDS\n" +
+		"\n" +
+		"\thelp\tPrints this helpful message\n" +
+		"\tversion\tPrints the currently installed version of sweet\n" +
+		"\n" +
+		"For more information about specific sub-commands, use sweet help [sub-command]\n"
+
+	fmt.Print(msg)
+}
+
+func Usage() {
+	fmt.Printf("Usage: %s [sub-command]\n", CommandName)
+	fmt.Printf("Run %s %s [sub-command] for more information", "sweet", CommandName)
+}
+
+// Prints help message for the help subcommand
+func printHelpHelpMessage() {
+	msg := "help - Displays help information\n"
+
+	fmt.Print(msg)
+}
+
+func printVersionHelpMessage() {
+	msg := "version - Displays version of the application"
+
+	fmt.Print(msg)
 }
 
 func PrintSweetUsage() {
@@ -48,4 +90,8 @@ func PrintVersionUsage() {
 
 func PrintAddUsage() {
 	fmt.Println("add usage")
+}
+
+func GetMessage() string {
+	return "hey from help"
 }
