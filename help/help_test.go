@@ -1,7 +1,6 @@
 package help
 
 import (
-	"os"
 	"testing"
 
 	"github.com/NicksPatties/sweet/util"
@@ -25,16 +24,11 @@ func TestRun(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		f, err := os.ReadFile(tc.wantFilename)
-		if err != nil {
-			t.Errorf("Error opening file %s", tc.wantFilename)
-		}
-		want := string(f)
+		want := util.GetWantFile(tc.wantFilename, t)
 		var codeGot int
 
 		got := util.GetStringFromStdout(func() {
-			args := []string{}
-			codeGot = Run(args)
+			codeGot = Run(tc.args)
 		})
 		if got != want {
 			t.Errorf("%s: got\n%s\nwant\n%s", tc.name, got, want)
@@ -42,7 +36,6 @@ func TestRun(t *testing.T) {
 		if codeGot != tc.codeWant {
 			t.Errorf("%s: got error code %d, wanted error code %d", tc.name, codeGot, tc.codeWant)
 		}
-
 	}
 
 }

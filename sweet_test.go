@@ -12,10 +12,10 @@ func TestRun(t *testing.T) {
 		help: func([]string) int {
 			return 0
 		},
-		version: func([]string) int {
+		version: func([]string, string) int {
 			return 0
 		},
-		about: func([]string) int {
+		about: func([]string, string, string, string, string) int {
 			return 0
 		},
 	}

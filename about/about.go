@@ -15,14 +15,53 @@ import (
 
 const CommandName = "about"
 
-func Run(args []string) int {
+func Run(
+	args []string,
+	version,
+	issueLink,
+	supportLink,
+	executableName string,
+) int {
 
 	cmd := flag.NewFlagSet(CommandName, flag.ExitOnError)
 	cmd.Usage = util.MakeUsage(os.Args[0], CommandName, "")
 
 	cmd.Parse(args)
 
-	fmt.Printf("This is sweet!\n")
+	printAbout(version, issueLink, supportLink, executableName)
 
 	return 0
+}
+
+func printAbout(version, issueLink, supportLink, executableName string) {
+	msg := `Hey! That's
+
+      ,gg,                                                  gg  
+     i8""8i                                        I8      ,gg, 
+     ` + "`8,,8'" + `                                        I8      i88i 
+      ` + "`88'" + `                                      88888888   i88i 
+      dP"8,                                        I8      i88i 
+     dP' ` + "`8a" + `  gg    gg    gg    ,ggg,    ,ggg,     I8      ,gg, 
+    dP'   ` + "`Yb" + ` I8    I8    88bg i8" "8i  i8" "8i    I8       gg  
+_ ,dP'     I8 I8    I8    8I   I8, ,8I  I8, ,8I   ,I8,          
+"888,,____,dP,d8,  ,d8,  ,8I   ` + "`YbadP'" + `  ` + "`YbadP'" + `  ,d88b,     aa  
+a8P"Y88888P" P""Y88P""Y88P"   888P"Y888888P"Y88888P""Y88    88  
+
+The Software Engineering Exercise for Typing 
+
+Written by:
+	NicksPatties
+
+Version:
+	%s
+
+Having issues? Report them here:
+	%s
+
+Interested in supporting %s? You can do so here!
+	%s
+
+Copyright (c) 2023-2024 NicksPatties
+`
+	fmt.Printf(msg, version, issueLink, executableName, supportLink)
 }

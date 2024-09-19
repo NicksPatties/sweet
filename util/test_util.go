@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"os"
+	"testing"
 )
 
 // Grabs a string from a function that prints to os.Stdout.
@@ -24,4 +25,15 @@ func GetStringFromStdout(function func()) string {
 	r.Close()
 
 	return buf.String()
+}
+
+// Return the contents of a file as a string.
+// Useful for comparing the output of commands that print
+// a lot of text, like "about" or "help."
+func GetWantFile(wantFile string, t *testing.T) string {
+	f, err := os.ReadFile(wantFile)
+	if err != nil {
+		t.Errorf("Error opening file %s", wantFile)
+	}
+	return string(f)
 }

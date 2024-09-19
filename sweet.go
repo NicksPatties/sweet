@@ -40,13 +40,24 @@ import (
 	"github.com/NicksPatties/sweet/version"
 )
 
+// Assigned via -ldflags.
+// Example:
+//
+//	go build -ldflags "-X github.com/NicksPatties/sweet/version.version=`date -u +.%Y%m%d%H%M%S`" .
+//
+// See https://stackoverflow.com/a/11355611 for details.
+var sweetVersion string
+
+const issueLink string = "issue-link"
+const supportLink string = "support-link"
+
 // Function types for each of the commands.
 // Primarily used for dependency injection during tests.
 type Commands struct {
 	exercise func(string, string, string) int
 	help     func([]string) int
-	version  func([]string) int
-	about    func([]string) int
+	version  func([]string, string) int
+	about    func([]string, string, string, string, string) int
 }
 
 // Runs the sweet top level command.
@@ -73,11 +84,17 @@ func Run(executableName string, args []string, commands Commands) int {
 		subCommand := args[0]
 		switch subCommand {
 		case version.CommandName:
-			code = commands.version(args[1:])
+			code = commands.version(args[1:], getVersion())
 		case help.CommandName:
 			code = commands.help(args[1:])
 		case about.CommandName:
-			code = commands.about(args[1:])
+			code = commands.about(
+				args[1:],
+				getVersion(),
+				issueLink,
+				supportLink,
+				os.Args[0],
+			)
 		default:
 			fmt.Printf("Unregognized command")
 		}
@@ -97,5 +114,13 @@ func main() {
 
 	if code != 0 {
 		os.Exit(code)
+	}
+}
+
+func getVersion() string {
+	if sweetVersion == "" {
+		return "debug"
+	} else {
+		return sweetVersion
 	}
 }

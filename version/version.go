@@ -17,15 +17,7 @@ import (
 
 const CommandName = "version"
 
-// Assigned via -ldflags.
-// Example:
-//
-//	go build -ldflags "-X github.com/NicksPatties/sweet/version.version=`date -u +.%Y%m%d%H%M%S`" .
-//
-// See https://stackoverflow.com/a/11355611 for details.
-var version string
-
-func Run(args []string) int {
+func Run(args []string, version string) int {
 	cmd := flag.NewFlagSet(CommandName, flag.ExitOnError)
 	cmd.Usage = util.MakeUsage(os.Args[0], CommandName, "")
 
@@ -37,14 +29,6 @@ func Run(args []string) int {
 		return 1
 	}
 
-	printVersion()
+	fmt.Println(version)
 	return 0
-}
-
-func printVersion() {
-	if version == "" {
-		fmt.Println("debug")
-	} else {
-		fmt.Println(version)
-	}
 }
