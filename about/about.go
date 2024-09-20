@@ -6,31 +6,17 @@ and repository information.
 package about
 
 import (
-	"flag"
 	"fmt"
-	"os"
 
-	"github.com/NicksPatties/sweet/util"
+	"github.com/spf13/cobra"
 )
 
-const CommandName = "about"
-
-func Run(
-	args []string,
-	version,
-	issueLink,
-	supportLink,
-	executableName string,
-) int {
-
-	cmd := flag.NewFlagSet(CommandName, flag.ExitOnError)
-	cmd.Usage = util.MakeUsage(os.Args[0], CommandName, "")
-
-	cmd.Parse(args)
-
-	printAbout(version, issueLink, supportLink, executableName)
-
-	return 0
+var Command = &cobra.Command{
+	Use:   "about",
+	Short: "Print details about the application",
+	Run: func(cmd *cobra.Command, args []string) {
+		printAbout("version", "issueLink", "supportLink", "executableName")
+	},
 }
 
 func printAbout(version, issueLink, supportLink, executableName string) {
