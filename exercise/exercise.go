@@ -203,7 +203,7 @@ func (m exerciseModel) finished() bool {
 func (m exerciseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		currTyped := teaKeyMsgToEventTyped(msg)
+		var currTyped string
 		currI := len(m.typedText)
 		currExpected := runeToEventExpected(rune(m.exercise.text[currI]))
 		switch msg.Type {
@@ -211,10 +211,12 @@ func (m exerciseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.quitEarly = true
 			return m, tea.Quit
 		case tea.KeyBackspace:
+			currTyped = teaKeyMsgToEventTyped(msg)
 			m = m.deleteRuneFromTypedText()
 			// Create delete event and add it to events
 			m.events = append(m.events, NewEvent("backspace", "", currI))
 		case tea.KeyRunes, tea.KeySpace, tea.KeyEnter:
+			currTyped = teaKeyMsgToEventTyped(msg)
 
 			if m.startTime.IsZero() {
 				m.startTime = time.Now()
