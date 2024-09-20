@@ -7,3 +7,8 @@ const (
 	Percent = '%'
 	Arrow   = `↲`
 )
+
+const (
+	// Used for words per minute (WPM) calculations.
+	WORD_SIZE = 5
+)

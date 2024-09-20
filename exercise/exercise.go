@@ -3,12 +3,40 @@ package exercise
 import (
 	"fmt"
 	"os"
+	"time"
 
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	lg "github.com/charmbracelet/lipgloss"
 )
 
 func isWhitespace(rn rune) bool {
 	return rn == Tab || rn == Space
+}
+
+type exercise struct {
+	name string
+	text string
+}
+
+type exerciseModel struct {
+	title         string
+	exercise      string
+	typedExercise string
+	quitEarly     bool
+	startTime     time.Time
+	endTime       time.Time
+}
+
+func NewExerciseModel(t string, ex string) exerciseModel {
+	return exerciseModel{
+		title:         t,
+		exercise:      ex,
+		typedExercise: "",
+		quitEarly:     false,
+		startTime:     time.Time{},
+		endTime:       time.Time{},
+	}
 }
 
 func (m exerciseModel) addRuneToExercise(rn rune) exerciseModel {
@@ -65,6 +93,84 @@ type theme struct {
 	untypedStyle   lg.Style
 	cursorStyle    lg.Style
 	incorrectStyle lg.Style
+}
+
+func (m exerciseModel) finished() bool {
+	// If the user hasn't reached the end of the exercise,
+	// then they're not done yet.
+	l := len(m.exercise)
+	if len(m.typedExercise) < l {
+		return false
+	}
+
+	// Handle the case where the user types the last character incorrectly
+	exLast := rune(m.exercise[l-1])
+	typedLast := rune(m.typedExercise[l-1])
+
+	if exLast != typedLast {
+		return false
+	}
+	return true
+}
+
+func (m exerciseModel) Init() tea.Cmd {
+	return nil
+}
+
+func (m exerciseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.Type {
+		case tea.KeyCtrlC:
+			m.quitEarly = true
+			return m, tea.Quit
+		case tea.KeyBackspace:
+			m = m.deleteCharacter()
+		case tea.KeyRunes, tea.KeySpace, tea.KeyEnter:
+			if m.startTime.IsZero() {
+				m.startTime = time.Now()
+			}
+			if msg.Type == tea.KeyEnter {
+				m = m.addRuneToExercise(Enter)
+			} else {
+				m = m.addRuneToExercise(msg.Runes[0])
+			}
+			if m.finished() {
+				m.endTime = time.Now()
+				return m, tea.Quit
+			}
+		}
+	}
+
+	return m, nil
+}
+
+func (m exerciseModel) currentCharacterView() string {
+	typedEnd := min(len(m.typedExercise), len(m.exercise)-1)
+	currChar := rune(m.exercise[typedEnd])
+	charString := string(currChar)
+	if currChar == Enter {
+		charString = Arrow
+	}
+	return fmt.Sprintf("Curr character: %#U %d %s", currChar, currChar, charString)
+}
+
+func (m exerciseModel) nameView() string {
+	commentStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("7")).Italic(true)
+	commentPrefix := "//"
+	return commentStyle.Render(fmt.Sprintf("%s %s", commentPrefix, m.title))
+}
+
+func (m exerciseModel) View() string {
+	s := ""
+	if !m.finished() {
+		s += "\n"
+		s += m.nameView()
+		s += "\n\n"
+		s += m.exerciseView()
+		s += "\n"
+	}
+	return s
 }
 
 // Returns the exercise string with the typed string overlaid on top of it. Renders
@@ -124,14 +230,28 @@ func (m exerciseModel) exerciseView() string {
 
 func Run() {
 
-	// run the session
-	m := RunSession()
+	// Get an exercise.
+	theExercise := exercise{
+		name: "simple",
+		text: "the text of the exercise",
+	}
 
-	if m.quitEarly {
+	// Create the new Exercise Model
+	model := NewExerciseModel(theExercise.name, theExercise.text)
+	teaModel, err := tea.NewProgram(model).Run()
+
+	model, _ = teaModel.(exerciseModel)
+
+	if err != nil {
+		fmt.Printf("Alas, there's been an error: %v", err)
+		os.Exit(1)
+	}
+
+	if model.quitEarly {
 		fmt.Println("Goodbye!")
 		os.Exit(0)
 	}
 
 	// show the results
-	showResults(m)
+	showResults(model)
 }

@@ -5,10 +5,6 @@ import (
 	"time"
 )
 
-const (
-	WORD_SIZE = 5
-)
-
 func min(a int, b int) int {
 	if a < b {
 		return a
