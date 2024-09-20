@@ -9,6 +9,7 @@ package main
 import (
 	"fmt"
 	"github.com/NicksPatties/sweet/about"
+	"github.com/NicksPatties/sweet/exercise"
 	"github.com/NicksPatties/sweet/stats"
 	"github.com/spf13/cobra"
 )
@@ -17,14 +18,9 @@ var rootCmd = &cobra.Command{
 	Use:  "sweet",
 	Long: "The Software Engineer Exercise for Typing.",
 	Run: func(cmd *cobra.Command, args []string) {
-		language, _ := cmd.Flags().GetString("language")
-		runTypingGame(language)
+		// language, _ := cmd.Flags().GetString("language")
+		exercise.Run()
 	},
-}
-
-func runTypingGame(language string) {
-	fmt.Printf("Running typing game in %s language\n", language)
-	// Implement your typing game logic here
 }
 
 func init() {
