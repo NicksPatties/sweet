@@ -2,77 +2,10 @@ package exercise
 
 import (
 	"fmt"
-	"log"
-	"math/rand"
 	"os"
-	"path"
-	"regexp"
-	"strings"
 
-	"github.com/charmbracelet/lipgloss"
+	lg "github.com/charmbracelet/lipgloss"
 )
-
-func getExercisesDirectory() (string, error) {
-	hd, err := os.UserHomeDir()
-	if err != nil {
-		return "", err
-	}
-	return path.Join(hd, ".sweet", "exercises"), nil
-}
-
-func getRandomExercise() (string, string, error) {
-	dirPath, err := getExercisesDirectory()
-	paths, err := getAllFilePathsInDirectory(dirPath)
-	if err != nil {
-		log.Fatalf("not sweet... an error ocurred: %s", err)
-	}
-	randI := rand.Intn(len(paths))
-
-	return getExerciseFromFile(paths[randI])
-}
-
-func listExercises() (string, error) {
-	ePath, err := getDefaultExercisesPath()
-	if err != nil {
-		return "", err
-	}
-
-	paths, err := getAllFilePathsInDirectory(ePath)
-	if err != nil {
-		return "", err
-	}
-
-	exercises := ""
-	for _, path := range paths {
-		str := strings.Replace(path, ePath, "", 1)
-		exercises += fmt.Sprintln(str[1:])
-	}
-	return exercises, nil
-}
-
-// Gets an exercise for the matching lang file extension
-func getExerciseForLang(lang string) (string, string, error) {
-	dirPath, err := getExercisesDirectory()
-	// get all the files in the exercises directory
-	r, err := regexp.Compile("[[:alnum:]]+." + lang)
-	exercisesList, err := listExercises()
-	exercises := r.FindAllString(exercisesList, -1)
-	if exercises == nil {
-		return "", "", fmt.Errorf("Failed to find exercise of type %s", lang)
-	}
-	randI := rand.Intn(len(exercises))
-	ex := exercises[randI]
-	exPath := path.Join(dirPath, ex)
-	if err != nil {
-		return "", "", fmt.Errorf("Failed to find exercise of type %s", lang)
-	}
-	return getExerciseFromFile(exPath)
-}
-
-func getExerciseFromFile(fileName string) (string, string, error) {
-	exercise, err := os.ReadFile(fileName)
-	return fileName, string(exercise), err
-}
 
 func isWhitespace(rn rune) bool {
 	return rn == Tab || rn == Space
@@ -128,30 +61,21 @@ func (m sessionModel) deleteCharacter() sessionModel {
 }
 
 type theme struct {
-	typedStyle     lipgloss.Style
-	untypedStyle   lipgloss.Style
-	cursorStyle    lipgloss.Style
-	incorrectStyle lipgloss.Style
-}
-
-func defaultTheme() theme {
-	return theme{
-		typedStyle:     lipgloss.NewStyle().Foreground(lipgloss.Color("#FFFFFF")),
-		untypedStyle:   lipgloss.NewStyle().Foreground(lipgloss.Color("7")),
-		cursorStyle:    lipgloss.NewStyle().Background(lipgloss.Color("14")),
-		incorrectStyle: lipgloss.NewStyle().Background(lipgloss.Color("1")).Foreground(lipgloss.Color("15")),
-	}
+	typedStyle     lg.Style
+	untypedStyle   lg.Style
+	cursorStyle    lg.Style
+	incorrectStyle lg.Style
 }
 
 // Returns the exercise string with the typed string overlaid on top of it. Renders
 // correctly typed characters with white text, incorrectly typed characters with a
 // red background, and characters that haven't been typed yet with gray text.
-func (m sessionModel) exerciseView(args ...theme) string {
-	var t theme
-	if len(args) == 0 {
-		t = defaultTheme()
-	} else {
-		t = args[0]
+func (m sessionModel) exerciseView() string {
+	t := theme{
+		typedStyle:     lg.NewStyle().Foreground(lg.Color("#FFFFFF")),
+		untypedStyle:   lg.NewStyle().Foreground(lg.Color("7")),
+		cursorStyle:    lg.NewStyle().Background(lg.Color("255")).Foreground(lg.Color("0")),
+		incorrectStyle: lg.NewStyle().Background(lg.Color("1")).Foreground(lg.Color("15")),
 	}
 	ts, us, cs, is := t.typedStyle, t.untypedStyle, t.cursorStyle, t.incorrectStyle
 	s := ""
@@ -198,27 +122,9 @@ func (m sessionModel) exerciseView(args ...theme) string {
 	return s
 }
 
-func (m sessionModel) getExerciseRuneCount() int {
-	ex := m.exercise
-	c := 0
-	hitNewline := false
-	for _, rn := range ex {
-		if isWhitespace(rn) && hitNewline {
-			continue
-		}
-		hitNewline = rn == Enter
-		c++
-	}
-	return c
-}
-
 func Run() {
 
 	// check if the $HOME/.sweet directory is there, create the directory, and then add the default exercises
-	err := addDefaultExercises()
-	if err != nil {
-		log.Fatalf("Whoops! %s", err.Error())
-	}
 
 	// run the session
 	m := RunSession()

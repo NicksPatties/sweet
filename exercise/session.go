@@ -112,9 +112,10 @@ func (m sessionModel) View() string {
 	return s
 }
 
-func RunSession( /*t string, ex string*/ ) (m sessionModel) {
+func RunSession() (m sessionModel) {
 	theExercise := sampleExercises[0]
 	model, err := tea.NewProgram(initialModel(theExercise.name, theExercise.text)).Run()
+
 	if err != nil {
 		fmt.Printf("Alas, there's been an error: %v", err)
 		os.Exit(1)
