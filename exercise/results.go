@@ -36,10 +36,10 @@ func wpm(start time.Time, end time.Time, typed string, exercise string, wordSize
 		minLengthString = typed
 	}
 	mins := end.Sub(start).Minutes()
-	mistakes := float64(numMistakes(typed, exercise))
+	incorrect := float64(numIncorrectCharacters(typed, exercise))
 	typedEntries := len(requiredRunes(minLengthString))
 	words := float64(typedEntries / wordSize)
-	return (words - mistakes) / mins
+	return (words - incorrect) / mins
 }
 
 func cpm(start time.Time, end time.Time, typed string, exercise string) float64 {
@@ -51,34 +51,41 @@ func accuracy(typed string, exercise string) float32 {
 	if len(typed) == 0 || len(exercise) == 0 {
 		return float32(0)
 	}
-	accuracy := float32(0)
+	var accuracy float32
 	minLengthString := exercise
 	if len(typed) < len(exercise) {
 		minLengthString = typed
 	}
 
-	m := float32(numMistakes(typed, exercise))
+	m := float32(numIncorrectCharacters(typed, exercise))
 	l := float32(len(requiredRunes(minLengthString)))
 	accuracy = (l - m) / l
 
 	return accuracy * 100
 }
 
-// Counts the number of mistakes made in an exercise. Only counts up to the number
-// of characters typed into the exercise. If the number of characters typed exceeds
-// the length of the exercise, then this function only counts up to the length of
-// the exercise, and the remaining characters are discarded
-func numMistakes(typed string, exercise string) int {
-	mistakes := 0
+func numIncorrectCharacters(typed string, exercise string) (incorrect int) {
 	r := min(len(typed), len(exercise))
 
 	for i := 0; i < r; i++ {
 		if typed[i] != exercise[i] {
-			mistakes++
+			incorrect++
 		}
 	}
 
-	return mistakes
+	return
+}
+
+func numMistakes(events []event) (mistakes int) {
+	for _, e := range events {
+		if e.typed == "backspace" {
+			continue
+		}
+		if e.typed != e.expected {
+			mistakes++
+		}
+	}
+	return
 }
 
 func duration(startTime time.Time, endTime time.Time) string {
@@ -90,9 +97,9 @@ func duration(startTime time.Time, endTime time.Time) string {
 }
 
 func showResults(m exerciseModel) {
-	fmt.Printf("Results of %s:\n", m.title)
-	fmt.Printf("WPM: %.f\n", wpm(m.startTime, m.endTime, m.typedExercise, m.exercise, WORD_SIZE))
-	fmt.Printf("Mistakes: %d\n", numMistakes(m.typedExercise, m.exercise))
-	fmt.Printf("Accuracy: %.2f%%\n", accuracy(m.typedExercise, m.exercise))
+	fmt.Printf("Results of %s:\n", m.exercise.name)
+	fmt.Printf("WPM: %.f\n", wpm(m.startTime, m.endTime, m.typedText, m.exercise.text, WORD_SIZE))
+	fmt.Printf("Mistakes: %d\n", numMistakes(m.events))
+	fmt.Printf("Accuracy: %.2f%%\n", accuracy(m.typedText, m.exercise.text))
 	fmt.Printf("Duration: %s\n", duration(m.startTime, m.endTime))
 }
