@@ -85,9 +85,18 @@ func numMistakes(typed string, exercise string) int {
 	return mistakes
 }
 
-func showResults(m sessionModel) {
+func duration(startTime time.Time, endTime time.Time) string {
+	nanos := (endTime.UnixMilli() - startTime.UnixMilli()) * int64(time.Millisecond)
+	d := time.Duration(nanos)
+
+	s := fmt.Sprintf("%.3fs", d.Seconds())
+	return s
+}
+
+func showResults(m exerciseModel) {
 	fmt.Printf("Results of %s:\n", m.title)
 	fmt.Printf("WPM: %.f\n", wpm(m.startTime, m.endTime, m.typedExercise, m.exercise, WORD_SIZE))
 	fmt.Printf("Mistakes: %d\n", numMistakes(m.typedExercise, m.exercise))
-	fmt.Printf("Accuracy: %.2f\n", accuracy(m.typedExercise, m.exercise))
+	fmt.Printf("Accuracy: %.2f%%\n", accuracy(m.typedExercise, m.exercise))
+	fmt.Printf("Duration: %s\n", duration(m.startTime, m.endTime))
 }

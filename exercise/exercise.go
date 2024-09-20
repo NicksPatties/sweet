@@ -11,7 +11,7 @@ func isWhitespace(rn rune) bool {
 	return rn == Tab || rn == Space
 }
 
-func (m sessionModel) addRuneToExercise(rn rune) sessionModel {
+func (m exerciseModel) addRuneToExercise(rn rune) exerciseModel {
 	if len(m.typedExercise) == len(m.exercise) {
 		return m
 	}
@@ -30,7 +30,7 @@ func (m sessionModel) addRuneToExercise(rn rune) sessionModel {
 	return m
 }
 
-func (m sessionModel) deleteCharacter() sessionModel {
+func (m exerciseModel) deleteCharacter() exerciseModel {
 	tex := m.typedExercise
 	l := len(tex)
 
@@ -70,7 +70,7 @@ type theme struct {
 // Returns the exercise string with the typed string overlaid on top of it. Renders
 // correctly typed characters with white text, incorrectly typed characters with a
 // red background, and characters that haven't been typed yet with gray text.
-func (m sessionModel) exerciseView() string {
+func (m exerciseModel) exerciseView() string {
 	t := theme{
 		typedStyle:     lg.NewStyle().Foreground(lg.Color("#FFFFFF")),
 		untypedStyle:   lg.NewStyle().Foreground(lg.Color("7")),
@@ -123,8 +123,6 @@ func (m sessionModel) exerciseView() string {
 }
 
 func Run() {
-
-	// check if the $HOME/.sweet directory is there, create the directory, and then add the default exercises
 
 	// run the session
 	m := RunSession()

@@ -9,7 +9,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-type sessionModel struct {
+type exerciseModel struct {
 	title         string
 	exercise      string
 	typedExercise string
@@ -18,8 +18,8 @@ type sessionModel struct {
 	endTime       time.Time
 }
 
-func initialModel(t string, ex string) sessionModel {
-	return sessionModel{
+func initialModel(t string, ex string) exerciseModel {
+	return exerciseModel{
 		title:         t,
 		exercise:      ex,
 		typedExercise: "",
@@ -29,12 +29,15 @@ func initialModel(t string, ex string) sessionModel {
 	}
 }
 
-func (m sessionModel) finished() bool {
+func (m exerciseModel) finished() bool {
+	// If the user hasn't reached the end of the exercise,
+	// then they're not done yet.
 	l := len(m.exercise)
 	if len(m.typedExercise) < l {
 		return false
 	}
-	// they're the same length, so check the last characters
+
+	// Handle the case where the user types the last character incorrectly
 	exLast := rune(m.exercise[l-1])
 	typedLast := rune(m.typedExercise[l-1])
 
@@ -44,11 +47,11 @@ func (m sessionModel) finished() bool {
 	return true
 }
 
-func (m sessionModel) Init() tea.Cmd {
+func (m exerciseModel) Init() tea.Cmd {
 	return nil
 }
 
-func (m sessionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m exerciseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.Type {
@@ -76,7 +79,7 @@ func (m sessionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m sessionModel) currentCharacterView() string {
+func (m exerciseModel) currentCharacterView() string {
 	min := func(a int, b int) int {
 		if a <= b {
 			return a
@@ -92,13 +95,13 @@ func (m sessionModel) currentCharacterView() string {
 	return fmt.Sprintf("Curr character: %#U %d %s", currChar, currChar, charString)
 }
 
-func (m sessionModel) nameView() string {
+func (m exerciseModel) nameView() string {
 	commentStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("7")).Italic(true)
 	commentPrefix := "//"
 	return commentStyle.Render(fmt.Sprintf("%s %s", commentPrefix, m.title))
 }
 
-func (m sessionModel) View() string {
+func (m exerciseModel) View() string {
 	s := ""
 	if !m.finished() {
 		s += "\n"
@@ -112,13 +115,17 @@ func (m sessionModel) View() string {
 	return s
 }
 
-func RunSession() (m sessionModel) {
-	theExercise := sampleExercises[0]
+func RunSession() (m exerciseModel) {
+	// theExercise := sampleExercises[0]
+	theExercise := exercise{
+		name: "simple",
+		text: "the text of the exercise",
+	}
 	model, err := tea.NewProgram(initialModel(theExercise.name, theExercise.text)).Run()
 
 	if err != nil {
 		fmt.Printf("Alas, there's been an error: %v", err)
 		os.Exit(1)
 	}
-	return model.(sessionModel)
+	return model.(exerciseModel)
 }
