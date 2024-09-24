@@ -2,8 +2,13 @@ package exercise
 
 import (
 	"fmt"
+	"math/rand"
 	"os"
+	"path"
 	"time"
+
+	"github.com/NicksPatties/sweet/log"
+	"github.com/NicksPatties/sweet/util"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -21,6 +26,8 @@ type exercise struct {
 	name string
 	// The contents of the exercise. The user types this.
 	text string
+	// A short description that shows when the user complete the exercise.
+	completionDescription string
 }
 
 // A recording of a keypress during the exercise.
@@ -106,6 +113,50 @@ type exerciseModel struct {
 }
 
 // INITIALIZATION
+
+// Gets a random exercise from sweet's configuration directory.
+// If language is not empty, then a random exercise with the given
+// extension will be selected.
+func getExercise(configDir string, language string) exercise {
+	exercisesDir := path.Join(configDir, "exercises")
+	files, err := os.ReadDir(exercisesDir)
+	if err != nil {
+		log.PrintErr("Failed to read exercises directory: %s", exercisesDir)
+		log.PrintErr("Error details: %s", err.Error())
+	}
+
+	// Convert the DirEntries into strings.
+	var fileNames []string
+	for _, f := range files {
+		fileNames = append(fileNames, f.Name())
+	}
+
+	// If language is defined, filter the files down by their extension.
+	if language != "" {
+		fileNames = util.FilterFileNames(fileNames, language)
+
+		if len(fileNames) == 0 {
+			log.PrintErr("No files match the given language %s. Exiting.", language)
+			os.Exit(1)
+		}
+	}
+
+	// Select a random exercise.
+	randI := rand.Intn(len(fileNames))
+	fileName := fileNames[randI]
+	fullFilePath := path.Join(exercisesDir, fileName)
+	bytes, err := os.ReadFile(fullFilePath)
+	if err != nil {
+		log.PrintErr("Failed to open exercise file: %s", fullFilePath)
+		log.PrintErr("Error details: %s", err.Error())
+		os.Exit(1)
+	}
+
+	return exercise{
+		name: fileName,
+		text: string(bytes),
+	}
+}
 
 func NewExerciseModel(ex exercise) exerciseModel {
 	return exerciseModel{
@@ -317,15 +368,11 @@ func (m exerciseModel) View() (s string) {
 // typing game bubbletea application.
 //
 // Returns an array of events for analysis with the stats
-func Run() {
+func Run(configDir string, language string) {
 
 	// Get an exercise.
-	theExercise := exercise{
-		name: "simple",
-		text: "func main() {\n\tfmt.Println(\"hey\")\n",
-	}
-
-	exModel := NewExerciseModel(theExercise)
+	exercise := getExercise(configDir, language)
+	exModel := NewExerciseModel(exercise)
 	teaModel, err := tea.NewProgram(exModel).Run()
 
 	if err != nil {
@@ -343,11 +390,5 @@ func Run() {
 		os.Exit(0)
 	}
 
-	// show the results
 	showResults(exModel)
-
-	// log the events for debugging purposes
-	// for _, e := range exModel.events {
-	// 	fmt.Println(e)
-	// }
 }

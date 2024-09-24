@@ -9,6 +9,8 @@ package main
 import (
 	"fmt"
 	"github.com/NicksPatties/sweet/about"
+	"github.com/NicksPatties/sweet/util"
+
 	"github.com/NicksPatties/sweet/exercise"
 	"github.com/NicksPatties/sweet/stats"
 	"github.com/spf13/cobra"
@@ -18,13 +20,16 @@ var rootCmd = &cobra.Command{
 	Use:  "sweet",
 	Long: "The Software Engineer Exercise for Typing.",
 	Run: func(cmd *cobra.Command, args []string) {
-		// language, _ := cmd.Flags().GetString("language")
-		exercise.Run()
+		language, _ := cmd.Flags().GetString("language")
+		configDir := util.GetConfigDirectory()
+		// TODO I should pass in a flags struct for this command.
+		exercise.Run(configDir, language)
 	},
 }
 
 func init() {
-	// Add language flag to root command only
+	// Add language flag to root command only.
+	// The flags for other commands will be defined in their respective modules.
 	rootCmd.Flags().StringP("language", "l", "", "Language for the typing game")
 
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
