@@ -17,11 +17,11 @@ import (
 
 // STRUCTS
 
-// A single exercise.
+// A single Exercise.
 //
 // This contains the data that is required to display and perform
-// the typing exercise.
-type exercise struct {
+// the typing Exercise.
+type Exercise struct {
 	// The name of the exercise. Usually the file name.
 	name string
 	// The contents of the exercise. The user types this.
@@ -96,7 +96,7 @@ func NewEvent(typed string, expected string, i int) event {
 //
 // Implements tea.Model. Stores the state of the currently running exercise.
 type exerciseModel struct {
-	exercise exercise
+	exercise Exercise
 
 	// The charcters that the user has typed during this exercise.
 	typedText string
@@ -117,7 +117,7 @@ type exerciseModel struct {
 // Gets a random exercise from sweet's configuration directory.
 // If language is not empty, then a random exercise with the given
 // extension will be selected.
-func getExercise(configDir string, language string) exercise {
+func getExercise(configDir string, language string) Exercise {
 	exercisesDir := path.Join(configDir, "exercises")
 	files, err := os.ReadDir(exercisesDir)
 	if err != nil {
@@ -152,13 +152,13 @@ func getExercise(configDir string, language string) exercise {
 		os.Exit(1)
 	}
 
-	return exercise{
+	return Exercise{
 		name: fileName,
 		text: string(bytes),
 	}
 }
 
-func NewExerciseModel(ex exercise) exerciseModel {
+func NewExerciseModel(ex Exercise) exerciseModel {
 	return exerciseModel{
 		exercise:  ex,
 		typedText: "",

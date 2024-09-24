@@ -6,16 +6,10 @@ import (
 	"path"
 )
 
-var l logger = NewLogger(path.Base(os.Args[0]))
+var l logger
 
 type logger struct {
 	exeName string
-}
-
-func NewLogger(exeName string) logger {
-	return logger{
-		exeName: exeName,
-	}
 }
 
 func PrintErr(msg string, args ...any) {
@@ -28,4 +22,11 @@ func PrintWarn(msg string, args ...any) {
 
 func PrintInfo(msg string, args ...any) {
 	fmt.Fprintf(os.Stderr, "%s INFO: "+msg+"\n", l.exeName, args)
+}
+
+func init() {
+	exeName := path.Base(os.Args[0])
+	l = logger{
+		exeName: exeName,
+	}
 }

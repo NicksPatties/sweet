@@ -3,6 +3,7 @@ package util
 import (
 	"hash/crc32"
 	"io"
+	"net/url"
 	"os"
 	"path"
 
@@ -68,4 +69,14 @@ func FilterFileNames(fileNames []string, language string) (found []string) {
 		}
 	}
 	return found
+}
+
+func IsValidURL(str string) bool {
+	u, err := url.Parse(str)
+	if err != nil {
+		return false
+	}
+
+	// Check if scheme and host are present
+	return u.Scheme != "" && u.Host != ""
 }

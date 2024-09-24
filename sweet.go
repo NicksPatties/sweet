@@ -9,6 +9,7 @@ package main
 import (
 	"fmt"
 	"github.com/NicksPatties/sweet/about"
+	"github.com/NicksPatties/sweet/add"
 	"github.com/NicksPatties/sweet/util"
 
 	"github.com/NicksPatties/sweet/exercise"
@@ -37,6 +38,7 @@ func init() {
 	commands := []*cobra.Command{
 		about.Command,
 		stats.Command,
+		add.Command,
 	}
 
 	for _, c := range commands {
