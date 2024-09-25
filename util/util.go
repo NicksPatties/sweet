@@ -3,11 +3,10 @@ package util
 import (
 	"hash/crc32"
 	"io"
+	l "log"
 	"net/url"
 	"os"
 	"path"
-
-	l "github.com/NicksPatties/sweet/log"
 )
 
 // Converts a file from the filePath into a hashed value
@@ -39,18 +38,16 @@ func GetConfigDirectory() string {
 
 	configDir, err := os.UserConfigDir()
 	if err != nil {
-		l.PrintErr("Failed to get user's config directory: %s\n", err.Error())
-		os.Exit(1)
+		l.Fatalf("Failed to get user's config directory: %s\n", err.Error())
 	} else {
-		l.PrintInfo("Found user's config directory: %s", configDir)
+		l.Printf("Found user's config directory: %s", configDir)
 	}
 
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		l.PrintErr("Failed to get user's home directory: %s\n", err.Error())
-		os.Exit(1)
+		l.Fatalf("Failed to get user's home directory: %s\n", err.Error())
 	} else {
-		l.PrintInfo("Found user's home directory: %s", homeDir)
+		l.Printf("Found user's home directory: %s", homeDir)
 	}
 
 	return path.Join(configDir, exeName)

@@ -8,6 +8,9 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"math"
+
 	"github.com/NicksPatties/sweet/about"
 	"github.com/NicksPatties/sweet/add"
 	"github.com/NicksPatties/sweet/util"
@@ -23,6 +26,14 @@ var rootCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		language, _ := cmd.Flags().GetString("language")
 		configDir := util.GetConfigDirectory()
+		start, _ := cmd.Flags().GetUint("start")
+		end, _ := cmd.Flags().GetUint("end")
+		if start != 0 || end != math.MaxUint {
+			log.Fatalf("Start and end should not be assigned.")
+		}
+		if start > end {
+			log.Fatalf("Start flag %d cannot be greater than end flag %d.", start, end)
+		}
 		// TODO I should pass in a flags struct for this command.
 		exercise.Run(configDir, language)
 	},
@@ -32,6 +43,8 @@ func init() {
 	// Add language flag to root command only.
 	// The flags for other commands will be defined in their respective modules.
 	rootCmd.Flags().StringP("language", "l", "", "Language for the typing game")
+	rootCmd.Flags().UintP("start", "s", 0, "Language for the typing game")
+	rootCmd.Flags().UintP("end", "e", math.MaxUint, "Language for the typing game")
 
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 

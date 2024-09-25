@@ -2,12 +2,12 @@ package exercise
 
 import (
 	"fmt"
+	"log"
 	"math/rand"
 	"os"
 	"path"
 	"time"
 
-	"github.com/NicksPatties/sweet/log"
 	"github.com/NicksPatties/sweet/util"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -118,11 +118,15 @@ type exerciseModel struct {
 // If language is not empty, then a random exercise with the given
 // extension will be selected.
 func getExercise(configDir string, language string) Exercise {
-	exercisesDir := path.Join(configDir, "exercises")
+	var exercisesDir string
+	if envDir := os.Getenv("SWEET_EXERCISES_DIR"); envDir != "" {
+		exercisesDir = envDir
+	} else {
+		exercisesDir = path.Join(configDir, "exercises")
+	}
 	files, err := os.ReadDir(exercisesDir)
 	if err != nil {
-		log.PrintErr("Failed to read exercises directory: %s", exercisesDir)
-		log.PrintErr("Error details: %s", err.Error())
+		log.Fatalf("Failed to read exercises directory: %s\n\t%s", exercisesDir, err)
 	}
 
 	// Convert the DirEntries into strings.
@@ -131,13 +135,16 @@ func getExercise(configDir string, language string) Exercise {
 		fileNames = append(fileNames, f.Name())
 	}
 
+	if len(fileNames) == 0 {
+		log.Fatalf("No exercises found in directory %s.", exercisesDir)
+	}
+
 	// If language is defined, filter the files down by their extension.
 	if language != "" {
 		fileNames = util.FilterFileNames(fileNames, language)
 
 		if len(fileNames) == 0 {
-			log.PrintErr("No files match the given language %s. Exiting.", language)
-			os.Exit(1)
+			log.Fatalf("No files match the given language %s. Exiting.", language)
 		}
 	}
 
@@ -147,9 +154,7 @@ func getExercise(configDir string, language string) Exercise {
 	fullFilePath := path.Join(exercisesDir, fileName)
 	bytes, err := os.ReadFile(fullFilePath)
 	if err != nil {
-		log.PrintErr("Failed to open exercise file: %s", fullFilePath)
-		log.PrintErr("Error details: %s", err.Error())
-		os.Exit(1)
+		log.Fatalf("Failed to open exercise file: %s", fullFilePath)
 	}
 
 	return Exercise{

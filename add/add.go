@@ -9,11 +9,11 @@ package add
 import (
 	"bufio"
 	"fmt"
+	l "log"
 	"math"
 	"os"
 	"path"
 
-	l "github.com/NicksPatties/sweet/log"
 	"github.com/spf13/cobra"
 )
 
@@ -22,10 +22,9 @@ var Command = &cobra.Command{
 	Short: "Add an exercise",
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
-			l.PrintErr("No path specified. Exiting.")
-			os.Exit(1)
+			l.Fatalf("No path specified. Exiting.")
 		} else if len(args) > 1 {
-			l.PrintWarn("Multiple paths specified. Ignoring paths %s", args[1:])
+			l.Printf("Multiple paths specified. Ignoring paths %s", args[1:])
 		}
 		path := args[0]
 		start, _ := cmd.Flags().GetInt("start")
