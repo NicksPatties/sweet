@@ -1,4 +1,4 @@
-package main
+package root
 
 import (
 	"fmt"
@@ -19,6 +19,9 @@ func mockCommand() (mockCmd *cobra.Command) {
 }
 
 func TestValidateFlags(t *testing.T) {
+	want := ExerciseArgs{
+		file: 
+	}
 	tmpDir := t.TempDir()
 	var tmpFile *os.File
 	var err error
@@ -33,6 +36,9 @@ func TestValidateFlags(t *testing.T) {
 	mockCmd.Run = func(cmd *cobra.Command, args []string) {
 		got := getExerciseArgs(cmd, args)
 
+		if got.language != want.language {
+			
+		}
 	}
 	if err := mockCmd.Execute(); err != nil {
 		t.Fatal("mockCmd failed to execute. " + err.Error())

@@ -1,4 +1,4 @@
-package exercise
+package root
 
 const (
 	Enter   = '\n'
