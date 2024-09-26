@@ -39,17 +39,7 @@ func GetConfigDirectory() string {
 	configDir, err := os.UserConfigDir()
 	if err != nil {
 		l.Fatalf("Failed to get user's config directory: %s\n", err.Error())
-	} else {
-		l.Printf("Found user's config directory: %s", configDir)
 	}
-
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		l.Fatalf("Failed to get user's home directory: %s\n", err.Error())
-	} else {
-		l.Printf("Found user's home directory: %s", homeDir)
-	}
-
 	return path.Join(configDir, exeName)
 }
 

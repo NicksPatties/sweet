@@ -23,6 +23,7 @@ import (
 var rootCmd = &cobra.Command{
 	Use:  "sweet",
 	Long: "The Software Engineer Exercise for Typing.",
+	Args: cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		language, _ := cmd.Flags().GetString("language")
 		configDir := util.GetConfigDirectory()
@@ -33,6 +34,11 @@ var rootCmd = &cobra.Command{
 		}
 		if start > end {
 			log.Fatalf("Start flag %d cannot be greater than end flag %d.", start, end)
+		}
+
+		if len(args) > 0 && args[0] == "-" {
+			fmt.Print("I should use stdin")
+
 		}
 		// TODO I should pass in a flags struct for this command.
 		exercise.Run(configDir, language)

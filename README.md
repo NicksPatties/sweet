@@ -46,3 +46,8 @@ go build -ldflags "-X github.com/NicksPatties/sweet/version.version=v0.0.2-`date
 7. In `Main` in `sweet.go`, add the `Run` function from your new `{{command}}` module to the `defaultCommands` struct.
 
 By now you should have a new command that you can run and test like its own standalone application.
+
+## Writing e2e tests
+
+See `e2e/exercise_test.sh` and `e2e/e2e_test_template.sh` for examples.
+
