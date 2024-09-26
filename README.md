@@ -44,6 +44,7 @@ go build -ldflags "-X github.com/NicksPatties/sweet/version.version=v0.0.2-`date
 5. In `sweet.go`, add func signature from step 2 to `Commands` struct
 6. In `Run` in `sweet.go`, add a case to the `switch subCommand` statement
 7. In `Main` in `sweet.go`, add the `Run` function from your new `{{command}}` module to the `defaultCommands` struct.
+8. Valiate flags in the `&cobra.Command`'s struct, then pass valid params to the `Run` function
 
 By now you should have a new command that you can run and test like its own standalone application.
 
