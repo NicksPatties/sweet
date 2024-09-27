@@ -63,10 +63,10 @@ func init() {
 // This contains the data that is required to display and perform
 // the typing Exercise.
 type Exercise struct {
-	// The Name of the exercise. Usually the file Name.
-	Name string
+	// The name of the exercise. Usually the file name.
+	name string
 	// The contents of the exercise. The user types this.
-	Text string
+	text string
 	// A short description that shows when the user complete the exercise.
 	completionDescription string
 }
@@ -199,8 +199,8 @@ func getRandomExercise(configDir string, language string) Exercise {
 	}
 
 	return Exercise{
-		Name: fileName,
-		Text: string(bytes),
+		name: fileName,
+		text: string(bytes),
 	}
 }
 
@@ -226,7 +226,7 @@ func isWhitespace(rn rune) bool {
 }
 
 func (m exerciseModel) addRuneToTypedText(rn rune) exerciseModel {
-	if len(m.typedText) == len(m.exercise.Text) {
+	if len(m.typedText) == len(m.exercise.text) {
 		return m
 	}
 
@@ -236,10 +236,10 @@ func (m exerciseModel) addRuneToTypedText(rn rune) exerciseModel {
 	// then add the Enter and the following whitespace to the typedText.
 	//
 	// This provides the appearance of auto-indentation while typing.
-	if rune(m.exercise.Text[idx]) == Enter {
+	if rune(m.exercise.text[idx]) == Enter {
 		whiteSpace := []rune{}
-		for i := len(m.typedText) + 1; i < len(m.exercise.Text) && isWhitespace(rune(m.exercise.Text[i])); i++ {
-			whiteSpace = append(whiteSpace, rune(m.exercise.Text[i]))
+		for i := len(m.typedText) + 1; i < len(m.exercise.text) && isWhitespace(rune(m.exercise.text[i])); i++ {
+			whiteSpace = append(whiteSpace, rune(m.exercise.text[i]))
 		}
 		m.typedText += string(rn)
 		m.typedText += string(whiteSpace)
@@ -269,9 +269,9 @@ func (m exerciseModel) deleteRuneFromTypedText() exerciseModel {
 	l = len(m.typedText)
 	i := 1
 	// move index backwards until a non-whitespace rune is found
-	for ; isWhitespace(rune(m.exercise.Text[l-i])); i++ {
+	for ; isWhitespace(rune(m.exercise.text[l-i])); i++ {
 	}
-	currRn = rune(m.exercise.Text[l-i])
+	currRn = rune(m.exercise.text[l-i])
 	if currRn == Enter {
 		// remove all runes up to and including the newline rune
 		m.typedText = tex[:l-i]
@@ -282,13 +282,13 @@ func (m exerciseModel) deleteRuneFromTypedText() exerciseModel {
 func (m exerciseModel) finished() bool {
 	// If the user hasn't reached the end of the exercise,
 	// then they're not done yet.
-	l := len(m.exercise.Text)
+	l := len(m.exercise.text)
 	if len(m.typedText) < l {
 		return false
 	}
 
 	// Handle the case where the user types the last character incorrectly
-	exLast := rune(m.exercise.Text[l-1])
+	exLast := rune(m.exercise.text[l-1])
 	typedLast := rune(m.typedText[l-1])
 
 	if exLast != typedLast {
@@ -302,7 +302,7 @@ func (m exerciseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		var currTyped string
 		currI := len(m.typedText)
-		currExpected := runeToEventExpected(rune(m.exercise.Text[currI]))
+		currExpected := runeToEventExpected(rune(m.exercise.text[currI]))
 		switch msg.Type {
 		case tea.KeyCtrlC:
 			m.quitEarly = true
@@ -339,7 +339,7 @@ func (m exerciseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m exerciseModel) exerciseNameView() string {
 	commentStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("7")).Italic(true)
 	commentPrefix := "//"
-	return commentStyle.Render(fmt.Sprintf("%s %s", commentPrefix, m.exercise.Name))
+	return commentStyle.Render(fmt.Sprintf("%s %s", commentPrefix, m.exercise.name))
 }
 
 func (m exerciseModel) exerciseTextView() (s string) {
@@ -354,7 +354,7 @@ func (m exerciseModel) exerciseTextView() (s string) {
 
 	typed := m.typedText
 
-	for i, exRune := range m.exercise.Text {
+	for i, exRune := range m.exercise.text {
 		// Has this character been typed yet?
 		if i > len(typed) {
 			s += us.Render(string(exRune))
@@ -441,6 +441,7 @@ func oldRun(configDir string, language string) {
 }
 
 // Validates and returns the exercise from command line arguments.
+// If the flags are incorrect, an error is returned.
 func FromArgs(cmd *cobra.Command, args []string) (exercise Exercise, err error) {
 	start, _ := cmd.Flags().GetUint("start")
 	end, _ := cmd.Flags().GetUint("end")
@@ -452,6 +453,9 @@ func FromArgs(cmd *cobra.Command, args []string) (exercise Exercise, err error) 
 
 	var file *os.File
 	defer file.Close()
+	dumb := []string{}
+	fmt.Printf("args:      %s\n", dumb)
+	fmt.Printf("len(args): %d\n", len(dumb))
 	if len(args) > 0 { // get the file from the argument
 		if args[0] == "-" {
 			file = os.Stdin
@@ -463,7 +467,6 @@ func FromArgs(cmd *cobra.Command, args []string) (exercise Exercise, err error) 
 
 		}
 	} else { // get a random exercise
-
 		if start != 0 || end != math.MaxUint {
 			err = errors.New("start and end should not be assigned for random exercise")
 			return
@@ -527,8 +530,8 @@ func FromArgs(cmd *cobra.Command, args []string) (exercise Exercise, err error) 
 		return
 	}
 
-	exercise.Text = text
-	exercise.Name = path.Base(file.Name())
+	exercise.text = text
+	exercise.name = path.Base(file.Name())
 	return
 }
 

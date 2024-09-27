@@ -97,9 +97,9 @@ func duration(startTime time.Time, endTime time.Time) string {
 }
 
 func showResults(m exerciseModel) {
-	fmt.Printf("Results of %s:\n", m.exercise.Name)
-	fmt.Printf("WPM: %.f\n", wpm(m.startTime, m.endTime, m.typedText, m.exercise.Text, WORD_SIZE))
+	fmt.Printf("Results of %s:\n", m.exercise.name)
+	fmt.Printf("WPM: %.f\n", wpm(m.startTime, m.endTime, m.typedText, m.exercise.text, WORD_SIZE))
 	fmt.Printf("Mistakes: %d\n", numMistakes(m.events))
-	fmt.Printf("Accuracy: %.2f%%\n", accuracy(m.typedText, m.exercise.Text))
+	fmt.Printf("Accuracy: %.2f%%\n", accuracy(m.typedText, m.exercise.text))
 	fmt.Printf("Duration: %s\n", duration(m.startTime, m.endTime))
 }
