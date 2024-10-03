@@ -27,7 +27,7 @@ var Cmd = &cobra.Command{
 	Long: "The Software Engineer Exercise for Typing.",
 	Args: cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		ex, err := FromArgs(cmd, args)
+		ex, err := fromArgs(cmd, args)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -35,13 +35,17 @@ var Cmd = &cobra.Command{
 	},
 }
 
+func setCmdFlags(cmd *cobra.Command) {
+	cmd.Flags().StringP("language", "l", "", "Language for the typing game")
+	cmd.Flags().UintP("start", "s", 0, "Language for the typing game")
+	cmd.Flags().UintP("end", "e", math.MaxUint, "Language for the typing game")
+}
+
 func init() {
 
 	// Add language flag to root command only.
 	// The flags for other commands will be defined in their respective modules.
-	Cmd.Flags().StringP("language", "l", "", "Language for the typing game")
-	Cmd.Flags().UintP("start", "s", 0, "Language for the typing game")
-	Cmd.Flags().UintP("end", "e", math.MaxUint, "Language for the typing game")
+	setCmdFlags(Cmd)
 
 	Cmd.CompletionOptions.DisableDefaultCmd = true
 
@@ -442,7 +446,7 @@ func oldRun(configDir string, language string) {
 
 // Validates and returns the exercise from command line arguments.
 // If the flags are incorrect, an error is returned.
-func FromArgs(cmd *cobra.Command, args []string) (exercise Exercise, err error) {
+func fromArgs(cmd *cobra.Command, args []string) (exercise Exercise, err error) {
 	start, _ := cmd.Flags().GetUint("start")
 	end, _ := cmd.Flags().GetUint("end")
 
