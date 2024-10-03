@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# Embrace the sweet release of code!
+# Run this in the repository's root directory when you're ready to release.
+
+log () {
+  echo "sweet release: $1"
+}
+
+builds="./builds"
+# see: `go tool dist list`
+platforms=("darwin/amd64" "darwin/arm64" "linux/amd64" "linux/arm64" "windows/amd64" "windows/arm64")
+version=$(git tag --sort=-creatordate | head -n 1)
+
+log "building release of sweet$version"
+for p in "${platforms[@]}";
+do
+  os=$(echo "$p" | cut -d/ -f 1)
+  arch=$(echo "$p" | cut -d/ -f 2)
+  name="sweet-$os-$arch"
+  if [ "$os" = "windows" ]; then
+    name="$name.exe"
+  fi
+  path="$builds/$name"
+  log "building $path..."
+  GOOS=$os GOARCH=$arch go build -ldflags "-w -X github.com/NicksPatties/sweet/cmd/about.version=$version" -o "$path"
+  log "$path built"
+  log "generating checksum for $path..."
+  sha256sum "$path" >> "$path-sum.txt"
+  log "checksum for $path generated"
+done
+
+log "done building release of sweet$version!"
