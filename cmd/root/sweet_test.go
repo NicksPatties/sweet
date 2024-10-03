@@ -12,19 +12,22 @@ import (
 )
 
 func (got Exercise) matches(want Exercise) bool {
-	return got.name != want.name || got.text != want.text
+	return got.name == want.name && got.text == want.text
 }
 
 func (got Exercise) matchesOneOf(wants []Exercise) bool {
 	for _, want := range wants {
 		if got.matches(want) {
+			fmt.Printf("I match!\n")
 			return true
+		} else {
+			fmt.Printf("no match\n")
 		}
 	}
 	return false
 }
 
-func printExerciseFiles(t *testing.T, dir string) (m string) {
+func printExerciseFiles(dir string) (m string) {
 	entries, _ := os.ReadDir(dir)
 	var files []fs.DirEntry
 	for _, ent := range entries {
@@ -38,7 +41,9 @@ func printExerciseFiles(t *testing.T, dir string) (m string) {
 		name := file.Name()
 		text, _ := os.ReadFile(path.Join(dir, file.Name()))
 		m += fmt.Sprintf("\tname %s\n", name)
-		m += fmt.Sprintf("\ttext %s\n\n", text)
+		m += fmt.Sprintf("\tname bytes %v\n", []byte(name))
+		m += fmt.Sprintf("\ttext %s\n", text)
+		m += fmt.Sprintf("\ttext bytes %v\n", []byte(text))
 	}
 	return
 }
@@ -85,27 +90,6 @@ func TestFromArgs(t *testing.T) {
 				// Actually run the test here
 				got, gotErr := FromArgs(cmd, args)
 				tc.check(got, gotErr)
-
-				// if gotErr == nil {
-				// 	if tc.wantErr != nil {
-				// 		t.Fatalf("%s: got no error, want error %s", tc.name, tc.wantErr)
-				// 	} else if got.name != tc.want.name || got.text != tc.want.text {
-				// 		m := fmt.Sprintf("%s: expected exercise don't match\n", tc.name)
-				// 		m += fmt.Sprintf("got name  %s\n", got.name)
-				// 		m += fmt.Sprintf("want name %s\n", tc.want.name)
-				// 		m += fmt.Sprintf("name bytes  %v\n", []byte(got.name))
-				// 		m += fmt.Sprintf("want bytes  %v\n\n", []byte(tc.want.name))
-				// 		m += fmt.Sprintf("got  text %s\n", got.text)
-				// 		m += fmt.Sprintf("want text %s\n", tc.want.text)
-				// 		m += fmt.Sprintf("text bytes  %v\n", []byte(got.text))
-				// 		m += fmt.Sprintf("want bytes  %v\n\n", []byte(tc.want.text))
-				// 		t.Fatal(m)
-				// 	}
-				// } else {
-				// 	if tc.wantErr == nil {
-				// 		t.Fatalf("%s: got error %s, wanted no error ", tc.name, gotErr.Error())
-				// 	}
-				// }
 			},
 		}
 
@@ -134,13 +118,13 @@ func TestFromArgs(t *testing.T) {
 				t.Fatalf("%s wanted no error, got %s\n", name, gotErr)
 			}
 			if !got.matchesOneOf(testExercises) {
-				m += fmt.Sprintf("%s got\n", name)
+				m := fmt.Sprintf("%s got\n", name)
 
 				m += fmt.Sprintf("\tname       %s\n", got.name)
 				m += fmt.Sprintf("\tname bytes %v\n", []byte(got.name))
 				m += fmt.Sprintf("\ttext       %s\n", got.text)
 				m += fmt.Sprintf("\ttext bytes %v\n", []byte(got.text))
-				m += printExerciseFiles(t, tmpExercisesDir)
+				m += printExerciseFiles(tmpExercisesDir)
 				t.Fatal(m)
 			}
 		},
