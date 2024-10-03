@@ -7,10 +7,11 @@ log () {
   echo "sweet release: $1"
 }
 
-builds="./builds"
+builds="builds"
 # see: `go tool dist list`
 platforms=("darwin/amd64" "darwin/arm64" "linux/amd64" "linux/arm64" "windows/amd64" "windows/arm64")
 version=$(git tag --sort=-creatordate | head -n 1)
+assets=()
 
 log "building release of sweet$version"
 for p in "${platforms[@]}";
@@ -25,9 +26,14 @@ do
   log "building $path..."
   GOOS=$os GOARCH=$arch go build -ldflags "-w -X github.com/NicksPatties/sweet/cmd/about.version=$version" -o "$path"
   log "$path built"
+  assets+=("$path")
   log "generating checksum for $path..."
   sha256sum "$path" >> "$path-sum.txt"
+  sum="$path-sum.txt"
+  assets+=("$sum")
   log "checksum for $path generated"
 done
 
-log "done building release of sweet$version!"
+log "done building assets!"
+log "creating draft of release for sweet$version"
+gh release create "$version" --generate-notes -d "${assets[@]}"
