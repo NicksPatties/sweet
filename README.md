@@ -113,6 +113,8 @@ go test -coverprofile coverage {{module-path}} && go tool cover -html=coverage
 
 ## Building a release version
 
+Creates a release to GitHub, and updates the pkg.go.dev listing.
+
 ```sh
 # Assuming you're currently on the commit you'd like to release
 git checkout main
