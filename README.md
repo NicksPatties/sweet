@@ -108,7 +108,7 @@ go test ./...
 ### Building and reviewing test coverage
 
 ```sh
-go test -coverprofile coverage ./cmd/root && go tool cover -html=coverage
+go test -coverprofile coverage {{module-path}} && go tool cover -html=coverage
 ```
 
 ## Building a release version
