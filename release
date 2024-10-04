@@ -8,6 +8,8 @@ log () {
 }
 
 builds="builds"
+mkdir $builds
+cd $builds || exit
 # see: `go tool dist list`
 platforms=("darwin/amd64" "darwin/arm64" "linux/amd64" "linux/arm64" "windows/amd64" "windows/arm64")
 version=$(git tag --sort=-creatordate | head -n 1)
@@ -22,14 +24,14 @@ do
   if [ "$os" = "windows" ]; then
     name="$name.exe"
   fi
-  path="$builds/$name"
+  path="$name"
   log "building $path..."
-  GOOS=$os GOARCH=$arch go build -ldflags "-w -X github.com/NicksPatties/sweet/cmd/about.version=$version" -o "$path"
+  GOOS=$os GOARCH=$arch go build -C .. -ldflags "-w -X github.com/NicksPatties/sweet/cmd/about.version=$version" -o "$builds/$path"
   log "$path built"
   assets+=("$path")
   log "generating checksum for $path..."
-  sha256sum "$path" >> "$path-sum.txt"
-  sum="$path-sum.txt"
+  sum="$path.sha256"
+  sha256sum "$path" >> "$sum"
   assets+=("$sum")
   log "checksum for $path generated"
 done
@@ -37,3 +39,7 @@ done
 log "done building assets!"
 log "creating draft of release for sweet$version"
 gh release create "$version" --generate-notes -d "${assets[@]}"
+log "removing $builds directory"
+cd ..
+rm -rf $builds
+log "all done!"
