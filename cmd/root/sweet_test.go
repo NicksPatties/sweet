@@ -1,6 +1,7 @@
 package root
 
 import (
+	"errors"
 	"fmt"
 	"io/fs"
 	"os"
@@ -97,14 +98,16 @@ func TestFromArgs(t *testing.T) {
 			name: "hello.go",
 			text: "fmt.Println(\"Hello!\")\n",
 		},
+		{
+			name: "threelines.txt",
+			text: "this file\nhas three lines\nof text.\n",
+		},
 	}
 	createExerciseFiles(t, tmpExercisesDir, testExercises)
 
 	type testCase struct {
-		name    string
-		check   func(Exercise, error)
-		wantErr error
-		args    []string
+		args  []string
+		check func(Exercise, error)
 	}
 
 	var mockCmd = func(tc testCase) *cobra.Command {
@@ -122,7 +125,7 @@ func TestFromArgs(t *testing.T) {
 
 	testCases := []testCase{
 		{
-			name: "random exercise, no args",
+			args: []string{},
 			check: func(got Exercise, gotErr error) {
 				name := "random exercise, no args"
 				if gotErr != nil {
@@ -135,15 +138,121 @@ func TestFromArgs(t *testing.T) {
 					t.Fatal(m)
 				}
 			},
-			wantErr: nil,
-			args:    []string{},
+		},
+		{
+			args: []string{path.Join(tmpExercisesDir, testExercises[0].name)},
+			check: func(got Exercise, gotErr error) {
+				name := "specific exercise, no args"
+				want := testExercises[0]
+				if gotErr != nil {
+					t.Fatalf("%s wanted no error, got %s\n", name, gotErr)
+				}
+				if !got.matches(want) {
+					m := fmt.Sprintf("\n%s got\n", name)
+					m += got.details()
+					m += want.details()
+					t.Fatal(m)
+				}
+			},
+		},
+		{
+			args: []string{
+				path.Join(tmpExercisesDir, testExercises[3].name),
+				"-s",
+				"2",
+			},
+			check: func(got Exercise, gotErr error) {
+				name := "specific exercise, start flag"
+				want := Exercise{
+					name: testExercises[3].name,
+					text: "has three lines\nof text.\n",
+				}
+				if gotErr != nil {
+					t.Fatalf("%s wanted no error, got %s\n", name, gotErr)
+				}
+				if !got.matches(want) {
+					m := fmt.Sprintf("\n%s got\n", name)
+					m += got.details()
+					m += want.details()
+					t.Fatal(m)
+				}
+			},
+		},
+		{
+			args: []string{
+				path.Join(tmpExercisesDir, testExercises[3].name),
+				"-e",
+				"2",
+			},
+			check: func(got Exercise, gotErr error) {
+				name := "specific exercise, start flag"
+				want := Exercise{
+					name: testExercises[3].name,
+					text: "this file\nhas three lines\n",
+				}
+				if gotErr != nil {
+					t.Fatalf("%s wanted no error, got %s\n", name, gotErr)
+				}
+				if !got.matches(want) {
+					m := fmt.Sprintf("\n%s got\n", name)
+					m += got.details()
+					m += fmt.Sprintf("\nwanted\n")
+					m += want.details()
+					t.Fatal(m)
+				}
+			},
+		},
+		{
+			args: []string{
+				path.Join(tmpExercisesDir, testExercises[3].name),
+				"-s",
+				"2",
+				"-e",
+				"2",
+			},
+			check: func(got Exercise, gotErr error) {
+				name := "specific exercise, start and end flag"
+				want := Exercise{
+					name: testExercises[3].name,
+					text: "has three lines\n",
+				}
+				if gotErr != nil {
+					t.Fatalf("%s wanted no error, got %s\n", name, gotErr)
+				}
+				if !got.matches(want) {
+					m := fmt.Sprintf("\n%s got\n", name)
+					m += got.details()
+					m += fmt.Sprintf("\nwanted\n")
+					m += want.details()
+					t.Fatal(m)
+				}
+			},
+		},
+		{
+			args: []string{
+				path.Join(tmpExercisesDir, testExercises[3].name),
+				"-s",
+				"2",
+				"-e",
+				"1",
+			},
+			check: func(got Exercise, gotErr error) {
+				wantErr := errors.New("start flag 2 cannot be greater than end flag 1")
+				name := "specific exercise, start and end flag, incorrect output"
+				if gotErr == nil {
+					t.Fatalf("%s wanted error, got nil\n", name)
+				}
+				if gotErr.Error() != wantErr.Error() {
+					t.Fatalf("%s wanted error msg \"%s\", got \"%s\"", name, wantErr.Error(), gotErr.Error())
+				}
+			},
 		},
 	}
 
-	for _, tc := range testCases {
+	for i, tc := range testCases {
 		cmd := mockCmd(tc)
 		if err := cmd.Execute(); err != nil {
-			t.Fatalf("%s: mock command failed to run: %s", tc.name, err)
+			t.Fatalf("mock command no %d failed to run: %s", i, err)
 		}
 	}
 }
