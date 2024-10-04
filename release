@@ -42,4 +42,6 @@ gh release create "$version" --generate-notes -d "${assets[@]}"
 log "removing $builds directory"
 cd ..
 rm -rf $builds
+log "releasing to pkg.go.dev"
+GOPROXY=proxy.golang.org go list -m "github.com/NicksPatties/sweet@$version"
 log "all done!"
