@@ -23,9 +23,10 @@ import (
 )
 
 var Cmd = &cobra.Command{
-	Use:  "sweet",
-	Long: "The Software Engineer Exercise for Typing.",
-	Args: cobra.MaximumNArgs(1),
+	Use:   "sweet [file|-]",
+	Short: "The Software Engineer Exercise for Typing.",
+	Long:  "The Software Engineer Exercise for Typing. Starts a touch typing game, and prints the results.",
+	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		ex, err := fromArgs(cmd, args)
 		if err != nil {
@@ -36,9 +37,10 @@ var Cmd = &cobra.Command{
 }
 
 func setRootCmdFlags(cmd *cobra.Command) {
-	cmd.Flags().StringP("language", "l", "", "Language for the typing game")
-	cmd.Flags().UintP("start", "s", 0, "Language for the typing game")
-	cmd.Flags().UintP("end", "e", math.MaxUint, "Language for the typing game")
+	cmd.Flags().StringP("language", "l", "", "language by extension")
+	cmd.Flags().UintP("start", "s", 0, "start line")
+	cmd.Flags().UintP("end", "e", math.MaxUint, "end line")
+	cmd.Flags().SortFlags = false
 }
 
 func init() {
