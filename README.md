@@ -121,6 +121,12 @@ git push origin {{version}}
 ./release
 ```
 
+### Sending the release to pkg.go.dev
+
+```sh
+GOPROXY=proxy.golang.org go list -m github.com/NicksPatties/sweet@{{version}}
+```
+
 ## Creating a new command
 
 1. Create new file called `{{command}}/{{command}}.go`
