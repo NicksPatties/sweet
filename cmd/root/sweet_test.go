@@ -255,7 +255,7 @@ func TestFromArgs(t *testing.T) {
 				"2",
 			},
 			check: func(got Exercise, gotErr error) {
-				wantErr := errors.New("start flag 2 cannot be greater than end flag 1")
+				wantErr := errors.New("start and end should not be assigned for random exercise")
 				name := "random exercise, start and end flag"
 				if gotErr == nil {
 					t.Fatalf("%s wanted error, got nil\n", name)
@@ -294,7 +294,7 @@ func TestFromArgs(t *testing.T) {
 			},
 			check: func(got Exercise, gotErr error) {
 				name := "random exercise, language selected, but not available"
-				wantErr := errors.New("failed to find exercise of language 'ts'.")
+				wantErr := errors.New("failed to find exercise matching language ts")
 				if gotErr == nil {
 					t.Fatalf("%s wanted error, got nil\n", name)
 				}

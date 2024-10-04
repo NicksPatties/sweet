@@ -9,6 +9,7 @@ import (
 	"math/rand"
 	"os"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/NicksPatties/sweet/cmd/about"
@@ -415,9 +416,15 @@ func fromArgs(cmd *cobra.Command, args []string) (exercise Exercise, err error) 
 			return
 		}
 
+		language, _ := cmd.Flags().GetString("language")
 		var files []os.DirEntry
 		for _, entry := range entries {
 			if entry.IsDir() {
+				continue
+			}
+			// Get the extension of a filename
+			ext := strings.Split(entry.Name(), ".")[1]
+			if language != "" && language != ext {
 				continue
 			}
 			files = append(files, entry)
@@ -425,7 +432,11 @@ func fromArgs(cmd *cobra.Command, args []string) (exercise Exercise, err error) 
 
 		numFiles := len(files)
 		if numFiles == 0 {
-			err = errors.New("no files in the exercises directory")
+			if language != "" {
+				err = errors.New("failed to find exercise matching language " + language)
+			} else {
+				err = errors.New("no files in the exercises directory")
+			}
 			return
 		}
 		randI := rand.Intn(numFiles)
