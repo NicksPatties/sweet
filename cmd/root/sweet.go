@@ -9,12 +9,12 @@ import (
 	"math/rand"
 	"os"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/NicksPatties/sweet/cmd/about"
 	"github.com/NicksPatties/sweet/cmd/add"
 	"github.com/NicksPatties/sweet/cmd/stats"
-	"github.com/NicksPatties/sweet/util"
 	"github.com/spf13/cobra"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -27,7 +27,7 @@ var Cmd = &cobra.Command{
 	Long: "The Software Engineer Exercise for Typing.",
 	Args: cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		ex, err := FromArgs(cmd, args)
+		ex, err := fromArgs(cmd, args)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -35,13 +35,17 @@ var Cmd = &cobra.Command{
 	},
 }
 
+func setRootCmdFlags(cmd *cobra.Command) {
+	cmd.Flags().StringP("language", "l", "", "Language for the typing game")
+	cmd.Flags().UintP("start", "s", 0, "Language for the typing game")
+	cmd.Flags().UintP("end", "e", math.MaxUint, "Language for the typing game")
+}
+
 func init() {
 
 	// Add language flag to root command only.
 	// The flags for other commands will be defined in their respective modules.
-	Cmd.Flags().StringP("language", "l", "", "Language for the typing game")
-	Cmd.Flags().UintP("start", "s", 0, "Language for the typing game")
-	Cmd.Flags().UintP("end", "e", math.MaxUint, "Language for the typing game")
+	setRootCmdFlags(Cmd)
 
 	Cmd.CompletionOptions.DisableDefaultCmd = true
 
@@ -154,56 +158,6 @@ type exerciseModel struct {
 }
 
 // INITIALIZATION
-
-// Gets a random exercise from sweet's configuration directory.
-// If language is not empty, then a random exercise with the given
-// extension will be selected.
-func getRandomExercise(configDir string, language string) Exercise {
-	var exercisesDir string
-	if envDir := os.Getenv("SWEET_EXERCISES_DIR"); envDir != "" {
-		exercisesDir = envDir
-	} else {
-		exercisesDir = path.Join(configDir, "exercises")
-	}
-	files, err := os.ReadDir(exercisesDir)
-	if err != nil {
-		log.Fatalf("Failed to read exercises directory: %s\n\t%s", exercisesDir, err)
-	}
-
-	// Convert the DirEntries into strings.
-	var fileNames []string
-	for _, f := range files {
-		fileNames = append(fileNames, f.Name())
-	}
-
-	if len(fileNames) == 0 {
-		log.Fatalf("No exercises found in directory %s.", exercisesDir)
-	}
-
-	// If language is defined, filter the files down by their extension.
-	if language != "" {
-		fileNames = util.FilterFileNames(fileNames, language)
-
-		if len(fileNames) == 0 {
-			log.Fatalf("No files match the given language %s. Exiting.", language)
-		}
-	}
-
-	// Select a random exercise.
-	randI := rand.Intn(len(fileNames))
-	fileName := fileNames[randI]
-	fullFilePath := path.Join(exercisesDir, fileName)
-	bytes, err := os.ReadFile(fullFilePath)
-	if err != nil {
-		log.Fatalf("Failed to open exercise file: %s", fullFilePath)
-	}
-
-	return Exercise{
-		name: fileName,
-		text: string(bytes),
-	}
-}
-
 func NewExerciseModel(ex Exercise) exerciseModel {
 	return exerciseModel{
 		exercise:  ex,
@@ -410,39 +364,9 @@ func (m exerciseModel) View() (s string) {
 	return
 }
 
-// Selects an exercise from the exercises directory and runs the
-// typing game bubbletea application.
-//
-// Returns an array of events for analysis with the stats
-// This should really just take in an *os.File object
-func oldRun(configDir string, language string) {
-
-	// Get an exercise.
-	exercise := getRandomExercise(configDir, language)
-	exModel := NewExerciseModel(exercise)
-	teaModel, err := tea.NewProgram(exModel).Run()
-
-	if err != nil {
-		fmt.Printf("Error running typing exercise: %v\n", err)
-		os.Exit(1)
-	}
-
-	exModel, ok := teaModel.(exerciseModel)
-
-	if !ok {
-		fmt.Printf("Error casting bubbletea model.\n")
-	}
-
-	if exModel.quitEarly {
-		os.Exit(0)
-	}
-
-	showResults(exModel)
-}
-
 // Validates and returns the exercise from command line arguments.
 // If the flags are incorrect, an error is returned.
-func FromArgs(cmd *cobra.Command, args []string) (exercise Exercise, err error) {
+func fromArgs(cmd *cobra.Command, args []string) (exercise Exercise, err error) {
 	start, _ := cmd.Flags().GetUint("start")
 	end, _ := cmd.Flags().GetUint("end")
 
@@ -453,9 +377,6 @@ func FromArgs(cmd *cobra.Command, args []string) (exercise Exercise, err error) 
 
 	var file *os.File
 	defer file.Close()
-	dumb := []string{}
-	fmt.Printf("args:      %s\n", dumb)
-	fmt.Printf("len(args): %d\n", len(dumb))
 	if len(args) > 0 { // get the file from the argument
 		if args[0] == "-" {
 			file = os.Stdin
@@ -495,9 +416,15 @@ func FromArgs(cmd *cobra.Command, args []string) (exercise Exercise, err error) 
 			return
 		}
 
+		language, _ := cmd.Flags().GetString("language")
 		var files []os.DirEntry
 		for _, entry := range entries {
 			if entry.IsDir() {
+				continue
+			}
+			// Gets the file extension
+			ext := strings.Split(entry.Name(), ".")[1]
+			if language != "" && language != ext {
 				continue
 			}
 			files = append(files, entry)
@@ -505,7 +432,11 @@ func FromArgs(cmd *cobra.Command, args []string) (exercise Exercise, err error) 
 
 		numFiles := len(files)
 		if numFiles == 0 {
-			err = errors.New("no files in the exercises directory")
+			if language != "" {
+				err = errors.New("failed to find exercise matching language " + language)
+			} else {
+				err = errors.New("no files in the exercises directory")
+			}
 			return
 		}
 		randI := rand.Intn(numFiles)

@@ -31,3 +31,6 @@ go.work
 
 # executable name
 sweet
+
+# test coverage file
+coverage

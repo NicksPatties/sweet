@@ -105,6 +105,12 @@ go test ./{{module-name}}
 go test ./...
 ```
 
+### Building and reviewing test coverage
+
+```sh
+go test -coverprofile coverage {{module-path}} && go tool cover -html=coverage
+```
+
 ## Building a release version
 
 ```sh

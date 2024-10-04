@@ -1,8 +1,9 @@
 package root
 
 import (
+	"errors"
 	"fmt"
-	"math"
+	"io/fs"
 	"os"
 	"path"
 	"testing"
@@ -10,9 +11,54 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func createExerciseFiles(t *testing.T, dir string, exercises []Exercise) (files []*os.File) {
+func (got Exercise) matches(want Exercise) bool {
+	return got.name == want.name && got.text == want.text
+}
+
+func (got Exercise) matchesOneOf(wants []Exercise) bool {
+	for _, want := range wants {
+		if got.matches(want) {
+			return true
+		}
+	}
+	return false
+}
+
+// Returns the name, text, and their arrays of bytes.
+// Useful when printing out exercises when a test fails.
+func (ex Exercise) details() (m string) {
+	m = fmt.Sprintf("\tname %s\n", ex.name)
+	m += fmt.Sprintf("\tname bytes %v\n", []byte(ex.name))
+	m += fmt.Sprintf("\ttext %s\n", ex.text)
+	m += fmt.Sprintf("\ttext bytes %v\n", []byte(ex.text))
+	return
+}
+
+// Returs the details of each exercise in a tmp directory.
+func printExerciseFiles(dir string) (m string) {
+	entries, _ := os.ReadDir(dir)
+	var files []fs.DirEntry
+	for _, ent := range entries {
+		if !ent.IsDir() {
+			files = append(files, ent)
+		}
+	}
+
+	m = fmt.Sprintf("wanted one of\n")
+	for _, file := range files {
+		name := file.Name()
+		textBytes, _ := os.ReadFile(path.Join(dir, file.Name()))
+		m += Exercise{
+			name: name,
+			text: string(textBytes),
+		}.details()
+	}
+	return
+}
+
+func createExerciseFiles(t *testing.T, dir string, exercises []Exercise) {
 	for _, ex := range exercises {
-		tmpFile, err := os.CreateTemp(dir, ex.name)
+		tmpFile, err := os.Create(path.Join(dir, ex.name))
 		if err != nil {
 			t.Fatal("failed to create exercise file")
 		}
@@ -21,9 +67,7 @@ func createExerciseFiles(t *testing.T, dir string, exercises []Exercise) (files 
 		if err != nil {
 			t.Fatalf("failed to close temporary file %s", tmpFile.Name())
 		}
-		files = append(files, tmpFile)
 	}
-	return
 }
 
 func fileToExercise(t *testing.T, fileName string) (exercise Exercise) {
@@ -36,76 +80,351 @@ func fileToExercise(t *testing.T, fileName string) (exercise Exercise) {
 	return
 }
 
-func TestFromArgs(t *testing.T) {
+type fromArgsTestCase struct {
+	args  []string
+	check func(Exercise, error)
+}
 
-	type testCase struct {
-		name    string
-		want    Exercise
-		wantErr error
-		args    []string
-	}
-
-	var mockCmd = func(tc testCase) *cobra.Command {
-		cmd := &cobra.Command{
-			Use:  "sweet",
-			Long: "The Software Engineer Exercise for Typing.",
-			Args: cobra.MaximumNArgs(1),
-			Run: func(cmd *cobra.Command, args []string) {
-				// Actually run the test here
-				got, gotErr := FromArgs(cmd, args)
-
-				if gotErr == nil {
-					if tc.wantErr != nil {
-						t.Fatalf("%s: got no error, want error %s", tc.name, tc.wantErr)
-					} else if got.name != tc.want.name || got.text != tc.want.text {
-						m := fmt.Sprintf("%s: expected exercise don't match\n", tc.name)
-						m += fmt.Sprintf("got name  %s\n", got.name)
-						m += fmt.Sprintf("want name %s\n", tc.want.name)
-						m += fmt.Sprintf("name bytes  %v\n", []byte(got.name))
-						m += fmt.Sprintf("want bytes  %v\n\n", []byte(tc.want.name))
-						m += fmt.Sprintf("got  text %s\n", got.text)
-						m += fmt.Sprintf("want text %s\n", tc.want.text)
-						m += fmt.Sprintf("text bytes  %v\n", []byte(got.text))
-						m += fmt.Sprintf("want bytes  %v\n\n", []byte(tc.want.text))
-						t.Fatal(m)
-					}
-				} else {
-					if tc.wantErr == nil {
-						t.Fatalf("%s: got error %s, wanted no error ", tc.name, gotErr.Error())
-					}
-				}
-			},
-		}
-
-		cmd.Flags().StringP("language", "l", "", "Language for the typing game")
-		cmd.Flags().UintP("start", "s", 0, "Language for the typing game")
-		cmd.Flags().UintP("end", "e", math.MaxUint, "Language for the typing game")
-		cmd.SetArgs(tc.args)
-		return cmd
-	}
-
-	tmpExercisesDir := t.TempDir()
-	prevExercisesDir := os.Getenv("SWEET_EXERCISES_DIR")
-	defer os.Setenv("SWEET_EXERCISES_DIR", prevExercisesDir)
-	os.Setenv("SWEET_EXERCISES_DIR", tmpExercisesDir)
-
-	testExercises := []Exercise{
-		{
-			name: "tmpExercise",
-			text: "the test\n",
+var mockCmd = func(tc fromArgsTestCase) *cobra.Command {
+	cmd := &cobra.Command{
+		Args: cobra.MaximumNArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			got, gotErr := fromArgs(cmd, args)
+			tc.check(got, gotErr)
 		},
 	}
-	testFiles := createExerciseFiles(t, tmpExercisesDir, testExercises)
+	setRootCmdFlags(cmd)
+	cmd.SetArgs(tc.args)
+	return cmd
+}
 
-	tc := testCase{
-		name:    "random exercise, no args",
-		want:    fileToExercise(t, testFiles[0].Name()),
-		wantErr: nil,
-		args:    []string{},
+func TestFromArgs(t *testing.T) {
+
+	// Test environment setup
+	tmpExercisesDir := t.TempDir()
+	t.Setenv("SWEET_EXERCISES_DIR", tmpExercisesDir)
+	testExercises := []Exercise{
+		{
+			name: "test.txt",
+			text: "the test\n",
+		},
+		{
+			name: "hello.js",
+			text: "console.log('Hello!');\n",
+		},
+		{
+			name: "hello.go",
+			text: "fmt.Println(\"Hello!\")\n",
+		},
+		{
+			name: "threelines.txt",
+			text: "this file\nhas three lines\nof text.\n",
+		},
+	}
+	createExerciseFiles(t, tmpExercisesDir, testExercises)
+
+	testCases := []fromArgsTestCase{
+		{
+			args: []string{},
+			check: func(got Exercise, gotErr error) {
+				name := "random exercise, no args"
+				if gotErr != nil {
+					t.Fatalf("%s wanted no error, got %s\n", name, gotErr)
+				}
+				if !got.matchesOneOf(testExercises) {
+					m := fmt.Sprintf("\n%s got\n", name)
+					m += got.details()
+					m += printExerciseFiles(tmpExercisesDir)
+					t.Fatal(m)
+				}
+			},
+		},
+		{
+			args: []string{path.Join(tmpExercisesDir, testExercises[0].name)},
+			check: func(got Exercise, gotErr error) {
+				name := "specific exercise, no args"
+				want := testExercises[0]
+				if gotErr != nil {
+					t.Fatalf("%s wanted no error, got %s\n", name, gotErr)
+				}
+				if !got.matches(want) {
+					m := fmt.Sprintf("\n%s got\n", name)
+					m += got.details()
+					m += want.details()
+					t.Fatal(m)
+				}
+			},
+		},
+		{
+			args: []string{
+				path.Join(tmpExercisesDir, testExercises[3].name),
+				"-s",
+				"2",
+			},
+			check: func(got Exercise, gotErr error) {
+				name := "specific exercise, start flag"
+				want := Exercise{
+					name: testExercises[3].name,
+					text: "has three lines\nof text.\n",
+				}
+				if gotErr != nil {
+					t.Fatalf("%s wanted no error, got %s\n", name, gotErr)
+				}
+				if !got.matches(want) {
+					m := fmt.Sprintf("\n%s got\n", name)
+					m += got.details()
+					m += want.details()
+					t.Fatal(m)
+				}
+			},
+		},
+		{
+			args: []string{
+				path.Join(tmpExercisesDir, testExercises[3].name),
+				"-e",
+				"2",
+			},
+			check: func(got Exercise, gotErr error) {
+				name := "specific exercise, end flag"
+				want := Exercise{
+					name: testExercises[3].name,
+					text: "this file\nhas three lines\n",
+				}
+				if gotErr != nil {
+					t.Fatalf("%s wanted no error, got %s\n", name, gotErr)
+				}
+				if !got.matches(want) {
+					m := fmt.Sprintf("\n%s got\n", name)
+					m += got.details()
+					m += fmt.Sprintf("\nwanted\n")
+					m += want.details()
+					t.Fatal(m)
+				}
+			},
+		},
+		{
+			args: []string{
+				path.Join(tmpExercisesDir, testExercises[3].name),
+				"-s",
+				"2",
+				"-e",
+				"2",
+			},
+			check: func(got Exercise, gotErr error) {
+				name := "specific exercise, start and end flag"
+				want := Exercise{
+					name: testExercises[3].name,
+					text: "has three lines\n",
+				}
+				if gotErr != nil {
+					t.Fatalf("%s wanted no error, got %s\n", name, gotErr)
+				}
+				if !got.matches(want) {
+					m := fmt.Sprintf("\n%s got\n", name)
+					m += got.details()
+					m += fmt.Sprintf("\nwanted\n")
+					m += want.details()
+					t.Fatal(m)
+				}
+			},
+		},
+		{
+			args: []string{
+				path.Join(tmpExercisesDir, testExercises[3].name),
+				"-s",
+				"2",
+				"-e",
+				"1",
+			},
+			check: func(got Exercise, gotErr error) {
+				wantErr := errors.New("start flag 2 cannot be greater than end flag 1")
+				name := "specific exercise, start and end flag, incorrect output"
+				if gotErr == nil {
+					t.Fatalf("%s wanted error, got nil\n", name)
+				}
+				if gotErr.Error() != wantErr.Error() {
+					t.Fatalf("%s wanted error msg \"%s\", got \"%s\"", name, wantErr.Error(), gotErr.Error())
+				}
+			},
+		},
+		{
+			args: []string{
+				"-s",
+				"1",
+				"-e",
+				"2",
+			},
+			check: func(got Exercise, gotErr error) {
+				wantErr := errors.New("start and end should not be assigned for random exercise")
+				name := "random exercise, start and end flag"
+				if gotErr == nil {
+					t.Fatalf("%s wanted error, got nil\n", name)
+				}
+				if gotErr.Error() != wantErr.Error() {
+					t.Fatalf("%s wanted error msg \"%s\", got \"%s\"", name, wantErr.Error(), gotErr.Error())
+				}
+			},
+		},
+		{
+			// WARNING: This test might be flaky if the random
+			// selected exercise happens to be the go exercise.
+			args: []string{
+				"-l",
+				"go",
+			},
+			check: func(got Exercise, gotErr error) {
+				name := "random exercise, with language"
+				want := testExercises[2]
+				if gotErr != nil {
+					t.Fatalf("%s wanted no error, got %s\n", name, gotErr)
+				}
+				if !got.matches(want) {
+					m := fmt.Sprintf("\n%s got\n", name)
+					m += got.details()
+					m += fmt.Sprintf("\nwanted\n")
+					m += want.details()
+					t.Fatal(m)
+				}
+			},
+		},
+		{
+			args: []string{
+				"-l",
+				"ts",
+			},
+			check: func(got Exercise, gotErr error) {
+				name := "random exercise, with language, but not available"
+				wantErr := errors.New("failed to find exercise matching language ts")
+				if gotErr == nil {
+					t.Fatalf("%s wanted error, got nil\n", name)
+				}
+				if gotErr.Error() != wantErr.Error() {
+					t.Fatalf("%s wanted error msg \"%s\", got \"%s\"", name, wantErr.Error(), gotErr.Error())
+				}
+
+			},
+		},
+	}
+
+	for i, tc := range testCases {
+		cmd := mockCmd(tc)
+		if err := cmd.Execute(); err != nil {
+			t.Fatalf("mock command no. %d failed to run: %s", i, err)
+		}
+	}
+}
+
+func TestFromArgsWithStdin(t *testing.T) {
+	// Test environment setup
+	tmpExercisesDir := t.TempDir()
+	t.Setenv("SWEET_EXERCISES_DIR", tmpExercisesDir)
+
+	// Create a tmp file. This will replace os.Stdin
+	tmp, err := os.CreateTemp(".", "stdin")
+	if err != nil {
+		t.Error("Failed to create tmp file")
+	}
+	defer func() {
+		tmp.Close()
+		os.Remove(tmp.Name())
+	}()
+
+	wantText := "Hello from stdin!\n"
+	want := Exercise{
+		name: path.Join(".", tmp.Name()),
+		text: wantText,
+	}
+
+	// Write to tmp file
+	_, err = tmp.Write([]byte(wantText))
+	if err != nil {
+		t.Error("Failed to write to tmp file")
+	}
+	// Go back to the beginning of the file
+	tmp.Seek(0, 0)
+
+	// Replace Stdin with the tmp file
+	oldStdin := os.Stdin
+	os.Stdin = tmp
+	defer func() {
+		os.Stdin = oldStdin
+	}()
+
+	tc := fromArgsTestCase{
+		args: []string{"-"},
+		check: func(got Exercise, gotErr error) {
+			name := "from stdin"
+			if gotErr != nil {
+				t.Fatalf("%s wanted no error, got %s\n", name, gotErr)
+			}
+			if !got.matches(want) {
+				m := fmt.Sprintf("\n%s got\n", name)
+				m += got.details()
+				m += fmt.Sprintf("\nwanted\n")
+				m += want.details()
+				t.Fatal(m)
+			}
+		},
 	}
 
 	cmd := mockCmd(tc)
 	if err := cmd.Execute(); err != nil {
-		t.Fatalf("%s: mock command failed to run: %s", tc.name, err)
+		t.Fatalf("mock command failed to run: %s", err)
+	}
+}
+
+func TestFromArgsWithNoExerciseFiles(t *testing.T) {
+	tmpExercisesDir := t.TempDir()
+	t.Setenv("SWEET_EXERCISES_DIR", tmpExercisesDir)
+
+	tc := fromArgsTestCase{
+		args: []string{},
+		check: func(got Exercise, gotErr error) {
+			name := "random exercise, but no exercise files"
+			wantErr := errors.New("no files in the exercises directory")
+			if gotErr == nil {
+				t.Fatalf("%s wanted error, got nil\n", name)
+			}
+			if gotErr.Error() != wantErr.Error() {
+				t.Fatalf("%s wanted error msg \"%s\", got \"%s\"", name, wantErr.Error(), gotErr.Error())
+			}
+		},
+	}
+
+	cmd := mockCmd(tc)
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("mock command failed to run: %s", err)
+	}
+}
+
+func TestFromArgsWithEmptyExerciseFiles(t *testing.T) {
+	tmpExercisesDir := t.TempDir()
+	t.Setenv("SWEET_EXERCISES_DIR", tmpExercisesDir)
+
+	testExercises := []Exercise{
+		{
+			name: "empty.txt",
+			text: "",
+		},
+	}
+	createExerciseFiles(t, tmpExercisesDir, testExercises)
+
+	tc := fromArgsTestCase{
+		args: []string{},
+		check: func(got Exercise, gotErr error) {
+			name := "blank exercise file"
+			wantErr := errors.New("no input text selected")
+			if gotErr == nil {
+				t.Fatalf("%s wanted error, got nil\n", name)
+			}
+			if gotErr.Error() != wantErr.Error() {
+				t.Fatalf("%s wanted error msg \"%s\", got \"%s\"", name, wantErr.Error(), gotErr.Error())
+			}
+		},
+	}
+
+	cmd := mockCmd(tc)
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("mock command failed to run: %s", err)
 	}
 }
