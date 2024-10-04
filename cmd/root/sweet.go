@@ -376,9 +376,6 @@ func fromArgs(cmd *cobra.Command, args []string) (exercise Exercise, err error) 
 
 	var file *os.File
 	defer file.Close()
-	dumb := []string{}
-	fmt.Printf("args:      %s\n", dumb)
-	fmt.Printf("len(args): %d\n", len(dumb))
 	if len(args) > 0 { // get the file from the argument
 		if args[0] == "-" {
 			file = os.Stdin

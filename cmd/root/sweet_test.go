@@ -18,10 +18,7 @@ func (got Exercise) matches(want Exercise) bool {
 func (got Exercise) matchesOneOf(wants []Exercise) bool {
 	for _, want := range wants {
 		if got.matches(want) {
-			fmt.Printf("I match!\n")
 			return true
-		} else {
-			fmt.Printf("no match\n")
 		}
 	}
 	return false
