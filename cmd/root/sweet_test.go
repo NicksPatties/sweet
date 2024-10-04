@@ -81,6 +81,25 @@ func fileToExercise(t *testing.T, fileName string) (exercise Exercise) {
 
 func TestFromArgs(t *testing.T) {
 
+	// Test environment setup
+	tmpExercisesDir := t.TempDir()
+	t.Setenv("SWEET_EXERCISES_DIR", tmpExercisesDir)
+	testExercises := []Exercise{
+		{
+			name: "test.txt",
+			text: "the test\n",
+		},
+		{
+			name: "hello.js",
+			text: "console.log('Hello!');\n",
+		},
+		{
+			name: "hello.go",
+			text: "fmt.Println(\"Hello!\")\n",
+		},
+	}
+	createExerciseFiles(t, tmpExercisesDir, testExercises)
+
 	type testCase struct {
 		name    string
 		check   func(Exercise, error)
@@ -101,36 +120,30 @@ func TestFromArgs(t *testing.T) {
 		return cmd
 	}
 
-	tmpExercisesDir := t.TempDir()
-	t.Setenv("SWEET_EXERCISES_DIR", tmpExercisesDir)
-	testExercises := []Exercise{
+	testCases := []testCase{
 		{
-			name: "tmpExercise",
-			text: "the test\n",
+			name: "random exercise, no args",
+			check: func(got Exercise, gotErr error) {
+				name := "random exercise, no args"
+				if gotErr != nil {
+					t.Fatalf("%s wanted no error, got %s\n", name, gotErr)
+				}
+				if !got.matchesOneOf(testExercises) {
+					m := fmt.Sprintf("\n%s got\n", name)
+					m += got.details()
+					m += printExerciseFiles(tmpExercisesDir)
+					t.Fatal(m)
+				}
+			},
+			wantErr: nil,
+			args:    []string{},
 		},
 	}
-	createExerciseFiles(t, tmpExercisesDir, testExercises)
 
-	tc := testCase{
-		name: "random exercise, no args",
-		check: func(got Exercise, gotErr error) {
-			name := "random exercise, no args"
-			if gotErr != nil {
-				t.Fatalf("%s wanted no error, got %s\n", name, gotErr)
-			}
-			if !got.matchesOneOf(testExercises) {
-				m := fmt.Sprintf("\n%s got\n", name)
-				m += got.details()
-				m += printExerciseFiles(tmpExercisesDir)
-				t.Fatal(m)
-			}
-		},
-		wantErr: nil,
-		args:    []string{},
-	}
-
-	cmd := mockCmd(tc)
-	if err := cmd.Execute(); err != nil {
-		t.Fatalf("%s: mock command failed to run: %s", tc.name, err)
+	for _, tc := range testCases {
+		cmd := mockCmd(tc)
+		if err := cmd.Execute(); err != nil {
+			t.Fatalf("%s: mock command failed to run: %s", tc.name, err)
+		}
 	}
 }
