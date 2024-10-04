@@ -24,6 +24,8 @@ func (got Exercise) matchesOneOf(wants []Exercise) bool {
 	return false
 }
 
+// Returns the name, text, and they're arrays of bytes.
+// Useful when priting out exercises when a test fails.
 func (ex Exercise) details() (m string) {
 	m = fmt.Sprintf("\tname %s\n", ex.name)
 	m += fmt.Sprintf("\tname bytes %v\n", []byte(ex.name))
@@ -32,6 +34,7 @@ func (ex Exercise) details() (m string) {
 	return
 }
 
+// Returs the details of each exercise in a tmp directory.
 func printExerciseFiles(dir string) (m string) {
 	entries, _ := os.ReadDir(dir)
 	var files []fs.DirEntry
@@ -77,6 +80,24 @@ func fileToExercise(t *testing.T, fileName string) (exercise Exercise) {
 	return
 }
 
+type fromArgsTestCase struct {
+	args  []string
+	check func(Exercise, error)
+}
+
+var mockCmd = func(tc fromArgsTestCase) *cobra.Command {
+	cmd := &cobra.Command{
+		Args: cobra.MaximumNArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			got, gotErr := fromArgs(cmd, args)
+			tc.check(got, gotErr)
+		},
+	}
+	setCmdFlags(cmd)
+	cmd.SetArgs(tc.args)
+	return cmd
+}
+
 func TestFromArgs(t *testing.T) {
 
 	// Test environment setup
@@ -102,25 +123,7 @@ func TestFromArgs(t *testing.T) {
 	}
 	createExerciseFiles(t, tmpExercisesDir, testExercises)
 
-	type testCase struct {
-		args  []string
-		check func(Exercise, error)
-	}
-
-	var mockCmd = func(tc testCase) *cobra.Command {
-		cmd := &cobra.Command{
-			Args: cobra.MaximumNArgs(1),
-			Run: func(cmd *cobra.Command, args []string) {
-				got, gotErr := fromArgs(cmd, args)
-				tc.check(got, gotErr)
-			},
-		}
-		setCmdFlags(cmd)
-		cmd.SetArgs(tc.args)
-		return cmd
-	}
-
-	testCases := []testCase{
+	testCases := []fromArgsTestCase{
 		{
 			args: []string{},
 			check: func(got Exercise, gotErr error) {
@@ -245,33 +248,60 @@ func TestFromArgs(t *testing.T) {
 			},
 		},
 		{
-			args: []string{},
+			args: []string{
+				"-s",
+				"1",
+				"-e",
+				"2",
+			},
 			check: func(got Exercise, gotErr error) {
-				t.Errorf("TODO: standard input")
+				wantErr := errors.New("start flag 2 cannot be greater than end flag 1")
+				name := "random exercise, start and end flag"
+				if gotErr == nil {
+					t.Fatalf("%s wanted error, got nil\n", name)
+				}
+				if gotErr.Error() != wantErr.Error() {
+					t.Fatalf("%s wanted error msg \"%s\", got \"%s\"", name, wantErr.Error(), gotErr.Error())
+				}
 			},
 		},
 		{
-			args: []string{},
+			// WARNING: This test might be flaky if the random
+			// selected exercise happens to be the go exercise.
+			args: []string{
+				"-l",
+				"go",
+			},
 			check: func(got Exercise, gotErr error) {
-				t.Errorf("TODO: random exercise, with start and end flags")
+				name := "random exercise, language selected"
+				want := testExercises[2]
+				if gotErr != nil {
+					t.Fatalf("%s wanted no error, got %s\n", name, gotErr)
+				}
+				if !got.matches(want) {
+					m := fmt.Sprintf("\n%s got\n", name)
+					m += got.details()
+					m += fmt.Sprintf("\nwanted\n")
+					m += want.details()
+					t.Fatal(m)
+				}
 			},
 		},
 		{
-			args: []string{},
-			check: func(got Exercise, gotErr error) {
-				t.Errorf("TODO: random exercise, specific language")
+			args: []string{
+				"-l",
+				"ts",
 			},
-		},
-		{
-			args: []string{},
 			check: func(got Exercise, gotErr error) {
-				t.Errorf("TODO: No files in exercise directory")
-			},
-		},
-		{
-			args: []string{},
-			check: func(got Exercise, gotErr error) {
-				t.Errorf("TODO: Empty files in exercise directory")
+				name := "random exercise, language selected, but not available"
+				wantErr := errors.New("failed to find exercise of language 'ts'.")
+				if gotErr == nil {
+					t.Fatalf("%s wanted error, got nil\n", name)
+				}
+				if gotErr.Error() != wantErr.Error() {
+					t.Fatalf("%s wanted error msg \"%s\", got \"%s\"", name, wantErr.Error(), gotErr.Error())
+				}
+
 			},
 		},
 	}
@@ -279,7 +309,94 @@ func TestFromArgs(t *testing.T) {
 	for i, tc := range testCases {
 		cmd := mockCmd(tc)
 		if err := cmd.Execute(); err != nil {
-			t.Fatalf("mock command no %d failed to run: %s", i, err)
+			t.Fatalf("mock command no. %d failed to run: %s", i, err)
 		}
 	}
 }
+
+func TestFromArgsWithStdin(t *testing.T) {
+	// Test environment setup
+	tmpExercisesDir := t.TempDir()
+	t.Setenv("SWEET_EXERCISES_DIR", tmpExercisesDir)
+
+	// Create a tmp file. This will replace os.Stdin
+	tmp, err := os.CreateTemp(".", "stdin")
+	if err != nil {
+		t.Error("Failed to create tmp file")
+	}
+	defer func() {
+		tmp.Close()
+		os.Remove(tmp.Name())
+	}()
+
+	wantText := "Hello from stdin!\n"
+	want := Exercise{
+		name: path.Join(".", tmp.Name()),
+		text: wantText,
+	}
+
+	// Write to tmp file
+	_, err = tmp.Write([]byte(wantText))
+	if err != nil {
+		t.Error("Failed to write to tmp file")
+	}
+	// Need to go back to the beginning to read Stdin
+	tmp.Seek(0, 0)
+
+	// Replace Stdin with the tmp file
+	oldStdin := os.Stdin
+	os.Stdin = tmp
+	defer func() {
+		os.Stdin = oldStdin
+	}()
+
+	tc := fromArgsTestCase{
+		args: []string{"-"},
+		check: func(got Exercise, gotErr error) {
+			name := "from stdin"
+			if gotErr != nil {
+				t.Fatalf("%s wanted no error, got %s\n", name, gotErr)
+			}
+			if !got.matches(want) {
+				m := fmt.Sprintf("\n%s got\n", name)
+				m += got.details()
+				m += fmt.Sprintf("\nwanted\n")
+				m += want.details()
+				t.Fatal(m)
+			}
+		},
+	}
+
+	cmd := mockCmd(tc)
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("mock command failed to run: %s", err)
+	}
+}
+
+// func TestFromArgsWithNoExerciseFiles(t *testing.T) {
+// 	// Test environment setup
+// 	tmpExercisesDir := t.TempDir()
+// 	t.Setenv("SWEET_EXERCISES_DIR", tmpExercisesDir)
+
+// 	tc := fromArgsTestCase{
+// 		args: []string{"-"},
+// 		check: func(got Exercise, gotErr error) {
+// 			name := ""
+// 			if gotErr != nil {
+// 				t.Fatalf("%s wanted no error, got %s\n", name, gotErr)
+// 			}
+// 			if !got.matches(want) {
+// 				m := fmt.Sprintf("\n%s got\n", name)
+// 				m += got.details()
+// 				m += fmt.Sprintf("\nwanted\n")
+// 				m += want.details()
+// 				t.Fatal(m)
+// 			}
+// 		},
+// 	}
+
+// 	cmd := mockCmd(tc)
+// 	if err := cmd.Execute(); err != nil {
+// 		t.Fatalf("mock command failed to run: %s", err)
+// 	}
+// }
