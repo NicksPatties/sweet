@@ -35,7 +35,7 @@ var Cmd = &cobra.Command{
 	},
 }
 
-func setCmdFlags(cmd *cobra.Command) {
+func setRootCmdFlags(cmd *cobra.Command) {
 	cmd.Flags().StringP("language", "l", "", "Language for the typing game")
 	cmd.Flags().UintP("start", "s", 0, "Language for the typing game")
 	cmd.Flags().UintP("end", "e", math.MaxUint, "Language for the typing game")
@@ -45,7 +45,7 @@ func init() {
 
 	// Add language flag to root command only.
 	// The flags for other commands will be defined in their respective modules.
-	setCmdFlags(Cmd)
+	setRootCmdFlags(Cmd)
 
 	Cmd.CompletionOptions.DisableDefaultCmd = true
 
@@ -422,7 +422,7 @@ func fromArgs(cmd *cobra.Command, args []string) (exercise Exercise, err error) 
 			if entry.IsDir() {
 				continue
 			}
-			// Get the extension of a filename
+			// Gets the file extension
 			ext := strings.Split(entry.Name(), ".")[1]
 			if language != "" && language != ext {
 				continue

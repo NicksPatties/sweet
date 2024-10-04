@@ -24,8 +24,8 @@ func (got Exercise) matchesOneOf(wants []Exercise) bool {
 	return false
 }
 
-// Returns the name, text, and they're arrays of bytes.
-// Useful when priting out exercises when a test fails.
+// Returns the name, text, and their arrays of bytes.
+// Useful when printing out exercises when a test fails.
 func (ex Exercise) details() (m string) {
 	m = fmt.Sprintf("\tname %s\n", ex.name)
 	m += fmt.Sprintf("\tname bytes %v\n", []byte(ex.name))
@@ -93,7 +93,7 @@ var mockCmd = func(tc fromArgsTestCase) *cobra.Command {
 			tc.check(got, gotErr)
 		},
 	}
-	setCmdFlags(cmd)
+	setRootCmdFlags(cmd)
 	cmd.SetArgs(tc.args)
 	return cmd
 }
@@ -185,7 +185,7 @@ func TestFromArgs(t *testing.T) {
 				"2",
 			},
 			check: func(got Exercise, gotErr error) {
-				name := "specific exercise, start flag"
+				name := "specific exercise, end flag"
 				want := Exercise{
 					name: testExercises[3].name,
 					text: "this file\nhas three lines\n",
@@ -273,7 +273,7 @@ func TestFromArgs(t *testing.T) {
 				"go",
 			},
 			check: func(got Exercise, gotErr error) {
-				name := "random exercise, language selected"
+				name := "random exercise, with language"
 				want := testExercises[2]
 				if gotErr != nil {
 					t.Fatalf("%s wanted no error, got %s\n", name, gotErr)
@@ -293,7 +293,7 @@ func TestFromArgs(t *testing.T) {
 				"ts",
 			},
 			check: func(got Exercise, gotErr error) {
-				name := "random exercise, language selected, but not available"
+				name := "random exercise, with language, but not available"
 				wantErr := errors.New("failed to find exercise matching language ts")
 				if gotErr == nil {
 					t.Fatalf("%s wanted error, got nil\n", name)
@@ -340,7 +340,7 @@ func TestFromArgsWithStdin(t *testing.T) {
 	if err != nil {
 		t.Error("Failed to write to tmp file")
 	}
-	// Need to go back to the beginning to read Stdin
+	// Go back to the beginning of the file
 	tmp.Seek(0, 0)
 
 	// Replace Stdin with the tmp file
