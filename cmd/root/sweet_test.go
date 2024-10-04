@@ -247,6 +247,36 @@ func TestFromArgs(t *testing.T) {
 				}
 			},
 		},
+		{
+			args: []string{},
+			check: func(got Exercise, gotErr error) {
+				t.Errorf("TODO: standard input")
+			},
+		},
+		{
+			args: []string{},
+			check: func(got Exercise, gotErr error) {
+				t.Errorf("TODO: random exercise, with start and end flags")
+			},
+		},
+		{
+			args: []string{},
+			check: func(got Exercise, gotErr error) {
+				t.Errorf("TODO: random exercise, specific language")
+			},
+		},
+		{
+			args: []string{},
+			check: func(got Exercise, gotErr error) {
+				t.Errorf("TODO: No files in exercise directory")
+			},
+		},
+		{
+			args: []string{},
+			check: func(got Exercise, gotErr error) {
+				t.Errorf("TODO: Empty files in exercise directory")
+			},
+		},
 	}
 
 	for i, tc := range testCases {
