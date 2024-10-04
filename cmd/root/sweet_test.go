@@ -373,30 +373,58 @@ func TestFromArgsWithStdin(t *testing.T) {
 	}
 }
 
-// func TestFromArgsWithNoExerciseFiles(t *testing.T) {
-// 	// Test environment setup
-// 	tmpExercisesDir := t.TempDir()
-// 	t.Setenv("SWEET_EXERCISES_DIR", tmpExercisesDir)
+func TestFromArgsWithNoExerciseFiles(t *testing.T) {
+	tmpExercisesDir := t.TempDir()
+	t.Setenv("SWEET_EXERCISES_DIR", tmpExercisesDir)
 
-// 	tc := fromArgsTestCase{
-// 		args: []string{"-"},
-// 		check: func(got Exercise, gotErr error) {
-// 			name := ""
-// 			if gotErr != nil {
-// 				t.Fatalf("%s wanted no error, got %s\n", name, gotErr)
-// 			}
-// 			if !got.matches(want) {
-// 				m := fmt.Sprintf("\n%s got\n", name)
-// 				m += got.details()
-// 				m += fmt.Sprintf("\nwanted\n")
-// 				m += want.details()
-// 				t.Fatal(m)
-// 			}
-// 		},
-// 	}
+	tc := fromArgsTestCase{
+		args: []string{},
+		check: func(got Exercise, gotErr error) {
+			name := "random exercise, but no exercise files"
+			wantErr := errors.New("no files in the exercises directory")
+			if gotErr == nil {
+				t.Fatalf("%s wanted error, got nil\n", name)
+			}
+			if gotErr.Error() != wantErr.Error() {
+				t.Fatalf("%s wanted error msg \"%s\", got \"%s\"", name, wantErr.Error(), gotErr.Error())
+			}
+		},
+	}
 
-// 	cmd := mockCmd(tc)
-// 	if err := cmd.Execute(); err != nil {
-// 		t.Fatalf("mock command failed to run: %s", err)
-// 	}
-// }
+	cmd := mockCmd(tc)
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("mock command failed to run: %s", err)
+	}
+}
+
+func TestFromArgsWithEmptyExerciseFiles(t *testing.T) {
+	tmpExercisesDir := t.TempDir()
+	t.Setenv("SWEET_EXERCISES_DIR", tmpExercisesDir)
+
+	testExercises := []Exercise{
+		{
+			name: "empty.txt",
+			text: "",
+		},
+	}
+	createExerciseFiles(t, tmpExercisesDir, testExercises)
+
+	tc := fromArgsTestCase{
+		args: []string{},
+		check: func(got Exercise, gotErr error) {
+			name := "blank exercise file"
+			wantErr := errors.New("no input text selected")
+			if gotErr == nil {
+				t.Fatalf("%s wanted error, got nil\n", name)
+			}
+			if gotErr.Error() != wantErr.Error() {
+				t.Fatalf("%s wanted error msg \"%s\", got \"%s\"", name, wantErr.Error(), gotErr.Error())
+			}
+		},
+	}
+
+	cmd := mockCmd(tc)
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("mock command failed to run: %s", err)
+	}
+}
