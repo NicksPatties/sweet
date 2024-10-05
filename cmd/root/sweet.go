@@ -15,6 +15,7 @@ import (
 	"github.com/NicksPatties/sweet/cmd/about"
 	"github.com/NicksPatties/sweet/cmd/add"
 	"github.com/NicksPatties/sweet/cmd/stats"
+	"github.com/NicksPatties/sweet/cmd/version"
 	"github.com/spf13/cobra"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -55,6 +56,7 @@ func init() {
 		about.Command,
 		stats.Command,
 		add.Command,
+		version.Command,
 	}
 
 	for _, c := range commands {
