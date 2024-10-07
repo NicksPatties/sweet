@@ -2,6 +2,7 @@ package root
 
 import (
 	"fmt"
+	"sort"
 	"time"
 )
 
@@ -66,13 +67,11 @@ func accuracy(typed string, exercise string) float32 {
 
 func numIncorrectCharacters(typed string, exercise string) (incorrect int) {
 	r := min(len(typed), len(exercise))
-
 	for i := 0; i < r; i++ {
 		if typed[i] != exercise[i] {
 			incorrect++
 		}
 	}
-
 	return
 }
 
@@ -96,10 +95,44 @@ func duration(startTime time.Time, endTime time.Time) string {
 	return s
 }
 
+func mostMissedKeys(events []event) (str string) {
+	buckets := map[string]int{}
+	for _, e := range events {
+		if e.typed != "backspace" && e.typed != e.expected {
+			buckets[e.expected]++
+		}
+	}
+
+	keys := make([]string, 0, len(buckets))
+	for key := range buckets {
+		keys = append(keys, key)
+	}
+
+	sort.SliceStable(keys, func(i int, j int) bool {
+		return buckets[keys[i]] > buckets[keys[j]]
+	})
+
+	for i, key := range keys {
+		times := buckets[key]
+		var t string
+		if times == 1 {
+			t = "time"
+		} else {
+			t = "times"
+		}
+		str += fmt.Sprintf("%s (%d %s)", key, buckets[key], t)
+		if i < len(keys)-1 {
+			str += ", "
+		}
+	}
+	return
+}
+
 func showResults(m exerciseModel) {
 	fmt.Printf("Results of %s:\n", m.exercise.name)
 	fmt.Printf("WPM: %.f\n", wpm(m.startTime, m.endTime, m.typedText, m.exercise.text, WORD_SIZE))
 	fmt.Printf("Mistakes: %d\n", numMistakes(m.events))
 	fmt.Printf("Accuracy: %.2f%%\n", accuracy(m.typedText, m.exercise.text))
 	fmt.Printf("Duration: %s\n", duration(m.startTime, m.endTime))
+	fmt.Printf("Most missed keys: %s", mostMissedKeys(m.events))
 }
