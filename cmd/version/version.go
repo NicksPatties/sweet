@@ -8,23 +8,26 @@ Usage:
 package version
 
 import (
-	"flag"
 	"fmt"
+
+	"github.com/spf13/cobra"
 )
 
-const CommandName = "version"
+// Included via a compiler flag.
+// i.e. go build -ldflags "-X github.com/NicksPatties/sweet/cmd/version.version=v0.1.0" .
+var version string
 
-func Run(args []string, executableName string, version string) int {
-	cmd := flag.NewFlagSet(CommandName, flag.ExitOnError)
+var Command = &cobra.Command{
+	Use:   "version",
+	Short: "prints the version",
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Print(getVersion(version))
+	},
+}
 
-	cmd.Parse(args)
-
-	if len(cmd.Args()) > 0 {
-		fmt.Println("Error: Too many arguments")
-		cmd.Usage()
-		return 1
+func getVersion(v string) string {
+	if v == "" {
+		return "dev"
 	}
-
-	fmt.Print(version)
-	return 0
+	return v
 }

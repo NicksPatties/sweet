@@ -13,7 +13,6 @@ import (
 
 // used to fill in the version number
 // i.e. go build -ldflags "-X github.com/NicksPatties/sweet/cmd/about.version=v0.1.0" .
-
 var version string
 
 var Command = &cobra.Command{
