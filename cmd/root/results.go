@@ -101,39 +101,39 @@ func duration(startTime time.Time, endTime time.Time) string {
 // and by the number of misses. Also, sets a limit
 // of number of keys missed to avoid overflowing the line.
 func mostMissedKeys(events []event) string {
-	buckets := map[string]int{}
+	misses := map[string]int{}
 	for _, e := range events {
 		if e.typed != "backspace" && e.typed != e.expected {
-			buckets[e.expected]++
+			misses[e.expected]++
 		}
 	}
 
-	keys := make([]string, 0, len(buckets))
-	for key := range buckets {
+	keys := []string{}
+	for key := range misses {
 		keys = append(keys, key)
 	}
 	// NOTE: Do I want to sort the keys with the same
 	// character by time?
 	sort.Strings(keys)
 	sort.SliceStable(keys, func(i int, j int) bool {
-		return buckets[keys[i]] > buckets[keys[j]]
+		return misses[keys[i]] > misses[keys[j]]
 	})
 
 	// A miss looks like this: "a (2 times)"
-	var misses []string
+	var missesStrs []string
 	limit := 3
 	for i := 0; i < len(keys) && i < limit; i++ {
 		key := keys[i]
-		times := buckets[key]
+		times := misses[key]
 		var t string
 		if times == 1 {
 			t = "time"
 		} else {
 			t = "times"
 		}
-		misses = append(misses, fmt.Sprintf("%s (%d %s)", key, buckets[key], t))
+		missesStrs = append(missesStrs, fmt.Sprintf("%s (%d %s)", key, misses[key], t))
 	}
-	return strings.Join(misses, ", ")
+	return strings.Join(missesStrs, ", ")
 }
 
 func showResults(m exerciseModel) {
