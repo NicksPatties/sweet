@@ -2,6 +2,8 @@ package root
 
 import (
 	"fmt"
+	"sort"
+	"strings"
 	"time"
 )
 
@@ -66,13 +68,11 @@ func accuracy(typed string, exercise string) float32 {
 
 func numIncorrectCharacters(typed string, exercise string) (incorrect int) {
 	r := min(len(typed), len(exercise))
-
 	for i := 0; i < r; i++ {
 		if typed[i] != exercise[i] {
 			incorrect++
 		}
 	}
-
 	return
 }
 
@@ -96,10 +96,51 @@ func duration(startTime time.Time, endTime time.Time) string {
 	return s
 }
 
+// Finds the most missed key presses when completing
+// an exercise. Missed keys are sorted alphabetically,
+// and by the number of misses. Also, sets a limit
+// of number of keys missed to avoid overflowing the line.
+func mostMissedKeys(events []event) string {
+	misses := map[string]int{}
+	for _, e := range events {
+		if e.typed != "backspace" && e.typed != e.expected {
+			misses[e.expected]++
+		}
+	}
+
+	keys := []string{}
+	for key := range misses {
+		keys = append(keys, key)
+	}
+	// NOTE: Do I want to sort the keys with the same
+	// character by time?
+	sort.Strings(keys)
+	sort.SliceStable(keys, func(i int, j int) bool {
+		return misses[keys[i]] > misses[keys[j]]
+	})
+
+	// A miss looks like this: "a (2 times)"
+	var missesStrs []string
+	limit := 3
+	for i := 0; i < len(keys) && i < limit; i++ {
+		key := keys[i]
+		times := misses[key]
+		var t string
+		if times == 1 {
+			t = "time"
+		} else {
+			t = "times"
+		}
+		missesStrs = append(missesStrs, fmt.Sprintf("%s (%d %s)", key, misses[key], t))
+	}
+	return strings.Join(missesStrs, ", ")
+}
+
 func showResults(m exerciseModel) {
 	fmt.Printf("Results of %s:\n", m.exercise.name)
 	fmt.Printf("WPM: %.f\n", wpm(m.startTime, m.endTime, m.typedText, m.exercise.text, WORD_SIZE))
 	fmt.Printf("Mistakes: %d\n", numMistakes(m.events))
 	fmt.Printf("Accuracy: %.2f%%\n", accuracy(m.typedText, m.exercise.text))
 	fmt.Printf("Duration: %s\n", duration(m.startTime, m.endTime))
+	fmt.Printf("Most missed keys: %s", mostMissedKeys(m.events))
 }
