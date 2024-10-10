@@ -366,6 +366,19 @@ func (m exerciseModel) View() (s string) {
 	return
 }
 
+// Scans a file and returns its text as a string.
+// If start or end is defined, only returns the lines between start and end.
+// If the file is empty, it returns an empty string.
+func scanFileText(file *os.File, start uint, end uint) (text string) {
+	scanner := bufio.NewScanner(file)
+	for line := uint(1); line <= end && scanner.Scan(); line++ {
+		if line >= start {
+			text += scanner.Text() + "\n"
+		}
+	}
+	return
+}
+
 // Validates and returns the exercise from command line arguments.
 // If the flags are incorrect, an error is returned.
 func fromArgs(cmd *cobra.Command, args []string) (exercise Exercise, err error) {
@@ -378,6 +391,7 @@ func fromArgs(cmd *cobra.Command, args []string) (exercise Exercise, err error) 
 	}
 
 	var file *os.File
+	var text string
 	defer file.Close()
 	if len(args) > 0 { // get the file from the argument
 		if args[0] == "-" {
@@ -388,6 +402,12 @@ func fromArgs(cmd *cobra.Command, args []string) (exercise Exercise, err error) 
 				return
 			}
 
+		}
+		text = scanFileText(file, start, end)
+		if text == "" {
+			msg := fmt.Sprintf("no text found in file %s. are you sure it's not empty?", file.Name())
+			err = errors.New(msg)
+			return
 		}
 	} else { // get a random exercise
 		if start != 0 || end != math.MaxUint {
@@ -441,20 +461,28 @@ func fromArgs(cmd *cobra.Command, args []string) (exercise Exercise, err error) 
 			}
 			return
 		}
-		randI := rand.Intn(numFiles)
-		filePath := path.Join(exercisesDir, files[randI].Name())
-		file, err = os.Open(filePath)
-		if err != nil {
-			return
-		}
-
-	}
-
-	var text string
-	scanner := bufio.NewScanner(file)
-	for line := uint(1); line <= end && scanner.Scan(); line++ {
-		if line >= start {
-			text += scanner.Text() + "\n"
+		// Attempt to find a file with text.
+		// If a file with no text is found, try again.
+		// If you reach the max number of retries, then error.
+		for text == "" {
+			randI := rand.Intn(numFiles)
+			filePath := path.Join(exercisesDir, files[randI].Name())
+			file, err = os.Open(filePath)
+			if err != nil {
+				return
+			}
+			text = scanFileText(file, start, end)
+			// if text is blank, remove the problem file
+			// from the array of possible files
+			if text == "" {
+				numFiles--
+				if numFiles == 0 {
+					msg := "all files are empty?! crazy!"
+					err = errors.New(msg)
+					return
+				}
+				files = append(files[:randI], files[randI+1:]...)
+			}
 		}
 	}
 

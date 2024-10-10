@@ -398,33 +398,89 @@ func TestFromArgsWithNoExerciseFiles(t *testing.T) {
 }
 
 func TestFromArgsWithEmptyExerciseFiles(t *testing.T) {
-	tmpExercisesDir := t.TempDir()
-	t.Setenv("SWEET_EXERCISES_DIR", tmpExercisesDir)
+	type testCase struct {
+		testExercises []Exercise
+		args          []string
+		check         func(got Exercise, gotErr error)
+	}
 
-	testExercises := []Exercise{
+	testCases := []testCase{
 		{
-			name: "empty.txt",
-			text: "",
+			testExercises: []Exercise{
+				{
+					name: "empty.txt",
+					text: "",
+				},
+				{
+					name: "not-empty.txt",
+					text: "Hello!\n",
+				},
+			},
+			args: []string{},
+			check: func(got Exercise, gotErr error) {
+				name := "blank exercise file when randomly selecting should select a non-empty exercise"
+				want := Exercise{
+					name: "not-empty.txt",
+					text: "Hello!\n",
+				}
+				if gotErr != nil {
+					t.Fatalf("%s wanted no error, got %s\n", name, gotErr)
+				}
+				if !got.matches(want) {
+					m := fmt.Sprintf("\n%s got\n", name)
+					m += got.details()
+					m += fmt.Sprintf("\nwanted\n")
+					m += want.details()
+					t.Fatal(m)
+				}
+			},
+		},
+		{
+			testExercises: []Exercise{
+				{
+					name: "empty.txt",
+					text: "",
+				},
+				{
+					name: "also-empty.txt",
+					text: "",
+				},
+			},
+			args: []string{},
+			check: func(got Exercise, gotErr error) {
+				name := "multiple blank exercise files when randomly selecting, should exit if there are no remaining files"
+				if gotErr == nil {
+					t.Fatalf("%s wanted error, got nil\n", name)
+				}
+			},
+		},
+		{
+			testExercises: []Exercise{},
+			args:          []string{},
+			check: func(got Exercise, gotErr error) {
+				name := "no exercise files, should error"
+				if gotErr == nil {
+					t.Fatalf("%s wanted error, got nil\n", name)
+				}
+			},
 		},
 	}
-	createExerciseFiles(t, tmpExercisesDir, testExercises)
 
-	tc := fromArgsTestCase{
-		args: []string{},
-		check: func(got Exercise, gotErr error) {
-			name := "blank exercise file"
-			wantErr := errors.New("no input text selected")
-			if gotErr == nil {
-				t.Fatalf("%s wanted error, got nil\n", name)
-			}
-			if gotErr.Error() != wantErr.Error() {
-				t.Fatalf("%s wanted error msg \"%s\", got \"%s\"", name, wantErr.Error(), gotErr.Error())
-			}
-		},
+	for _, tc := range testCases {
+		tmpExercisesDir := t.TempDir()
+		t.Setenv("SWEET_EXERCISES_DIR", tmpExercisesDir)
+
+		testExercises := tc.testExercises
+		createExerciseFiles(t, tmpExercisesDir, testExercises)
+
+		fromArgsTC := fromArgsTestCase{
+			args:  tc.args,
+			check: tc.check,
+		}
+		cmd := mockCmd(fromArgsTC)
+		if err := cmd.Execute(); err != nil {
+			t.Fatalf("mock command failed to run: %s", err)
+		}
 	}
 
-	cmd := mockCmd(tc)
-	if err := cmd.Execute(); err != nil {
-		t.Fatalf("mock command failed to run: %s", err)
-	}
 }
