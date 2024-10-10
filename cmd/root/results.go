@@ -2,6 +2,7 @@ package root
 
 import (
 	"fmt"
+	// g "github.com/guptarohit/asciigraph"
 	"sort"
 	"strings"
 	"time"
@@ -169,4 +170,6 @@ func showResults(m exerciseModel) {
 	fmt.Printf("Accuracy: %s%%\n", accuracy(m.events))
 	fmt.Printf("Duration: %s\n", duration(m.startTime, m.endTime))
 	fmt.Printf("Most missed keys: %s", mostMissedKeys(m.events))
+	wpmByEvents(m.events)
+
 }

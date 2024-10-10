@@ -23,6 +23,9 @@ import (
 	lg "github.com/charmbracelet/lipgloss"
 )
 
+// Used to be "2006-01-02 15:14:05.000", which produced weird output.
+const eventTsFormat = "2006-01-02 15:04:05.000"
+
 var Cmd = &cobra.Command{
 	Use:   "sweet [file|-]",
 	Short: "The Software Engineer Exercise for Typing.",
@@ -151,7 +154,6 @@ const eventTsLayout = "2006-01-02 15:04:05.000"
 // Converts an event to a string.
 func (e event) String() string {
 	time := e.ts.Format(eventTsLayout)
-
 	return fmt.Sprintf("%s\t%d\t%s\t%s", time, e.i, e.typed, e.expected)
 }
 

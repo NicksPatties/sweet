@@ -333,3 +333,18 @@ func TestMostMissedKeys(t *testing.T) {
 		}
 	}
 }
+
+// func TestWpmByEvents(t *testing.T) {
+// 	type testCase struct {
+// 		name   string
+// 		events []event
+// 		want   string
+// 	}
+
+// 	testCases := []testCase{
+// 		// {
+// 		// 	name: "default case",
+// 		// 	events: stringToEvents()
+
+// 		// },
+// 	}
