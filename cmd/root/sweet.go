@@ -37,8 +37,7 @@ var Cmd = &cobra.Command{
 }
 
 // Exercises that should be added to the
-// default exercises directory if it's not present
-// in
+// exercises directory if it's empty.
 var defaultExercises = []Exercise{
 	{
 		name: "sweet_cmd.go",
