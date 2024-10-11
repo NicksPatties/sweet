@@ -41,12 +41,48 @@ var Cmd = &cobra.Command{
 // in
 var defaultExercises = []Exercise{
 	{
-		name: "hey.go",
-		text: "fmt.Println(\"hey\")\n",
+		name: "sweet_cmd.go",
+		text: `var Cmd = &cobra.Command{
+	Use:   "sweet [file|-]",
+	Short: "The Software Engineer Exercise for Typing.",
+	Args:  cobra.MaximumNArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		ex, err := fromArgs(cmd, args)
+		if err != nil {
+			log.Fatal(err)
+		}
+		Run(ex)
+	},
+}
+`,
 	},
 	{
-		name: "hey.js",
-		text: "console.log('hey')\n",
+		name: "resume-section.html",
+		text: `<section id="themes">
+  <h1>Themes</h1>
+  <label class="has-checkbox-input">
+    <input type="radio" name="resume-theme" value="default" checked />
+    <span>Default</span>
+  </label>
+  <label class="has-checkbox-input">
+    <input type="radio" name="resume-theme" value="monospace" />
+    <span>Monospace</span>
+  </label>
+</section>
+`,
+	},
+	{
+		name: "portfolio-site-burger.css",
+		text: `.hero .burger {
+  position: absolute;
+  height: 100%;
+  top: 0;
+  right: 0;
+  opacity: 0.66;
+  z-index: -1;
+  transform: rotate(5deg);
+}
+`,
 	},
 }
 
