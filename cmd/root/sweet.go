@@ -36,6 +36,20 @@ var Cmd = &cobra.Command{
 	},
 }
 
+// Exercises that should be added to the
+// default exercises directory if it's not present
+// in
+var defaultExercises = []Exercise{
+	{
+		name: "hey.go",
+		text: "fmt.Println(\"hey\")\n",
+	},
+	{
+		name: "hey.js",
+		text: "console.log('hey')\n",
+	},
+}
+
 func setRootCmdFlags(cmd *cobra.Command) {
 	cmd.Flags().StringP("language", "l", "", "language by extension")
 	cmd.Flags().UintP("start", "s", 0, "start line")
@@ -379,6 +393,18 @@ func scanFileText(file *os.File, start uint, end uint) (text string) {
 	return
 }
 
+// Add some default exercises to the dir directory.
+// Assumes the contents of the directory are empty.
+// Returns the dirEntries of the newly added files.
+func addDefaultExercises(dir string) (files []os.DirEntry) {
+	for _, ex := range defaultExercises {
+		os.WriteFile(path.Join(dir, ex.name), []byte(ex.text), 0600)
+	}
+	files, _ = os.ReadDir(dir)
+
+	return
+}
+
 // Validates and returns the exercise from command line arguments.
 // If the flags are incorrect, an error is returned.
 func fromArgs(cmd *cobra.Command, args []string) (exercise Exercise, err error) {
@@ -449,6 +475,7 @@ func fromArgs(cmd *cobra.Command, args []string) (exercise Exercise, err error) 
 			if language != "" && language != ext {
 				continue
 			}
+
 			files = append(files, entry)
 		}
 
@@ -456,35 +483,32 @@ func fromArgs(cmd *cobra.Command, args []string) (exercise Exercise, err error) 
 		if numFiles == 0 {
 			if language != "" {
 				err = errors.New("failed to find exercise matching language " + language)
-			} else {
-				msg := fmt.Sprintf("no exercises found in the following exercise directory: %s\n", exercisesDir)
-				err = errors.New(msg)
+				return
 			}
-			return
+			fmt.Printf("adding default exercises to the %s directory...\n", exercisesDir)
+			files = addDefaultExercises(exercisesDir)
+			numFiles = len(files)
 		}
-		// Attempt to find a file with text.
-		// If a file with no text is found, try again.
-		// If you reach the max number of retries, then error.
+		// finding a valid exercise file
 		for text == "" {
-			randI := rand.Intn(numFiles)
+			randI := rand.Intn(len(files))
 			filePath := path.Join(exercisesDir, files[randI].Name())
 			file, err = os.Open(filePath)
 			if err != nil {
 				return
 			}
 			text = scanFileText(file, start, end)
-			// if text is blank, remove the problem file
-			// from the array of possible files
+			// If there's an empty file in the directory,
+			// then warn the user of that weird behavior.
 			if text == "" {
-				fmt.Printf("warn: found an empty file in the exercises directory: %s\n", filePath)
+				fmt.Printf("warn: found an empty file in the exercises directory: %s\n", exercisesDir)
 				numFiles--
 				if numFiles == 0 {
-					msg := fmt.Sprintf("no exercises found in the following exercise directory: %s\n", exercisesDir)
+					msg := fmt.Sprintf("all files found in the following exercises directory are empty: %s\n", exercisesDir)
 					err = errors.New(msg)
 					return
-				} else {
-					fmt.Println("trying another exercise file...")
 				}
+				fmt.Println("trying another exercise file...")
 				files = append(files[:randI], files[randI+1:]...)
 			}
 		}
