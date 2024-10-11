@@ -449,9 +449,15 @@ func TestFromArgsWithEmptyExerciseFiles(t *testing.T) {
 			args: []string{},
 			check: func(got Exercise, gotErr error) {
 				name := "multiple blank exercise files when randomly selecting, should exit if there are no remaining files"
+				dir := os.Getenv("SWEET_EXERCISES_DIR")
+				wantErrMsg := fmt.Sprintf("no exercises found in the following exercise directory: %s\n", dir)
 				if gotErr == nil {
 					t.Fatalf("%s wanted error, got nil\n", name)
 				}
+				if gotErr.Error() != wantErrMsg {
+					t.Fatalf("got error msg:\n\t%s\nwanted error msg\n\t%s", gotErr.Error(), wantErrMsg)
+				}
+
 			},
 		},
 		{
@@ -459,8 +465,13 @@ func TestFromArgsWithEmptyExerciseFiles(t *testing.T) {
 			args:          []string{},
 			check: func(got Exercise, gotErr error) {
 				name := "no exercise files, should error"
+				dir := os.Getenv("SWEET_EXERCISES_DIR")
+				wantErrMsg := fmt.Sprintf("no exercises found in the following exercise directory: %s\n", dir)
 				if gotErr == nil {
 					t.Fatalf("%s wanted error, got nil\n", name)
+				}
+				if gotErr.Error() != wantErrMsg {
+					t.Fatalf("got error msg:\n\t%s\nwanted error msg\n\t%s", gotErr.Error(), wantErrMsg)
 				}
 			},
 		},

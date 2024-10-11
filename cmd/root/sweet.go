@@ -457,7 +457,8 @@ func fromArgs(cmd *cobra.Command, args []string) (exercise Exercise, err error) 
 			if language != "" {
 				err = errors.New("failed to find exercise matching language " + language)
 			} else {
-				err = errors.New("no files in the exercises directory")
+				msg := fmt.Sprintf("no exercises found in the following exercise directory: %s\n", exercisesDir)
+				err = errors.New(msg)
 			}
 			return
 		}
@@ -475,11 +476,14 @@ func fromArgs(cmd *cobra.Command, args []string) (exercise Exercise, err error) 
 			// if text is blank, remove the problem file
 			// from the array of possible files
 			if text == "" {
+				fmt.Printf("warn: found an empty file in the exercises directory: %s\n", filePath)
 				numFiles--
 				if numFiles == 0 {
-					msg := "all files are empty?! crazy!"
+					msg := fmt.Sprintf("no exercises found in the following exercise directory: %s\n", exercisesDir)
 					err = errors.New(msg)
 					return
+				} else {
+					fmt.Println("trying another exercise file...")
 				}
 				files = append(files[:randI], files[randI+1:]...)
 			}
