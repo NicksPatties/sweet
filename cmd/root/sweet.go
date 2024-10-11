@@ -491,7 +491,7 @@ func fromArgs(cmd *cobra.Command, args []string) (exercise Exercise, err error) 
 		}
 		// finding a valid exercise file
 		for text == "" {
-			randI := rand.Intn(len(files))
+			randI := rand.Intn(numFiles)
 			filePath := path.Join(exercisesDir, files[randI].Name())
 			file, err = os.Open(filePath)
 			if err != nil {
