@@ -36,6 +36,55 @@ var Cmd = &cobra.Command{
 	},
 }
 
+// Exercises that should be added to the
+// exercises directory if it's empty.
+var defaultExercises = []Exercise{
+	{
+		name: "sweet_cmd.go",
+		text: `var Cmd = &cobra.Command{
+	Use:   "sweet [file|-]",
+	Short: "The Software Engineer Exercise for Typing.",
+	Args:  cobra.MaximumNArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		ex, err := fromArgs(cmd, args)
+		if err != nil {
+			log.Fatal(err)
+		}
+		Run(ex)
+	},
+}
+`,
+	},
+	{
+		name: "resume-section.html",
+		text: `<section id="themes">
+  <h1>Themes</h1>
+  <label class="has-checkbox-input">
+    <input type="radio" name="resume-theme" value="default" checked />
+    <span>Default</span>
+  </label>
+  <label class="has-checkbox-input">
+    <input type="radio" name="resume-theme" value="monospace" />
+    <span>Monospace</span>
+  </label>
+</section>
+`,
+	},
+	{
+		name: "portfolio-site-burger.css",
+		text: `.hero .burger {
+  position: absolute;
+  height: 100%;
+  top: 0;
+  right: 0;
+  opacity: 0.66;
+  z-index: -1;
+  transform: rotate(5deg);
+}
+`,
+	},
+}
+
 func setRootCmdFlags(cmd *cobra.Command) {
 	cmd.Flags().StringP("language", "l", "", "language by extension")
 	cmd.Flags().UintP("start", "s", 0, "start line")
@@ -379,6 +428,18 @@ func scanFileText(file *os.File, start uint, end uint) (text string) {
 	return
 }
 
+// Add some default exercises to the dir directory.
+// Assumes the contents of the directory are empty.
+// Returns the dirEntries of the newly added files.
+func addDefaultExercises(dir string) (files []os.DirEntry) {
+	for _, ex := range defaultExercises {
+		os.WriteFile(path.Join(dir, ex.name), []byte(ex.text), 0600)
+	}
+	files, _ = os.ReadDir(dir)
+
+	return
+}
+
 // Validates and returns the exercise from command line arguments.
 // If the flags are incorrect, an error is returned.
 func fromArgs(cmd *cobra.Command, args []string) (exercise Exercise, err error) {
@@ -449,6 +510,7 @@ func fromArgs(cmd *cobra.Command, args []string) (exercise Exercise, err error) 
 			if language != "" && language != ext {
 				continue
 			}
+
 			files = append(files, entry)
 		}
 
@@ -456,15 +518,13 @@ func fromArgs(cmd *cobra.Command, args []string) (exercise Exercise, err error) 
 		if numFiles == 0 {
 			if language != "" {
 				err = errors.New("failed to find exercise matching language " + language)
-			} else {
-				msg := fmt.Sprintf("no exercises found in the following exercise directory: %s\n", exercisesDir)
-				err = errors.New(msg)
+				return
 			}
-			return
+			fmt.Printf("adding default exercises to the %s directory...\n", exercisesDir)
+			files = addDefaultExercises(exercisesDir)
+			numFiles = len(files)
 		}
-		// Attempt to find a file with text.
-		// If a file with no text is found, try again.
-		// If you reach the max number of retries, then error.
+		// finding a valid exercise file
 		for text == "" {
 			randI := rand.Intn(numFiles)
 			filePath := path.Join(exercisesDir, files[randI].Name())
@@ -473,18 +533,17 @@ func fromArgs(cmd *cobra.Command, args []string) (exercise Exercise, err error) 
 				return
 			}
 			text = scanFileText(file, start, end)
-			// if text is blank, remove the problem file
-			// from the array of possible files
+			// If there's an empty file in the directory,
+			// then warn the user of that weird behavior.
 			if text == "" {
-				fmt.Printf("warn: found an empty file in the exercises directory: %s\n", filePath)
+				fmt.Printf("warn: found an empty file in the exercises directory: %s\n", exercisesDir)
 				numFiles--
 				if numFiles == 0 {
-					msg := fmt.Sprintf("no exercises found in the following exercise directory: %s\n", exercisesDir)
+					msg := fmt.Sprintf("all files found in the following exercises directory are empty: %s\n", exercisesDir)
 					err = errors.New(msg)
 					return
-				} else {
-					fmt.Println("trying another exercise file...")
 				}
+				fmt.Println("trying another exercise file...")
 				files = append(files[:randI], files[randI+1:]...)
 			}
 		}

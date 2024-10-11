@@ -373,30 +373,6 @@ func TestFromArgsWithStdin(t *testing.T) {
 	}
 }
 
-func TestFromArgsWithNoExerciseFiles(t *testing.T) {
-	tmpExercisesDir := t.TempDir()
-	t.Setenv("SWEET_EXERCISES_DIR", tmpExercisesDir)
-
-	tc := fromArgsTestCase{
-		args: []string{},
-		check: func(got Exercise, gotErr error) {
-			name := "random exercise, but no exercise files"
-			wantErr := errors.New("no files in the exercises directory")
-			if gotErr == nil {
-				t.Fatalf("%s wanted error, got nil\n", name)
-			}
-			if gotErr.Error() != wantErr.Error() {
-				t.Fatalf("%s wanted error msg \"%s\", got \"%s\"", name, wantErr.Error(), gotErr.Error())
-			}
-		},
-	}
-
-	cmd := mockCmd(tc)
-	if err := cmd.Execute(); err != nil {
-		t.Fatalf("mock command failed to run: %s", err)
-	}
-}
-
 func TestFromArgsWithEmptyExerciseFiles(t *testing.T) {
 	type testCase struct {
 		testExercises []Exercise
@@ -450,11 +426,12 @@ func TestFromArgsWithEmptyExerciseFiles(t *testing.T) {
 			check: func(got Exercise, gotErr error) {
 				name := "multiple blank exercise files when randomly selecting, should exit if there are no remaining files"
 				dir := os.Getenv("SWEET_EXERCISES_DIR")
-				wantErrMsg := fmt.Sprintf("no exercises found in the following exercise directory: %s\n", dir)
+				wantErrMsg := fmt.Sprintf("all files found in the following exercises directory are empty: %s\n", dir)
 				if gotErr == nil {
 					t.Fatalf("%s wanted error, got nil\n", name)
 				}
 				if gotErr.Error() != wantErrMsg {
+
 					t.Fatalf("got error msg:\n\t%s\nwanted error msg\n\t%s", gotErr.Error(), wantErrMsg)
 				}
 
@@ -464,14 +441,16 @@ func TestFromArgsWithEmptyExerciseFiles(t *testing.T) {
 			testExercises: []Exercise{},
 			args:          []string{},
 			check: func(got Exercise, gotErr error) {
-				name := "no exercise files, should error"
+				name := "no exercise files, should select a default exercise"
 				dir := os.Getenv("SWEET_EXERCISES_DIR")
-				wantErrMsg := fmt.Sprintf("no exercises found in the following exercise directory: %s\n", dir)
-				if gotErr == nil {
-					t.Fatalf("%s wanted error, got nil\n", name)
+				if gotErr != nil {
+					t.Fatalf("%s wanted no error, got %s\n", name, gotErr.Error())
 				}
-				if gotErr.Error() != wantErrMsg {
-					t.Fatalf("got error msg:\n\t%s\nwanted error msg\n\t%s", gotErr.Error(), wantErrMsg)
+				if !got.matchesOneOf(defaultExercises) {
+					m := fmt.Sprintf("\n%s got\n", name)
+					m += got.details()
+					m += printExerciseFiles(dir)
+					t.Fatal(m)
 				}
 			},
 		},
