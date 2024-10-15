@@ -146,7 +146,7 @@ type event struct {
 }
 
 func (e event) String() string {
-	time := e.ts.Format("2006-01-02 15:14:05.000")
+	time := e.ts.Format("2006-01-02 15:04:05.000")
 
 	return fmt.Sprintf("%s: %d %s %s", time, e.i, e.typed, e.expected)
 }
