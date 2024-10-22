@@ -1,12 +1,14 @@
 package root
 
 import (
-	"strconv"
-	"strings"
+	"fmt"
 	"testing"
-	"time"
 )
 
+// 7 total characters
+// 3 mistakes
+// 0 incorrect characters
+// about 5.43 wpm
 var defaultCaseEventsList string = `2024-10-07 13:46:47.679: 0 a h
 2024-10-07 13:46:48.298: 1 backspace
 2024-10-07 13:46:49.442: 0 h h
@@ -48,12 +50,12 @@ var sortedSpecialCharsEventList string = `2024-10-07 16:29:26.916: 0 c c
 2024-10-07 16:29:46.502: 13 backspace  
 2024-10-07 16:29:48.972: 12 " " 
 2024-10-07 16:29:49.427: 13 E E 
-2024-10-07 16:29:50.641: 18 y y 
-2024-10-07 16:29:55.056: 19 4 " 
-2024-10-07 16:29:55.797: 20 backspace  
-2024-10-07 16:29:56.540: 21 " " 
-2024-10-07 16:29:57.101: 22 ) ) 
-2024-10-07 16:29:58.765: 23 enter enter`
+2024-10-07 16:29:50.641: 14 y y 
+2024-10-07 16:29:55.056: 15 4 " 
+2024-10-07 16:29:55.797: 16 backspace  
+2024-10-07 16:29:56.540: 15 " " 
+2024-10-07 16:29:57.101: 16 ) ) 
+2024-10-07 16:29:58.765: 17 enter enter`
 
 var whitespaceEventsList string = `2024-10-07 16:09:16.628: 0 h h 
 2024-10-07 16:09:17.177: 1 e e 
@@ -98,25 +100,182 @@ var limitedMissesEventsList string = `2024-10-07 16:46:36.929: 0 q a
 2024-10-07 16:46:44.862: 3 f f 
 2024-10-07 16:46:46.290: 4 enter enter`
 
-func stringToEvent(line string) (e event) {
-	s := strings.Split(line, ": ")
-	e.ts, _ = time.Parse("2006-01-02 15:14:05.000", s[0])
-	s = strings.Split(s[1], " ")
-	e.i, _ = strconv.Atoi(s[0])
-	e.typed = s[1]
-	if len(s) > 2 {
-		e.expected = s[2]
-	}
-	return
-}
+func TestAccuracy(t *testing.T) {
 
-func stringToEvents(list string) (events []event) {
-	for _, line := range strings.Split(list, "\n") {
-		if line != "" {
-			events = append(events, stringToEvent(line))
+	type testCase struct {
+		name   string
+		events []event
+		want   string
+	}
+
+	testCases := []testCase{
+		{
+			name:   "default case",
+			events: parseEvents(defaultCaseEventsList),
+			want:   "57.14",
+		},
+		{
+			name:   "100 percent",
+			events: parseEvents("2024-10-07 13:46:47.679: 0 h h\n2024-10-07 13:46:56.521: 3 enter enter\n"),
+			want:   "100.00",
+		},
+		{
+			name:   "no events",
+			events: []event{},
+			want:   "0.00",
+		},
+	}
+
+	for _, tc := range testCases {
+		if got := accuracy(tc.events); got != tc.want {
+			t.Errorf("%s want %s, got %s\n", tc.name, tc.want, got)
 		}
 	}
-	return
+
+}
+
+func TestNumIncorrect(t *testing.T) {
+	type testCase struct {
+		name   string
+		events []event
+		want   int
+	}
+
+	testCases := []testCase{
+		{
+			name:   "no incorrect characters",
+			events: parseEvents(defaultCaseEventsList),
+			want:   0,
+		},
+		{
+			name: "some incorrect characters",
+			events: parseEvents(`2024-10-07 13:46:49.442: 0 h h
+2024-10-07 13:46:51.160: 1 e e
+2024-10-07 13:46:52.781: 2 i y
+2024-10-07 13:46:56.521: 3 enter enter`),
+			want: 1,
+		},
+		{
+			name: "all incorrect characters",
+			events: parseEvents(`2024-10-07 13:46:49.442: 0 o h
+2024-10-07 13:46:51.160: 1 m e
+2024-10-07 13:46:52.781: 2 g y
+2024-10-07 13:46:56.521: 3 ! enter`),
+			want: 4,
+		},
+		{
+			name:   "empty event list",
+			events: []event{},
+			want:   0,
+		},
+	}
+
+	for _, tc := range testCases {
+		got := numIncorrect(tc.events)
+
+		if got != tc.want {
+			t.Errorf("no incorrect: got %d, want %d", got, tc.want)
+		}
+
+	}
+
+}
+
+func TestWpm(t *testing.T) {
+	type testCase struct {
+		name   string
+		events []event
+		want   float64
+	}
+
+	testCases := []testCase{
+		{
+			name: "no mistakes",
+			events: parseEvents(`2024-10-07 16:29:26.916: 0 c c 
+2024-10-07 16:29:27.004: 1 o o 
+2024-10-07 16:29:27.095: 2 n n 
+2024-10-07 16:29:27.279: 3 s s 
+2024-10-07 16:29:27.416: 4 o o 
+2024-10-07 16:29:27.667: 5 l l 
+2024-10-07 16:29:27.784: 6 e e 
+2024-10-07 16:29:31.538: 7 enter enter`),
+			want: 20.77,
+		},
+		{
+			name: "with mistakes",
+			events: parseEvents(`2024-10-07 16:29:26.916: 0 c c 
+2024-10-07 16:29:27.004: 1 o o 
+2024-10-07 16:29:27.095: 2 n n 
+2024-10-07 16:29:27.279: 3 s s 
+2024-10-07 16:29:27.416: 4 o o 
+2024-10-07 16:29:27.667: 5 l l 
+2024-10-07 16:29:27.784: 6 d e 
+2024-10-07 16:29:31.538: 7 enter enter`),
+			want: 7.79,
+		},
+		{
+			name: "longer than one minute",
+			events: parseEvents(`2024-10-07 16:29:26.916: 0 c c 
+2024-10-07 16:29:27.004: 1 o o 
+2024-10-07 16:29:27.095: 2 n n 
+2024-10-07 16:29:27.279: 3 s s 
+2024-10-07 16:29:27.416: 4 o o 
+2024-10-07 16:29:27.667: 5 l l 
+2024-10-07 16:29:27.784: 6 e e 
+2024-10-07 16:31:26.916: 7 enter enter`),
+			want: 0.8,
+		},
+	}
+
+	aboutTheSame := func(a float64, b float64) bool {
+		af := fmt.Sprintf("%.2f", a)
+		bf := fmt.Sprintf("%.2f", b)
+		return af == bf
+	}
+
+	for _, tc := range testCases {
+		got := wpm(tc.events)
+		if !aboutTheSame(got, tc.want) {
+			t.Errorf("%s: got %f, wanted %f\n", tc.name, got, tc.want)
+		}
+	}
+}
+
+func TestWpmRaw(t *testing.T) {
+
+	type testCase struct {
+		name   string
+		events []event
+		want   float64
+	}
+
+	testCases := []testCase{
+		{
+			name: "with mistakes",
+			events: parseEvents(`2024-10-07 16:29:26.916: 0 c c 
+2024-10-07 16:29:27.004: 1 o o 
+2024-10-07 16:29:27.095: 2 n n 
+2024-10-07 16:29:27.279: 3 s s 
+2024-10-07 16:29:27.416: 4 o o 
+2024-10-07 16:29:27.667: 5 l l 
+2024-10-07 16:29:27.784: 6 d e 
+2024-10-07 16:29:31.538: 7 enter enter`),
+			want: 20.77,
+		},
+	}
+
+	aboutTheSame := func(a float64, b float64) bool {
+		af := fmt.Sprintf("%.2f", a)
+		bf := fmt.Sprintf("%.2f", b)
+		return af == bf
+	}
+
+	for _, tc := range testCases {
+		got := wpmRaw(tc.events)
+		if !aboutTheSame(got, tc.want) {
+			t.Errorf("%s: got %f, wanted %f\n", tc.name, got, tc.want)
+		}
+	}
 }
 
 func TestMostMissedKeys(t *testing.T) {
@@ -130,24 +289,29 @@ func TestMostMissedKeys(t *testing.T) {
 	testCases := []testCase{
 		{
 			name:   "default case",
-			events: stringToEvents(defaultCaseEventsList),
+			events: parseEvents(defaultCaseEventsList),
 			want:   "y (2 times), h (1 time)",
 		},
 		{
 			// " = 32, ( = 40, . = 46
 			name:   "sorted special characters",
-			events: stringToEvents(sortedSpecialCharsEventList),
+			events: parseEvents(sortedSpecialCharsEventList),
 			want:   "\" (3 times), ( (3 times), . (3 times)",
 		},
 		{
 			name:   "whitespace mistakes",
-			events: stringToEvents(whitespaceEventsList),
+			events: parseEvents(whitespaceEventsList),
 			want:   "enter (2 times), space (2 times)",
 		},
 		{
 			name:   "only show limited number of misses",
-			events: stringToEvents(limitedMissesEventsList),
+			events: parseEvents(limitedMissesEventsList),
 			want:   "a (1 time), d (1 time), f (1 time)",
+		},
+		{
+			name:   "no events",
+			events: []event{},
+			want:   "",
 		},
 	}
 

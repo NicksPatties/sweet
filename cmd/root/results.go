@@ -27,55 +27,81 @@ func requiredRunes(s string) []rune {
 	return arr
 }
 
-// Calculates the words per minute based on the calculations in this link:
-// https://www.speedtypingonline.com/typing-equations
-func wpm(start time.Time, end time.Time, typed string, exercise string, wordSize int) float64 {
-	if start.After(end) {
-		end = time.Now()
-	}
-	minLengthString := exercise
-	if len(typed) < len(exercise) {
-		minLengthString = typed
-	}
-	mins := end.Sub(start).Minutes()
-	incorrect := float64(numIncorrectCharacters(typed, exercise))
-	typedEntries := len(requiredRunes(minLengthString))
-	words := float64(typedEntries / wordSize)
+func wpm(events []event) float64 {
+	start := events[0].ts
+	end := events[len(events)-1].ts
+	duration := end.Sub(start)
+	mins := float64(duration) / float64(time.Minute)
+	wordSize := 5.0
+	chars := events[len(events)-1].i + 1
+	words := float64(chars) / wordSize
+	incorrect := float64(numIncorrect(events))
 	return (words - incorrect) / mins
 }
 
-func cpm(start time.Time, end time.Time, typed string, exercise string) float64 {
-	return wpm(start, end, typed, exercise, 1)
+// Same as wpm, but doesn't subtract incorrect chars.
+func wpmRaw(events []event) float64 {
+	start := events[0].ts
+	end := events[len(events)-1].ts
+	duration := end.Sub(start)
+	mins := float64(duration) / float64(time.Minute)
+	wordSize := 5.0
+	chars := events[len(events)-1].i + 1
+	words := float64(chars) / wordSize
+	return words / mins
 }
 
-// Gives a percentage accuracy of the typed exercise
-func accuracy(typed string, exercise string) float32 {
-	if len(typed) == 0 || len(exercise) == 0 {
-		return float32(0)
+// Gives a percentage accuracy of the typed exercise.
+// Accuracy is the percentage of mistakes over the number
+// of the total typed characters, excluding backspaces.
+//
+// Note, even if all characters at the end of an exercise
+// are correct, you can have an accuracy of less than 100%
+// if you made any mistakes.
+func accuracy(events []event) string {
+	if len(events) == 0 {
+		return "0.00"
 	}
-	var accuracy float32
-	minLengthString := exercise
-	if len(typed) < len(exercise) {
-		minLengthString = typed
+	mistakes := float64(0)
+	total := float64(0)
+	for _, e := range events {
+		if e.typed == "backspace" {
+			continue
+		}
+		if e.typed != e.expected {
+			mistakes++
+		}
+		total++
 	}
 
-	m := float32(numIncorrectCharacters(typed, exercise))
-	l := float32(len(requiredRunes(minLengthString)))
-	accuracy = (l - m) / l
-
-	return accuracy * 100
+	acc := (total - mistakes) / total * 100.0
+	return fmt.Sprintf("%.2f", acc)
 }
 
-func numIncorrectCharacters(typed string, exercise string) (incorrect int) {
-	r := min(len(typed), len(exercise))
-	for i := 0; i < r; i++ {
-		if typed[i] != exercise[i] {
-			incorrect++
+func numIncorrect(events []event) int {
+	if len(events) == 0 {
+		return 0
+	}
+	size := events[len(events)-1].i + 1
+	correct := make([]bool, size)
+	for _, e := range events {
+		if e.typed == "backspace" {
+			continue
+		}
+		correct[e.i] = e.typed == e.expected
+	}
+
+	count := 0
+	for _, c := range correct {
+		if !c {
+			count++
 		}
 	}
-	return
+	return count
 }
 
+// Returns the number of mistakes made during
+// an exercise.
 func numMistakes(events []event) (mistakes int) {
 	for _, e := range events {
 		if e.typed == "backspace" {
@@ -138,9 +164,9 @@ func mostMissedKeys(events []event) string {
 
 func showResults(m exerciseModel) {
 	fmt.Printf("Results of %s:\n", m.exercise.name)
-	fmt.Printf("WPM: %.f\n", wpm(m.startTime, m.endTime, m.typedText, m.exercise.text, WORD_SIZE))
+	fmt.Printf("WPM: %.f\n", wpm(m.events))
 	fmt.Printf("Mistakes: %d\n", numMistakes(m.events))
-	fmt.Printf("Accuracy: %.2f%%\n", accuracy(m.typedText, m.exercise.text))
+	fmt.Printf("Accuracy: %s%%\n", accuracy(m.events))
 	fmt.Printf("Duration: %s\n", duration(m.startTime, m.endTime))
 	fmt.Printf("Most missed keys: %s", mostMissedKeys(m.events))
 }
