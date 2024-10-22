@@ -27,9 +27,6 @@ func requiredRunes(s string) []rune {
 	return arr
 }
 
-// Returns both words per minute and raw words per minute.
-// Raw words per minute is the same as words per minute,
-// but without the penalty for incorrect characters.
 func wpm(events []event) float64 {
 	start := events[0].ts
 	end := events[len(events)-1].ts
@@ -42,25 +39,16 @@ func wpm(events []event) float64 {
 	return (words - incorrect) / mins
 }
 
-// Calculates the words per minute based on the calculations in this link:
-// https://www.speedtypingonline.com/typing-equations
-func wpmOld(start time.Time, end time.Time, typed string, exercise string, wordSize int) float64 {
-	if start.After(end) {
-		end = time.Now()
-	}
-	minLengthString := exercise
-	if len(typed) < len(exercise) {
-		minLengthString = typed
-	}
-	mins := end.Sub(start).Minutes()
-	incorrect := float64(numIncorrectOld(typed, exercise))
-	typedEntries := len(requiredRunes(minLengthString))
-	words := float64(typedEntries / wordSize)
-	return (words - incorrect) / mins
-}
-
-func cpm(start time.Time, end time.Time, typed string, exercise string) float64 {
-	return wpmOld(start, end, typed, exercise, 1)
+// Same as wpm, but doesn't subtract incorrect chars.
+func wpmRaw(events []event) float64 {
+	start := events[0].ts
+	end := events[len(events)-1].ts
+	duration := end.Sub(start)
+	mins := float64(duration) / float64(time.Minute)
+	wordSize := 5.0
+	chars := events[len(events)-1].i + 1
+	words := float64(chars) / wordSize
+	return words / mins
 }
 
 // Gives a percentage accuracy of the typed exercise.
@@ -110,18 +98,6 @@ func numIncorrect(events []event) int {
 		}
 	}
 	return count
-}
-
-// Returns the number of incorrect characters after
-// an exercise is completed.
-func numIncorrectOld(typed string, exercise string) (incorrect int) {
-	r := min(len(typed), len(exercise))
-	for i := 0; i < r; i++ {
-		if typed[i] != exercise[i] {
-			incorrect++
-		}
-	}
-	return
 }
 
 // Returns the number of mistakes made during

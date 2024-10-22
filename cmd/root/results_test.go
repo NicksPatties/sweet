@@ -213,6 +213,18 @@ func TestWpm(t *testing.T) {
 2024-10-07 16:29:31.538: 7 enter enter`),
 			want: 7.79,
 		},
+		{
+			name: "longer than one minute",
+			events: parseEvents(`2024-10-07 16:29:26.916: 0 c c 
+2024-10-07 16:29:27.004: 1 o o 
+2024-10-07 16:29:27.095: 2 n n 
+2024-10-07 16:29:27.279: 3 s s 
+2024-10-07 16:29:27.416: 4 o o 
+2024-10-07 16:29:27.667: 5 l l 
+2024-10-07 16:29:27.784: 6 e e 
+2024-10-07 16:31:26.916: 7 enter enter`),
+			want: 0.8,
+		},
 	}
 
 	aboutTheSame := func(a float64, b float64) bool {
@@ -223,6 +235,43 @@ func TestWpm(t *testing.T) {
 
 	for _, tc := range testCases {
 		got := wpm(tc.events)
+		if !aboutTheSame(got, tc.want) {
+			t.Errorf("%s: got %f, wanted %f\n", tc.name, got, tc.want)
+		}
+	}
+}
+
+func TestWpmRaw(t *testing.T) {
+
+	type testCase struct {
+		name   string
+		events []event
+		want   float64
+	}
+
+	testCases := []testCase{
+		{
+			name: "with mistakes",
+			events: parseEvents(`2024-10-07 16:29:26.916: 0 c c 
+2024-10-07 16:29:27.004: 1 o o 
+2024-10-07 16:29:27.095: 2 n n 
+2024-10-07 16:29:27.279: 3 s s 
+2024-10-07 16:29:27.416: 4 o o 
+2024-10-07 16:29:27.667: 5 l l 
+2024-10-07 16:29:27.784: 6 d e 
+2024-10-07 16:29:31.538: 7 enter enter`),
+			want: 20.77,
+		},
+	}
+
+	aboutTheSame := func(a float64, b float64) bool {
+		af := fmt.Sprintf("%.2f", a)
+		bf := fmt.Sprintf("%.2f", b)
+		return af == bf
+	}
+
+	for _, tc := range testCases {
+		got := wpmRaw(tc.events)
 		if !aboutTheSame(got, tc.want) {
 			t.Errorf("%s: got %f, wanted %f\n", tc.name, got, tc.want)
 		}
