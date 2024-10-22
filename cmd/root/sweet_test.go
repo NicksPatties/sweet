@@ -479,29 +479,35 @@ func TestFromArgsWithEmptyExerciseFiles(t *testing.T) {
 func TestParseEvent(t *testing.T) {
 
 	type testCase struct {
-		name  string
-		input string
-		want  event
+		name         string
+		input        string
+		wantTs       string
+		wantI        int
+		wantTyped    string
+		wantExpected string
 	}
 
-	ts, _ := time.Parse("2006-01-02 15:04:05.000", "2024-10-07 13:46:47.679")
 	testCases := []testCase{
 		{
-			name:  "Easy case",
-			input: "2024-10-07 13:46:47.679: 0 a h",
-			want: event{
-				typed:    "a",
-				ts:       ts,
-				expected: "h",
-				i:        0,
-			},
+			name:         "Easy case",
+			input:        "2024-10-07 13:46:47.679: 0 a h",
+			wantTs:       "2024-10-07 13:46:47.679",
+			wantI:        0,
+			wantTyped:    "a",
+			wantExpected: "h",
 		},
 	}
 
 	for _, tc := range testCases {
 		got := parseEvent(tc.input)
-		if got.typed != tc.want.typed || got.expected != tc.want.expected || got.ts != tc.want.ts || got.i != tc.want.i {
-			t.Errorf("%s: got\n%s\n\nwant:\n%s", tc.name, got, tc.want)
+		ts, _ := time.Parse("2006-01-02 15:04:05.000", tc.wantTs)
+		if got.typed != tc.wantTyped || got.expected != tc.wantExpected || got.ts != ts || got.i != tc.wantI {
+			t.Errorf("%s: got\n%s\n\nwant:\n%s", tc.name, got, event{
+				ts:       ts,
+				expected: tc.wantExpected,
+				typed:    tc.wantTyped,
+				i:        tc.wantI,
+			})
 		}
 	}
 }
