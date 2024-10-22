@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"testing"
+	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -473,4 +474,34 @@ func TestFromArgsWithEmptyExerciseFiles(t *testing.T) {
 		}
 	}
 
+}
+
+func TestParseEvent(t *testing.T) {
+
+	type testCase struct {
+		name  string
+		input string
+		want  event
+	}
+
+	ts, _ := time.Parse("2006-01-02 15:04:05.000", "2024-10-07 13:46:47.679")
+	testCases := []testCase{
+		{
+			name:  "Easy case",
+			input: "2024-10-07 13:46:47.679: 0 a h",
+			want: event{
+				typed:    "a",
+				ts:       ts,
+				expected: "h",
+				i:        0,
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		got := parseEvent(tc.input)
+		if got.typed != tc.want.typed || got.expected != tc.want.expected || got.ts != tc.want.ts || got.i != tc.want.i {
+			t.Errorf("%s: got\n%s\n\nwant:\n%s", tc.name, got, tc.want)
+		}
+	}
 }

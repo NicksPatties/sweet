@@ -9,6 +9,7 @@ import (
 	"math/rand"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 	"time"
 
@@ -145,10 +146,34 @@ type event struct {
 	i int
 }
 
+// Converts an event to a string.
 func (e event) String() string {
 	time := e.ts.Format("2006-01-02 15:04:05.000")
 
 	return fmt.Sprintf("%s: %d %s %s", time, e.i, e.typed, e.expected)
+}
+
+// Converts an event string to an event struct.
+func parseEvent(line string) (e event) {
+	s := strings.Split(line, ": ")
+	e.ts, _ = time.Parse("2006-01-02 15:04:05.000", s[0])
+	s = strings.Split(s[1], " ")
+	e.i, _ = strconv.Atoi(s[0])
+	e.typed = s[1]
+	if len(s) > 2 {
+		e.expected = s[2]
+	}
+	return
+}
+
+// Same as above, but for a multi-line list of events.
+func parseEvents(list string) (events []event) {
+	for _, line := range strings.Split(list, "\n") {
+		if line != "" {
+			events = append(events, parseEvent(line))
+		}
+	}
+	return
 }
 
 // Converts a bubbletea key message to a string.
