@@ -476,8 +476,45 @@ func TestFromArgsWithEmptyExerciseFiles(t *testing.T) {
 
 }
 
-func TestParseEvent(t *testing.T) {
+func TestEventString(t *testing.T) {
+	type testCase struct {
+		name       string
+		inTs       string // will be converted to time.Time
+		inI        int
+		inTyped    string
+		inExpected string
+		want       string
+	}
 
+	testCases := []testCase{
+		{
+			name:       "all fields",
+			inTs:       "2024-10-07 13:46:47.679",
+			inI:        0,
+			inTyped:    "a",
+			inExpected: "b",
+			want:       "2024-10-07 13:46:47.679\t0\ta\tb",
+		},
+	}
+
+	for _, tc := range testCases {
+		ts, _ := time.Parse(eventTsLayout, tc.inTs)
+		inEvent := event{
+			ts:       ts,
+			i:        tc.inI,
+			typed:    tc.inTyped,
+			expected: tc.inExpected,
+		}
+		got := fmt.Sprint(inEvent)
+		if got != tc.want {
+			t.Errorf("%s: got\n\t%s\nwant\n\t%s", tc.name, got, tc.want)
+		}
+
+	}
+
+}
+
+func TestParseEvent(t *testing.T) {
 	type testCase struct {
 		name         string
 		input        string
@@ -508,7 +545,7 @@ func TestParseEvent(t *testing.T) {
 
 	for _, tc := range testCases {
 		got := parseEvent(tc.input)
-		ts, _ := time.Parse("2006-01-02 15:04:05.000", tc.wantTs)
+		ts, _ := time.Parse(eventTsLayout, tc.wantTs)
 		if got.typed != tc.wantTyped || got.expected != tc.wantExpected || got.ts != ts || got.i != tc.wantI {
 			t.Errorf("%s: got\n%s\n\nwant:\n%s", tc.name, got, event{
 				ts:       ts,
@@ -516,6 +553,62 @@ func TestParseEvent(t *testing.T) {
 				typed:    tc.wantTyped,
 				i:        tc.wantI,
 			})
+		}
+	}
+}
+
+func getEventTs(s string) (t time.Time) {
+	t, _ = time.Parse(eventTsLayout, s)
+	return
+}
+
+func (a event) matches(b event) bool {
+	return a.ts.Equal(b.ts) &&
+		a.i == b.i &&
+		a.typed == b.typed &&
+		a.expected == b.expected
+}
+
+func TestParseEvents(t *testing.T) {
+
+	testCases := []struct {
+		name string
+		in   string
+		want []event
+	}{
+		{
+			name: "two events",
+			in: "2024-10-07 13:46:47.679\t0\ta\th\n" +
+				"2024-10-07 13:46:48.298\t1\tbackspace",
+			want: []event{
+				{
+					ts:       getEventTs("2024-10-07 13:46:47.679"),
+					i:        0,
+					typed:    "a",
+					expected: "h",
+				},
+				{
+					ts:       getEventTs("2024-10-07 13:46:48.298"),
+					i:        1,
+					typed:    "backspace",
+					expected: "",
+				},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		gotEvents := parseEvents(tc.in)
+		for i, got := range gotEvents {
+			if !got.matches(tc.want[i]) {
+				t.Errorf(
+					"%s [%d]:\ngot\n  %s\nwant\n  %s",
+					tc.name,
+					i,
+					got,
+					tc.want[i],
+				)
+			}
 		}
 	}
 }
