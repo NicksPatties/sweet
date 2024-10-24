@@ -489,12 +489,20 @@ func TestParseEvent(t *testing.T) {
 
 	testCases := []testCase{
 		{
-			name:         "Easy case",
-			input:        "2024-10-07 13:46:47.679: 0 a h",
+			name:         "all fields",
+			input:        "2024-10-07 13:46:47.679\t0\ta\th",
 			wantTs:       "2024-10-07 13:46:47.679",
 			wantI:        0,
 			wantTyped:    "a",
 			wantExpected: "h",
+		},
+		{
+			name:         "backspace",
+			input:        "2024-10-07 13:46:47.679\t0\tbackspace",
+			wantTs:       "2024-10-07 13:46:47.679",
+			wantI:        0,
+			wantTyped:    "backspace",
+			wantExpected: "",
 		},
 	}
 

@@ -155,13 +155,12 @@ func (e event) String() string {
 
 // Converts an event string to an event struct.
 func parseEvent(line string) (e event) {
-	s := strings.Split(line, ": ")
+	s := strings.Split(line, "\t")
 	e.ts, _ = time.Parse("2006-01-02 15:04:05.000", s[0])
-	s = strings.Split(s[1], " ")
-	e.i, _ = strconv.Atoi(s[0])
-	e.typed = s[1]
-	if len(s) > 2 {
-		e.expected = s[2]
+	e.i, _ = strconv.Atoi(s[1])
+	e.typed = s[2]
+	if len(s) > 3 {
+		e.expected = s[3]
 	}
 	return
 }
