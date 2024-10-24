@@ -2,7 +2,7 @@ package root
 
 import (
 	"fmt"
-	// g "github.com/guptarohit/asciigraph"
+	g "github.com/guptarohit/asciigraph"
 	"sort"
 	"strings"
 	"time"
@@ -29,12 +29,16 @@ func requiredRunes(s string) []rune {
 }
 
 func wpm(events []event) float64 {
+	if len(events) <= 1 {
+		return 0.0
+	}
 	start := events[0].ts
+	iOffset := events[0].i
 	end := events[len(events)-1].ts
 	duration := end.Sub(start)
 	mins := float64(duration) / float64(time.Minute)
 	wordSize := 5.0
-	chars := events[len(events)-1].i + 1
+	chars := events[len(events)-1].i - iOffset + 1
 	words := float64(chars) / wordSize
 	incorrect := float64(numIncorrect(events))
 	return (words - incorrect) / mins
@@ -50,6 +54,48 @@ func wpmRaw(events []event) float64 {
 	chars := events[len(events)-1].i + 1
 	words := float64(chars) / wordSize
 	return words / mins
+}
+
+func wpmGraph() string {
+	events := parseEvents(`2024-10-07 13:46:47.679: 0 a h
+2024-10-07 13:46:48.298: 1 backspace
+2024-10-07 13:46:49.442: 0 h h
+2024-10-07 13:46:51.160: 1 e e
+2024-10-07 13:46:52.781: 2 i y
+2024-10-07 13:46:53.316: 3 backspace
+2024-10-07 13:46:54.688: 2 k y
+2024-10-07 13:46:55.262: 3 backspace
+2024-10-07 13:46:55.997: 2 y y
+2024-10-07 13:46:56.521: 3 enter enter`)
+	d := events[len(events)-1].ts.Sub(events[0].ts)
+	seconds := int(d.Seconds()) + 1
+	wpmData := make([]float64, seconds)
+	currSecond := 0
+	cutoff := events[0].ts.Add(time.Second)
+
+	// Starting event index for the current second.
+	si := 0
+	for i, event := range events {
+		if event.ts.Before(cutoff) {
+			eventsInCurrSecond := events[si : i-1]
+			si = i
+			wpmData[currSecond] = wpm(eventsInCurrSecond)
+			currSecond += 1
+			cutoff = cutoff.Add(time.Second)
+		}
+	}
+
+	// get plot data for events
+	// create an array of floats of size of seconds length
+	// for each second
+	//   get the events that are within this second
+	//   calculate the wpm and wpmRaw for those events
+	//   add the wpm and wpmRaw for that second into the plot data
+	// create the plot and end the data
+
+	fmt.Printf("wpmData: %v\n", wpmData)
+
+	return g.Plot(wpmData)
 }
 
 // Gives a percentage accuracy of the typed exercise.
@@ -83,15 +129,24 @@ func numIncorrect(events []event) int {
 	if len(events) == 0 {
 		return 0
 	}
-	size := events[len(events)-1].i + 1
+	maxI, minI := events[0].i, events[0].i
+	for _, e := range events {
+		if e.i > maxI {
+			maxI = e.i
+		}
+		if e.i < minI {
+			minI = e.i
+		}
+	}
+	size := maxI - minI + 1
 	correct := make([]bool, size)
 	for _, e := range events {
 		if e.typed == "backspace" {
-			continue
+			correct[e.i-minI] = true
+		} else {
+			correct[e.i-minI] = e.typed == e.expected
 		}
-		correct[e.i] = e.typed == e.expected
 	}
-
 	count := 0
 	for _, c := range correct {
 		if !c {
@@ -169,7 +224,6 @@ func showResults(m exerciseModel) {
 	fmt.Printf("Mistakes: %d\n", numMistakes(m.events))
 	fmt.Printf("Accuracy: %s%%\n", accuracy(m.events))
 	fmt.Printf("Duration: %s\n", duration(m.startTime, m.endTime))
-	fmt.Printf("Most missed keys: %s", mostMissedKeys(m.events))
-	wpmByEvents(m.events)
-
+	fmt.Printf("Most missed keys: %s\n", mostMissedKeys(m.events))
+	fmt.Printf("Graph:\n%s", wpmGraph())
 }

@@ -147,6 +147,26 @@ func TestNumIncorrect(t *testing.T) {
 			want:   0,
 		},
 		{
+			name: "no incorrect characters, i offset",
+			events: parseEvents(`2024-10-07 16:29:26.916: 10 c c 
+2024-10-07 16:29:27.004: 11 o o 
+2024-10-07 16:29:27.095: 12 n n 
+2024-10-07 16:29:27.279: 13 s s 
+2024-10-07 16:29:27.416: 14 o o 
+2024-10-07 16:29:27.667: 15 l l 
+2024-10-07 16:29:27.784: 16 e e 
+2024-10-07 16:29:31.538: 17 enter enter`),
+			want: 0,
+		},
+		{
+			name: "all backspaces",
+			events: parseEvents(`2024-10-07 13:46:47.679: 4 backspace
+2024-10-07 13:46:48.298: 3 backspace
+2024-10-07 13:46:49.442: 2 backspace
+2024-10-07 13:46:51.160: 1 backspace`),
+			want: 0,
+		},
+		{
 			name: "some incorrect characters",
 			events: parseEvents(
 				"2024-10-07 13:46:49.442\t0\th\th\n" +
@@ -175,23 +195,18 @@ func TestNumIncorrect(t *testing.T) {
 
 	for _, tc := range testCases {
 		got := numIncorrect(tc.events)
-
 		if got != tc.want {
-			t.Errorf("no incorrect: got %d, want %d", got, tc.want)
+			t.Errorf("%s: got %d, want %d", tc.name, got, tc.want)
 		}
-
 	}
-
 }
 
 func TestWpm(t *testing.T) {
-	type testCase struct {
+	testCases := []struct {
 		name   string
 		events []event
 		want   float64
-	}
-
-	testCases := []testCase{
+	}{
 		{
 			name: "no mistakes",
 			events: parseEvents(
@@ -204,6 +219,18 @@ func TestWpm(t *testing.T) {
 					"2024-10-07 16:29:27.784\t6\te\te\n" +
 					"2024-10-07 16:29:31.538\t7\tenter\tenter",
 			),
+			want: 20.77,
+		},
+		{
+			name: "no mistakes, but i is offset",
+			events: parseEvents(`2024-10-07 16:29:26.916: 10 c c 
+2024-10-07 16:29:27.004: 11 o o 
+2024-10-07 16:29:27.095: 12 n n 
+2024-10-07 16:29:27.279: 13 s s 
+2024-10-07 16:29:27.416: 14 o o 
+2024-10-07 16:29:27.667: 15 l l 
+2024-10-07 16:29:27.784: 16 e e 
+2024-10-07 16:29:31.538: 17 enter enter`),
 			want: 20.77,
 		},
 		{
@@ -233,6 +260,16 @@ func TestWpm(t *testing.T) {
 					"2024-10-07 16:31:26.916\t7\tenter\tenter",
 			),
 			want: 0.8,
+		},
+		{
+			name:   "no events",
+			events: []event{},
+			want:   0.0,
+		},
+		{
+			name:   "one event",
+			events: parseEvents(`2024-10-07 16:29:26.916: 0 c c`),
+			want:   0.0,
 		},
 	}
 
