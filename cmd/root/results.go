@@ -70,19 +70,16 @@ func wpmGraph() string {
 	d := events[len(events)-1].ts.Sub(events[0].ts)
 	seconds := int(d.Seconds()) + 1
 	wpmData := make([]float64, seconds)
-	currSecond := 0
-	cutoff := events[0].ts.Add(time.Second)
+	eventBuckets := make([][]event, seconds)
 
-	// Starting event index for the current second.
-	si := 0
-	for i, event := range events {
-		if event.ts.Before(cutoff) {
-			eventsInCurrSecond := events[si : i-1]
-			si = i
-			wpmData[currSecond] = wpm(eventsInCurrSecond)
-			currSecond += 1
-			cutoff = cutoff.Add(time.Second)
-		}
+	for _, event := range events {
+		tsDiff := event.ts.Sub(events[0].ts)
+		bucketId := int(tsDiff.Seconds())
+		eventBuckets[bucketId] = append(eventBuckets[bucketId], event)
+	}
+
+	for i, eventBucket := range eventBuckets {
+		wpmData[i] = wpm(eventBucket)
 	}
 
 	// get plot data for events
