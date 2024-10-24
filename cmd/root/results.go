@@ -28,59 +28,68 @@ func requiredRunes(s string) []rune {
 	return arr
 }
 
-func wpm(events []event) float64 {
-	fmt.Println("wpm")
-	// TODO: calculate the length of events that does not have backspaces
-	lenTypedEvents := 0
+// Calculates the words per minute (wpm) using the events in the list.
+// Also allows the duration to be overridden, which is useful
+// for calculating wpm per second, which is used in the `wpmGraph` function.
+func wpmBase(events []event, raw bool, d time.Duration) float64 {
+	lenEventsNoBkspc := 0
 	for _, e := range events {
 		if e.typed != "backspace" {
-			lenTypedEvents++
+			lenEventsNoBkspc++
 		}
 	}
-	fmt.Printf("events: %v\n", events)
-	fmt.Printf("lenTypedEvents: %v\n", lenTypedEvents)
-	if lenTypedEvents <= 1 {
+	if lenEventsNoBkspc <= 1 {
 		return 0.0
 	}
 	start := events[0].ts
 	iOffset := events[0].i
 	end := events[len(events)-1].ts
-	duration := end.Sub(start)
-	mins := float64(duration) / float64(time.Minute)
+	if d == 0 {
+		d = end.Sub(start)
+	}
+	mins := float64(d) / float64(time.Minute)
 	wordSize := 5.0
 	chars := events[len(events)-1].i - iOffset + 1
 	words := float64(chars) / wordSize
-	incorrect := float64(numIncorrect(events))
-	return (words - incorrect) / mins
+	var result float64
+	if raw {
+		result = (words) / mins
+	} else {
+		incorrect := float64(numIncorrect(events))
+		if words-incorrect < 0 {
+			return 0.0
+		}
+		result = (words - incorrect) / mins
+	}
+	return result
+}
+
+// Calculates the words per minute (wpm) based on the
+// events that are passed into the
+func wpm(events []event) float64 {
+	return wpmBase(events, false, 0)
+}
+
+// Words per minute per second. Used to calculate the wpm of an
+// array of events that occur within the same second of each other.
+func wpmPs(events []event) float64 {
+	return wpmBase(events, false, time.Second)
 }
 
 // Same as wpm, but doesn't subtract incorrect chars.
 func wpmRaw(events []event) float64 {
-	start := events[0].ts
-	iOffset := events[0].i
-	end := events[len(events)-1].ts
-	duration := end.Sub(start)
-	mins := float64(duration) / float64(time.Minute)
-	wordSize := 5.0
-	chars := events[len(events)-1].i - iOffset + 1
-	words := float64(chars) / wordSize
-	return words / mins
+	return wpmBase(events, true, 0)
 }
 
-func wpmGraph() string {
-	events := parseEvents(`2024-10-07 13:46:47.679: 0 a h
-2024-10-07 13:46:48.298: 1 backspace
-2024-10-07 13:46:49.442: 0 h h
-2024-10-07 13:46:51.160: 1 e e
-2024-10-07 13:46:52.781: 2 i y
-2024-10-07 13:46:53.316: 3 backspace
-2024-10-07 13:46:54.688: 2 k y
-2024-10-07 13:46:55.262: 3 backspace
-2024-10-07 13:46:55.997: 2 y y
-2024-10-07 13:46:56.521: 3 enter enter`)
+func wpmRawPs(events []event) float64 {
+	return wpmBase(events, true, time.Second)
+}
+
+func wpmGraph(events []event) string {
 	d := events[len(events)-1].ts.Sub(events[0].ts)
 	seconds := int(d.Seconds()) + 1
 	wpmData := make([]float64, seconds)
+	wpmRawData := make([]float64, seconds)
 	eventBuckets := make([][]event, seconds)
 
 	for _, event := range events {
@@ -89,28 +98,25 @@ func wpmGraph() string {
 		eventBuckets[bucketId] = append(eventBuckets[bucketId], event)
 	}
 
-	fmt.Printf("computing wpm for event buckets\n")
+	currSeconds := time.Second
+	var currEvents []event
 	for i, eventBucket := range eventBuckets {
-		fmt.Printf("i: %v\n", i)
-		fmt.Printf("eventBucket: %v\n", eventBucket)
-		wpmData[i] = wpm(eventBucket)
+		// Need to calculate wpm from 0 to i seconds
+		// duration needs to be i + 1 seconds long
+		currEvents = append(currEvents, eventBucket...)
+		wpmData[i] = wpmBase(currEvents, false, currSeconds)
+		currSeconds += time.Second
+		wpmRawData[i] = wpmRawPs(eventBucket)
 	}
 
-	// get plot data for events
-	// create an array of floats of size of seconds length
-	// for each second
-	//   get the events that are within this second
-	//   calculate the wpm and wpmRaw for those events
-	//   add the wpm and wpmRaw for that second into the plot data
-	// create the plot and end the data
-
-	fmt.Printf("wpmData: %v\n", wpmData)
-
-	return g.Plot(
-		wpmData,
-		g.SeriesColors(g.AliceBlue),
+	return g.PlotMany(
+		[][]float64{wpmRawData, wpmData},
+		g.SeriesColors(g.Gray, g.Default),
+		g.SeriesLegends("wpm raw", "wpm"),
 		g.Height(10),
-		g.Width(len(wpmData)*2),
+		g.Width(0), // auto scaling
+		g.LowerBound(0),
+		g.Precision(0),
 	)
 }
 
@@ -241,5 +247,6 @@ func showResults(m exerciseModel) {
 	fmt.Printf("Accuracy: %s%%\n", accuracy(m.events))
 	fmt.Printf("Duration: %s\n", duration(m.startTime, m.endTime))
 	fmt.Printf("Most missed keys: %s\n", mostMissedKeys(m.events))
-	fmt.Printf("Graph:\n%s", wpmGraph())
+	fmt.Printf("Graph:\n%s", wpmGraph(m.events))
+	fmt.Println()
 }

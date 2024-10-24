@@ -271,6 +271,26 @@ func TestWpm(t *testing.T) {
 			events: parseEvents(`2024-10-07 16:29:26.916: 0 c c`),
 			want:   0.0,
 		},
+		{
+			name: "going backwards in index, only one typed character",
+			// I type one character in this time period, so this should
+			// return 0.0 becuase I don't have two characters to compare.
+			events: parseEvents(`2024-10-07 16:29:27.279: 3 backspace
+2024-10-07 16:29:27.416: 2 backspace
+2024-10-07 16:29:27.667: 1 backspace
+2024-10-07 16:29:27.784: 0 c c`),
+			want: 0.0,
+		},
+		{
+			name: "going backwards in index, typed multiple characters",
+			events: parseEvents(`2024-10-07 16:29:27.279: 3 backspace
+2024-10-07 16:29:27.416: 2 backspace
+2024-10-07 16:29:27.667: 1 backspace
+2024-10-07 16:29:27.784: 0 c c
+2024-10-07 16:29:28.000: 1 o o`),
+			// (2/5 - 0) /
+			want: 0.0,
+		},
 	}
 
 	aboutTheSame := func(a float64, b float64) bool {

@@ -179,6 +179,16 @@ func parseEvents(list string) (events []event) {
 	return
 }
 
+// Returns a string of an array of events.
+func eventsString(events []event) (s string) {
+	s += fmt.Sprintln("[")
+	for _, e := range events {
+		s += fmt.Sprintf("  %s\n", e)
+	}
+	s += fmt.Sprintln("]")
+	return
+}
+
 // Converts a bubbletea key message to a string.
 // Used to properly record key events.
 func teaKeyMsgToEventTyped(msg tea.KeyMsg) string {
