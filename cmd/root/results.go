@@ -29,7 +29,17 @@ func requiredRunes(s string) []rune {
 }
 
 func wpm(events []event) float64 {
-	if len(events) <= 1 {
+	fmt.Println("wpm")
+	// TODO: calculate the length of events that does not have backspaces
+	lenTypedEvents := 0
+	for _, e := range events {
+		if e.typed != "backspace" {
+			lenTypedEvents++
+		}
+	}
+	fmt.Printf("events: %v\n", events)
+	fmt.Printf("lenTypedEvents: %v\n", lenTypedEvents)
+	if lenTypedEvents <= 1 {
 		return 0.0
 	}
 	start := events[0].ts
@@ -47,11 +57,12 @@ func wpm(events []event) float64 {
 // Same as wpm, but doesn't subtract incorrect chars.
 func wpmRaw(events []event) float64 {
 	start := events[0].ts
+	iOffset := events[0].i
 	end := events[len(events)-1].ts
 	duration := end.Sub(start)
 	mins := float64(duration) / float64(time.Minute)
 	wordSize := 5.0
-	chars := events[len(events)-1].i + 1
+	chars := events[len(events)-1].i - iOffset + 1
 	words := float64(chars) / wordSize
 	return words / mins
 }
@@ -78,7 +89,10 @@ func wpmGraph() string {
 		eventBuckets[bucketId] = append(eventBuckets[bucketId], event)
 	}
 
+	fmt.Printf("computing wpm for event buckets\n")
 	for i, eventBucket := range eventBuckets {
+		fmt.Printf("i: %v\n", i)
+		fmt.Printf("eventBucket: %v\n", eventBucket)
 		wpmData[i] = wpm(eventBucket)
 	}
 
@@ -92,7 +106,12 @@ func wpmGraph() string {
 
 	fmt.Printf("wpmData: %v\n", wpmData)
 
-	return g.Plot(wpmData)
+	return g.Plot(
+		wpmData,
+		g.SeriesColors(g.AliceBlue),
+		g.Height(10),
+		g.Width(len(wpmData)*2),
+	)
 }
 
 // Gives a percentage accuracy of the typed exercise.
