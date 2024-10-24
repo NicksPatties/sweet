@@ -49,6 +49,11 @@ func wpmBase(events []event, raw bool, d time.Duration) float64 {
 	}
 	mins := float64(d) / float64(time.Minute)
 	wordSize := 5.0
+	// TODO: This line smells really bad.
+	// What do I need to do?
+	// 1. Take a list of events, and return the number
+	// of characters typed without backspaces and test it.
+
 	chars := events[len(events)-1].i - iOffset + 1
 	words := float64(chars) / wordSize
 	var result float64
@@ -192,7 +197,11 @@ func numMistakes(events []event) (mistakes int) {
 	return
 }
 
-func duration(startTime time.Time, endTime time.Time) string {
+func duration(events []event) time.Duration {
+	return events[len(events)-1].ts.Sub(events[0].ts)
+}
+
+func durationOld(startTime time.Time, endTime time.Time) string {
 	nanos := (endTime.UnixMilli() - startTime.UnixMilli()) * int64(time.Millisecond)
 	d := time.Duration(nanos)
 
@@ -241,11 +250,19 @@ func mostMissedKeys(events []event) string {
 }
 
 func showResults(m exerciseModel) {
+	incorrect := numIncorrect(m.events)
+	d := duration(m.events)
+	chars := len(m.exercise.text)
+	wordLen := 5
+	fmt.Printf("Events: %s\n", eventsString(m.events))
 	fmt.Printf("Results of %s:\n", m.exercise.name)
-	fmt.Printf("WPM: %.f\n", wpm(m.events))
-	fmt.Printf("Mistakes: %d\n", numMistakes(m.events))
-	fmt.Printf("Accuracy: %s%%\n", accuracy(m.events))
-	fmt.Printf("Duration: %s\n", duration(m.startTime, m.endTime))
+	fmt.Printf("Incorrect chars:  %d\n", numIncorrect(m.events))
+	fmt.Printf("Duration:         %s\n", duration(m.events))
+	fmt.Printf("WPM = ((%d/%d) - %d) / %f\n", chars, wordLen, incorrect, d.Minutes())
+	fmt.Printf("    = %.f\n", wpm(m.events))
+	fmt.Println()
+	fmt.Printf("Mistakes made:    %d\n", numMistakes(m.events))
+	fmt.Printf("Accuracy:         %s%%\n", accuracy(m.events))
 	fmt.Printf("Most missed keys: %s\n", mostMissedKeys(m.events))
 	fmt.Printf("Graph:\n%s", wpmGraph(m.events))
 	fmt.Println()
