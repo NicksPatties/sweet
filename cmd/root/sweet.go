@@ -146,22 +146,23 @@ type event struct {
 	i int
 }
 
+const eventTsLayout = "2006-01-02 15:04:05.000"
+
 // Converts an event to a string.
 func (e event) String() string {
-	time := e.ts.Format("2006-01-02 15:04:05.000")
+	time := e.ts.Format(eventTsLayout)
 
-	return fmt.Sprintf("%s: %d %s %s", time, e.i, e.typed, e.expected)
+	return fmt.Sprintf("%s\t%d\t%s\t%s", time, e.i, e.typed, e.expected)
 }
 
 // Converts an event string to an event struct.
 func parseEvent(line string) (e event) {
-	s := strings.Split(line, ": ")
-	e.ts, _ = time.Parse("2006-01-02 15:04:05.000", s[0])
-	s = strings.Split(s[1], " ")
-	e.i, _ = strconv.Atoi(s[0])
-	e.typed = s[1]
-	if len(s) > 2 {
-		e.expected = s[2]
+	s := strings.Split(line, "\t")
+	e.ts, _ = time.Parse(eventTsLayout, s[0])
+	e.i, _ = strconv.Atoi(s[1])
+	e.typed = s[2]
+	if len(s) > 3 {
+		e.expected = s[3]
 	}
 	return
 }
