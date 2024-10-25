@@ -7,7 +7,7 @@ import (
 
 // 7 total characters
 // 3 mistakes
-// 0 incorrect characters
+// 0 uncorrected errors
 // about 5.43 wpm
 var defaultCaseEventsList string = "2024-10-07 13:46:47.679\t0\ta\th\n" +
 	"2024-10-07 13:46:48.298\t1\tbackspace\n" +
@@ -134,7 +134,7 @@ func TestAccuracy(t *testing.T) {
 
 }
 
-func TestNumIncorrect(t *testing.T) {
+func TestUncorrectedErrors(t *testing.T) {
 	type testCase struct {
 		name   string
 		events []event
@@ -143,12 +143,12 @@ func TestNumIncorrect(t *testing.T) {
 
 	testCases := []testCase{
 		{
-			name:   "no incorrect characters",
+			name:   "no uncorrected errors",
 			events: parseEvents(defaultCaseEventsList),
 			want:   0,
 		},
 		{
-			name: "no incorrect characters, i offset",
+			name: "no uncorrected errors, i offset",
 			events: parseEvents(
 				"2024-10-07 16:29:26.916\t10\tc\tc\n" +
 					"2024-10-07 16:29:27.004\t11\to\to\n" +
@@ -172,7 +172,7 @@ func TestNumIncorrect(t *testing.T) {
 			want: 0,
 		},
 		{
-			name: "some incorrect characters",
+			name: "some uncorrected errors",
 			events: parseEvents(
 				"2024-10-07 13:46:49.442\t0\th\th\n" +
 					"2024-10-07 13:46:51.160\t1\te\te\n" +
@@ -182,7 +182,9 @@ func TestNumIncorrect(t *testing.T) {
 			want: 1,
 		},
 		{
-			name: "all incorrect characters",
+			name: "all uncorrected errors",
+			// expected: hey↲
+			// typed:    omg!
 			events: parseEvents(
 				"2024-10-07 13:46:49.442\t0\to\th\n" +
 					"2024-10-07 13:46:51.160\t1\tm\te\n" +
@@ -196,10 +198,37 @@ func TestNumIncorrect(t *testing.T) {
 			events: []event{},
 			want:   0,
 		},
+		{
+			name: "No uncorrected errors, but with newline and tab",
+			// expected and typed:
+			// Todo
+			//    - Drink milk
+			events: parseEvents(
+				"2024-10-25 13:30:22.846\t0\tT\tT\n" +
+					"2024-10-25 13:30:22.958\t1\to\to\n" +
+					"2024-10-25 13:30:23.029\t2\td\td\n" +
+					"2024-10-25 13:30:23.121\t3\to\to\n" +
+					"2024-10-25 13:30:23.540\t4\tenter\tenter\n" +
+					"2024-10-25 13:30:24.394\t6\t-\t-\n" +
+					"2024-10-25 13:30:24.591\t7\tspace\tspace\n" +
+					"2024-10-25 13:30:24.826\t8\tD\tD\n" +
+					"2024-10-25 13:30:25.030\t9\tr\tr\n" +
+					"2024-10-25 13:30:25.076\t10\ti\ti\n" +
+					"2024-10-25 13:30:25.171\t11\tn\tn\n" +
+					"2024-10-25 13:30:25.255\t12\tk\tk\n" +
+					"2024-10-25 13:30:25.408\t13\tspace\tspace\n" +
+					"2024-10-25 13:30:25.611\t14\tm\tm\n" +
+					"2024-10-25 13:30:25.665\t15\ti\ti\n" +
+					"2024-10-25 13:30:25.737\t16\tl\tl\n" +
+					"2024-10-25 13:30:25.942\t17\tk\tk\n" +
+					"2024-10-25 13:30:26.199\t18\tenter\tenter",
+			),
+			want: 0,
+		},
 	}
 
 	for _, tc := range testCases {
-		got := numIncorrect(tc.events)
+		got := numUncorrectedErrors(tc.events)
 		if got != tc.want {
 			t.Errorf("%s: got %d, want %d", tc.name, got, tc.want)
 		}
@@ -401,18 +430,3 @@ func TestMostMissedKeys(t *testing.T) {
 		}
 	}
 }
-
-// func TestWpmByEvents(t *testing.T) {
-// 	type testCase struct {
-// 		name   string
-// 		events []event
-// 		want   string
-// 	}
-
-// 	testCases := []testCase{
-// 		// {
-// 		// 	name: "default case",
-// 		// 	events: stringToEvents()
-
-// 		// },
-// 	}

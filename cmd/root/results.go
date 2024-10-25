@@ -47,7 +47,7 @@ func wpmBase(events []event, raw bool, d time.Duration) float64 {
 	if d == 0 {
 		d = end.Sub(start)
 	}
-	mins := float64(d) / float64(time.Minute)
+	mins := d.Minutes()
 	wordSize := 5.0
 	// TODO: This line smells really bad.
 	// What do I need to do?
@@ -60,7 +60,7 @@ func wpmBase(events []event, raw bool, d time.Duration) float64 {
 	if raw {
 		result = (words) / mins
 	} else {
-		incorrect := float64(numIncorrect(events))
+		incorrect := float64(numUncorrectedErrors(events))
 		if words-incorrect < 0 {
 			return 0.0
 		}
@@ -152,26 +152,23 @@ func accuracy(events []event) string {
 	return fmt.Sprintf("%.2f", acc)
 }
 
-func numIncorrect(events []event) int {
+// Returns the number of uncorrected errors in
+// a series of events.
+
+// If a series of events only contains
+// backspaces, then it's assumed no uncorrected
+// errors have been made, because the user is in
+// the process of correcting the error.
+func numUncorrectedErrors(events []event) int {
 	if len(events) == 0 {
 		return 0
 	}
-	maxI, minI := events[0].i, events[0].i
-	for _, e := range events {
-		if e.i > maxI {
-			maxI = e.i
-		}
-		if e.i < minI {
-			minI = e.i
-		}
-	}
-	size := maxI - minI + 1
-	correct := make([]bool, size)
+	correct := map[int]bool{}
 	for _, e := range events {
 		if e.typed == "backspace" {
-			correct[e.i-minI] = true
+			correct[e.i] = true
 		} else {
-			correct[e.i-minI] = e.typed == e.expected
+			correct[e.i] = e.typed == e.expected
 		}
 	}
 	count := 0
@@ -184,7 +181,10 @@ func numIncorrect(events []event) int {
 }
 
 // Returns the number of mistakes made during
-// an exercise.
+// an exercise. This includes both corrected and
+// uncorrected errors.
+//
+// Backspaces do not count as mistakes.
 func numMistakes(events []event) (mistakes int) {
 	for _, e := range events {
 		if e.typed == "backspace" {
@@ -197,16 +197,11 @@ func numMistakes(events []event) (mistakes int) {
 	return
 }
 
+// Returns the duration between the first event and
+// the last event of the array. If there are less than
+// two events in the list, it returns zero duration.
 func duration(events []event) time.Duration {
 	return events[len(events)-1].ts.Sub(events[0].ts)
-}
-
-func durationOld(startTime time.Time, endTime time.Time) string {
-	nanos := (endTime.UnixMilli() - startTime.UnixMilli()) * int64(time.Millisecond)
-	d := time.Duration(nanos)
-
-	s := fmt.Sprintf("%.3fs", d.Seconds())
-	return s
 }
 
 // Finds the most missed key presses when completing
@@ -250,15 +245,16 @@ func mostMissedKeys(events []event) string {
 }
 
 func showResults(m exerciseModel) {
-	incorrect := numIncorrect(m.events)
+	uncorrected := numUncorrectedErrors(m.events)
 	d := duration(m.events)
 	chars := len(m.exercise.text)
 	wordLen := 5
 	fmt.Printf("Events: %s\n", eventsString(m.events))
 	fmt.Printf("Results of %s:\n", m.exercise.name)
-	fmt.Printf("Incorrect chars:  %d\n", numIncorrect(m.events))
+	fmt.Printf("Incorrect chars:  %d\n", numUncorrectedErrors(m.events))
 	fmt.Printf("Duration:         %s\n", duration(m.events))
-	fmt.Printf("WPM = ((%d/%d) - %d) / %f\n", chars, wordLen, incorrect, d.Minutes())
+	fmt.Printf("WPM = ((characters/wordLength) - uncorrectedErrors) / minutes\n")
+	fmt.Printf("    = ((%d/%d) - %d) / %f\n", chars, wordLen, uncorrected, d.Minutes())
 	fmt.Printf("    = %.f\n", wpm(m.events))
 	fmt.Println()
 	fmt.Printf("Mistakes made:    %d\n", numMistakes(m.events))
