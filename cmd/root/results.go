@@ -28,33 +28,37 @@ func requiredRunes(s string) []rune {
 	return arr
 }
 
+// Remove backspaces from a list of events.
+//
+// Removing backspace events simplifies some calculations,
+// including wpm,
+func removeBackspaces(events []event) []event {
+	enb := []event{}
+	for _, e := range events {
+		if e.typed != "backspace" {
+			enb = append(enb, e)
+		}
+	}
+	return enb
+}
+
 // Calculates the words per minute (wpm) using the events in the list.
 // Also allows the duration to be overridden, which is useful
 // for calculating wpm per second, which is used in the `wpmGraph` function.
-func wpmBase(events []event, raw bool, d time.Duration) float64 {
-	lenEventsNoBkspc := 0
-	for _, e := range events {
-		if e.typed != "backspace" {
-			lenEventsNoBkspc++
-		}
-	}
-	if lenEventsNoBkspc <= 1 {
+func wpmBase(e []event, raw bool, d time.Duration) float64 {
+	events := removeBackspaces(e)
+	// cannot calculate wpm with less than 2 events
+	if len(events) < 2 {
 		return 0.0
 	}
 	start := events[0].ts
-	iOffset := events[0].i
 	end := events[len(events)-1].ts
 	if d == 0 {
 		d = end.Sub(start)
 	}
 	mins := d.Minutes()
 	wordSize := 5.0
-	// TODO: This line smells really bad.
-	// What do I need to do?
-	// 1. Take a list of events, and return the number
-	// of characters typed without backspaces and test it.
-
-	chars := events[len(events)-1].i - iOffset + 1
+	chars := len(events)
 	words := float64(chars) / wordSize
 	var result float64
 	if raw {
@@ -154,7 +158,7 @@ func accuracy(events []event) string {
 
 // Returns the number of uncorrected errors in
 // a series of events.
-
+//
 // If a series of events only contains
 // backspaces, then it's assumed no uncorrected
 // errors have been made, because the user is in
