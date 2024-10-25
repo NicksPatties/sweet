@@ -113,8 +113,9 @@ func TestAccuracy(t *testing.T) {
 		},
 		{
 			name: "100 percent",
-			events: parseEvents("2024-10-07 13:46:47.679\t0\th\th\n" +
-				"2024-10-07 13:46:56.521\t3\tenter\tenter",
+			events: parseEvents(
+				"2024-10-07 13:46:47.679\t0\th\th\n" +
+					"2024-10-07 13:46:56.521\t3\tenter\tenter",
 			),
 			want: "100.00",
 		},
@@ -148,22 +149,26 @@ func TestNumIncorrect(t *testing.T) {
 		},
 		{
 			name: "no incorrect characters, i offset",
-			events: parseEvents(`2024-10-07 16:29:26.916: 10 c c 
-2024-10-07 16:29:27.004: 11 o o 
-2024-10-07 16:29:27.095: 12 n n 
-2024-10-07 16:29:27.279: 13 s s 
-2024-10-07 16:29:27.416: 14 o o 
-2024-10-07 16:29:27.667: 15 l l 
-2024-10-07 16:29:27.784: 16 e e 
-2024-10-07 16:29:31.538: 17 enter enter`),
+			events: parseEvents(
+				"2024-10-07 16:29:26.916\t10\tc\tc\n" +
+					"2024-10-07 16:29:27.004\t11\to\to\n" +
+					"2024-10-07 16:29:27.095\t12\tn\tn\n" +
+					"2024-10-07 16:29:27.279\t13\ts\ts\n" +
+					"2024-10-07 16:29:27.416\t14\to\to\n" +
+					"2024-10-07 16:29:27.667\t15\tl\tl\n" +
+					"2024-10-07 16:29:27.784\t16\te\te\n" +
+					"2024-10-07 16:29:31.538\t17\tenter\tenter",
+			),
 			want: 0,
 		},
 		{
 			name: "all backspaces",
-			events: parseEvents(`2024-10-07 13:46:47.679: 4 backspace
-2024-10-07 13:46:48.298: 3 backspace
-2024-10-07 13:46:49.442: 2 backspace
-2024-10-07 13:46:51.160: 1 backspace`),
+			events: parseEvents(
+				"2024-10-07 13:46:47.679\t4\tbackspace\n" +
+					"2024-10-07 13:46:48.298\t3\tbackspace\n" +
+					"2024-10-07 13:46:49.442\t2\tbackspace\n" +
+					"2024-10-07 13:46:51.160\t1\tbackspace\n",
+			),
 			want: 0,
 		},
 		{
@@ -223,14 +228,16 @@ func TestWpm(t *testing.T) {
 		},
 		{
 			name: "no mistakes, but i is offset",
-			events: parseEvents(`2024-10-07 16:29:26.916: 10 c c 
-2024-10-07 16:29:27.004: 11 o o 
-2024-10-07 16:29:27.095: 12 n n 
-2024-10-07 16:29:27.279: 13 s s 
-2024-10-07 16:29:27.416: 14 o o 
-2024-10-07 16:29:27.667: 15 l l 
-2024-10-07 16:29:27.784: 16 e e 
-2024-10-07 16:29:31.538: 17 enter enter`),
+			events: parseEvents(
+				"2024-10-07 16:29:26.916\t10\tc\tc\n" +
+					"2024-10-07 16:29:27.004\t11\to\to\n" +
+					"2024-10-07 16:29:27.095\t12\tn\tn\n" +
+					"2024-10-07 16:29:27.279\t13\ts\ts\n" +
+					"2024-10-07 16:29:27.416\t14\to\to\n" +
+					"2024-10-07 16:29:27.667\t15\tl\tl\n" +
+					"2024-10-07 16:29:27.784\t16\te\te\n" +
+					"2024-10-07 16:29:31.538\t17\tenter\tenter",
+			),
 			want: 20.77,
 		},
 		{
@@ -268,26 +275,30 @@ func TestWpm(t *testing.T) {
 		},
 		{
 			name:   "one event",
-			events: parseEvents(`2024-10-07 16:29:26.916: 0 c c`),
+			events: parseEvents("2024-10-07 16:29:26.916\t0\tc\tc"),
 			want:   0.0,
 		},
 		{
 			name: "going backwards in index, only one typed character",
 			// I type one character in this time period, so this should
 			// return 0.0 becuase I don't have two characters to compare.
-			events: parseEvents(`2024-10-07 16:29:27.279: 3 backspace
-2024-10-07 16:29:27.416: 2 backspace
-2024-10-07 16:29:27.667: 1 backspace
-2024-10-07 16:29:27.784: 0 c c`),
+			events: parseEvents(
+				"2024-10-07 16:29:27.279\t3\tbackspace\n" +
+					"2024-10-07 16:29:27.416\t2\tbackspace\n" +
+					"2024-10-07 16:29:27.667\t1\tbackspace\n" +
+					"2024-10-07 16:29:27.784\t0\tc\tc",
+			),
 			want: 0.0,
 		},
 		{
 			name: "going backwards in index, typed multiple characters",
-			events: parseEvents(`2024-10-07 16:29:27.279: 3 backspace
-2024-10-07 16:29:27.416: 2 backspace
-2024-10-07 16:29:27.667: 1 backspace
-2024-10-07 16:29:27.784: 0 c c
-2024-10-07 16:29:28.000: 1 o o`),
+			events: parseEvents(
+				"2024-10-07 16:29:27.279\t3\tbackspace\n" +
+					"2024-10-07 16:29:27.416\t2\tbackspace\n" +
+					"2024-10-07 16:29:27.667\t1\tbackspace\n" +
+					"2024-10-07 16:29:27.784\t0\tc\tc\n" +
+					"2024-10-07 16:29:28.000\t1\to\to",
+			),
 			// (2/5 - 0) /
 			want: 0.0,
 		},
