@@ -249,22 +249,13 @@ func mostMissedKeys(events []event) string {
 }
 
 func showResults(m exerciseModel) {
-	uncErrs := numUncorrectedErrors(m.events)
-	d := duration(m.events)
-	// This now smells bad. This should be the number of characters typed,
-	// not the length of the exercise text.
-	chars := len(m.exercise.text)
-	wordLen := 5
-	fmt.Printf("Results of %s:\n", m.exercise.name)
-	fmt.Printf("uncorrectedErrors:  %d\n", numUncorrectedErrors(m.events))
-	fmt.Printf("duration:           %s\n", duration(m.events))
-	fmt.Printf("wpm     = ((characters/wordLength) - uncorrectedErrors) / minutes\n")
-	fmt.Printf("        = ((%d/%d) - %d) / %f\n", chars, wordLen, uncErrs, d.Minutes())
-	fmt.Printf("        = %.f\n", wpm(m.events))
-	fmt.Println()
-	fmt.Printf("mistakes:    %d\n", numMistakes(m.events))
-	fmt.Printf("accuracy:    %s%%\n", accuracy(m.events))
-	fmt.Printf("most missed keys: %s\n", mostMissedKeys(m.events))
+	fmt.Printf("results of %s:\n", m.exercise.name)
+	fmt.Printf("wpm:                 %.f\n", wpm(m.events))
+	fmt.Printf("uncorrected errors:  %d\n", numUncorrectedErrors(m.events))
+	fmt.Printf("duration:            %s\n", duration(m.events))
+	fmt.Printf("mistakes:            %d\n", numMistakes(m.events))
+	fmt.Printf("accuracy:            %s%%\n", accuracy(m.events))
+	fmt.Printf("most missed keys:    %s\n", mostMissedKeys(m.events))
 	fmt.Printf("graph:\n%s", wpmGraph(m.events))
 	fmt.Println()
 }
