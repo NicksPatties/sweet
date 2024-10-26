@@ -30,8 +30,7 @@ func requiredRunes(s string) []rune {
 
 // Remove backspaces from a list of events.
 //
-// Removing backspace events simplifies some calculations,
-// including wpm,
+// Removing backspace events simplifies wpm calculations.
 func removeBackspaces(events []event) []event {
 	enb := []event{}
 	for _, e := range events {
@@ -45,6 +44,9 @@ func removeBackspaces(events []event) []event {
 // Calculates the words per minute (wpm) using the events in the list.
 // Also allows the duration to be overridden, which is useful
 // for calculating wpm per second, which is used in the `wpmGraph` function.
+//
+// You should avoid using this function in favor of specific wpm
+// functions, including `wpm`, `wpmRaw`, `wpmRawPerSecond`, and so on.
 func wpmBase(e []event, raw bool, d time.Duration) float64 {
 	events := removeBackspaces(e)
 	// cannot calculate wpm with less than 2 events
@@ -65,6 +67,7 @@ func wpmBase(e []event, raw bool, d time.Duration) float64 {
 		result = (words) / mins
 	} else {
 		incorrect := float64(numUncorrectedErrors(events))
+		// avoid negative wpm
 		if words-incorrect < 0 {
 			return 0.0
 		}
@@ -74,15 +77,9 @@ func wpmBase(e []event, raw bool, d time.Duration) float64 {
 }
 
 // Calculates the words per minute (wpm) based on the
-// events that are passed into the
+// events that occurred during the exercise.
 func wpm(events []event) float64 {
 	return wpmBase(events, false, 0)
-}
-
-// Words per minute per second. Used to calculate the wpm of an
-// array of events that occur within the same second of each other.
-func wpmPs(events []event) float64 {
-	return wpmBase(events, false, time.Second)
 }
 
 // Same as wpm, but doesn't subtract incorrect chars.
@@ -90,7 +87,7 @@ func wpmRaw(events []event) float64 {
 	return wpmBase(events, true, 0)
 }
 
-func wpmRawPs(events []event) float64 {
+func wpmRawPerSecond(events []event) float64 {
 	return wpmBase(events, true, time.Second)
 }
 
@@ -115,13 +112,13 @@ func wpmGraph(events []event) string {
 		currEvents = append(currEvents, eventBucket...)
 		wpmData[i] = wpmBase(currEvents, false, currSeconds)
 		currSeconds += time.Second
-		wpmRawData[i] = wpmRawPs(eventBucket)
+		wpmRawData[i] = wpmRawPerSecond(eventBucket)
 	}
 
 	return g.PlotMany(
 		[][]float64{wpmRawData, wpmData},
 		g.SeriesColors(g.Gray, g.Default),
-		g.SeriesLegends("wpm raw", "wpm"),
+		g.SeriesLegends("raw wpm", "wpm"),
 		g.Height(10),
 		g.Width(0), // auto scaling
 		g.LowerBound(0),

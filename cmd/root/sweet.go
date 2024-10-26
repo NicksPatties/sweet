@@ -23,7 +23,6 @@ import (
 	lg "github.com/charmbracelet/lipgloss"
 )
 
-// Used to be "2006-01-02 15:14:05.000", which produced weird output.
 const eventTsFormat = "2006-01-02 15:04:05.000"
 
 var Cmd = &cobra.Command{
