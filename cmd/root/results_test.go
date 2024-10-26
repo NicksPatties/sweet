@@ -3,6 +3,7 @@ package root
 import (
 	"fmt"
 	"testing"
+	"time"
 )
 
 // mistakes:          3
@@ -156,6 +157,38 @@ func TestUncorrectedErrors(t *testing.T) {
 		got := numUncorrectedErrors(tc.events)
 		if got != tc.want {
 			t.Errorf("%s: got %d, want %d", tc.name, got, tc.want)
+		}
+	}
+}
+
+func TestDuration(t *testing.T) {
+	testCases := []struct {
+		name   string
+		events []event
+		want   time.Duration
+	}{
+		{
+			name: "default case",
+			events: parseEvents("2024-10-25 13:30:25.000\t17\tk\tk\n" +
+				"2024-10-25 13:30:26.000\t18\tenter\tenter"),
+			want: time.Second,
+		},
+		{
+			name:   "no events",
+			events: []event{},
+			want:   0.0,
+		},
+		{
+			name:   "one event",
+			events: parseEvents("2024-10-25 13:30:26.000\t18\tenter\tenter"),
+			want:   0.0,
+		},
+	}
+
+	for _, tc := range testCases {
+		got := duration(tc.events)
+		if got != tc.want {
+			t.Errorf("%s: got %v, want %v", tc.name, got, tc.want)
 		}
 	}
 }

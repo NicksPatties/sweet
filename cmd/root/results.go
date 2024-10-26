@@ -202,6 +202,9 @@ func numMistakes(events []event) (mistakes int) {
 // the last event of the array. If there are less than
 // two events in the list, it returns zero duration.
 func duration(events []event) time.Duration {
+	if len(events) < 2 {
+		return 0.0
+	}
 	return events[len(events)-1].ts.Sub(events[0].ts)
 }
 
