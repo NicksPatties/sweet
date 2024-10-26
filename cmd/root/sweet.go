@@ -23,6 +23,8 @@ import (
 	lg "github.com/charmbracelet/lipgloss"
 )
 
+const eventTsFormat = "2006-01-02 15:04:05.000"
+
 var Cmd = &cobra.Command{
 	Use:   "sweet [file|-]",
 	Short: "The Software Engineer Exercise for Typing.",
@@ -151,7 +153,6 @@ const eventTsLayout = "2006-01-02 15:04:05.000"
 // Converts an event to a string.
 func (e event) String() string {
 	time := e.ts.Format(eventTsLayout)
-
 	return fmt.Sprintf("%s\t%d\t%s\t%s", time, e.i, e.typed, e.expected)
 }
 
@@ -174,6 +175,16 @@ func parseEvents(list string) (events []event) {
 			events = append(events, parseEvent(line))
 		}
 	}
+	return
+}
+
+// Returns a string of an array of events.
+func eventsString(events []event) (s string) {
+	s += fmt.Sprintln("[")
+	for _, e := range events {
+		s += fmt.Sprintf("  %s\n", e)
+	}
+	s += fmt.Sprintln("]")
 	return
 }
 
