@@ -320,43 +320,6 @@ func TestWpm(t *testing.T) {
 	}
 }
 
-func TestWpmRaw(t *testing.T) {
-
-	type testCase struct {
-		name   string
-		events []event
-		want   float64
-	}
-
-	testCases := []testCase{
-		{
-			name: "with mistakes",
-			// uncorrected: 1
-			// typed:       consold↲
-			// expected:    console↲
-			events: parseEvents(
-				"2024-10-07 16:29:26.916\t0\tc\tc\n" +
-					"2024-10-07 16:29:27.004\t1\to\to\n" +
-					"2024-10-07 16:29:27.095\t2\tn\tn\n" +
-					"2024-10-07 16:29:27.279\t3\ts\ts\n" +
-					"2024-10-07 16:29:27.416\t4\to\to\n" +
-					"2024-10-07 16:29:27.667\t5\tl\tl\n" +
-					"2024-10-07 16:29:27.784\t6\td\te\n" +
-					"2024-10-07 16:29:31.538\t7\tenter\tenter",
-			),
-			// (8/5) / ((31.538 - 26.916) / 60) = 20.77
-			want: 20.77,
-		},
-	}
-
-	for _, tc := range testCases {
-		got := wpmRaw(tc.events)
-		if !aboutTheSame(got, tc.want) {
-			t.Errorf("%s: got %f, wanted %f\n", tc.name, got, tc.want)
-		}
-	}
-}
-
 func TestMostMissedKeys(t *testing.T) {
 
 	type testCase struct {

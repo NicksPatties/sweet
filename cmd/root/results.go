@@ -82,11 +82,16 @@ func wpm(events []event) float64 {
 	return wpmBase(events, false, 0)
 }
 
-// Same as wpm, but doesn't subtract incorrect chars.
-func wpmRaw(events []event) float64 {
-	return wpmBase(events, true, 0)
+// Calculates the wpm of a series of events that
+// lasted for `n` seconds. This is used to calculate the
+// rolling average wpm during the course of the exercise.
+func wpmForNSeconds(events []event, n int) float64 {
+	seconds := time.Duration(n) * time.Second
+	return wpmBase(events, false, seconds)
 }
 
+// Calculates the raw wpm for a series of events.
+// Assumes the events occurred in the same second.
 func wpmRawPerSecond(events []event) float64 {
 	return wpmBase(events, true, time.Second)
 }
@@ -104,14 +109,11 @@ func wpmGraph(events []event) string {
 		eventBuckets[bucketId] = append(eventBuckets[bucketId], event)
 	}
 
-	currSeconds := time.Second
 	var currEvents []event
 	for i, eventBucket := range eventBuckets {
-		// Need to calculate wpm from 0 to i seconds
-		// duration needs to be i + 1 seconds long
 		currEvents = append(currEvents, eventBucket...)
-		wpmData[i] = wpmBase(currEvents, false, currSeconds)
-		currSeconds += time.Second
+		currSeconds := i + 1
+		wpmData[i] = wpmForNSeconds(currEvents, currSeconds)
 		wpmRawData[i] = wpmRawPerSecond(eventBucket)
 	}
 
