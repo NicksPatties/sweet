@@ -35,41 +35,113 @@ go install github.com/NicksPatties/sweet@latest
 
 1. Go to the [releases](https://github.com/NicksPatties/sweet/releases) page.
 
-2. Download the executable with the matching operating system and architecture in the file name. The executables in the release are shown in the format `sweet-<os>-<arch>`.
+2. Download the executable with the matching operating system and architecture in the file name and its corresponding checksum file. The executables in the release are shown in the format `sweet-<os>-<architecture>`.
 
-3. Verify your downloaded executable is the same by comparing its checksum with the provided checksum in the release page. You can use a terminal command like this to generate the checksum for comparison.
+3. Verify your downloaded executable using the `sha256sum` command. Note that the checksum and the executable should be in the same directory and have the same basename.
 
-    ```sh
-    sha256sum <your_sweet_executable_file>
-    ```
-    If the checksums do not match, **do not run the file**. Please [report an issue](https://github.com/NicksPatties/sweet/issues) if something is wrong.
+  ```sh
+  # with <sweet_executable> and <sweet_executable>.sha256 in the current dir 
+  sha256sum <sweet_executable>.sha256 --check
+  # <sweet_executable>: OK
+  ```
+  If the checksums do not match, **do not run the file**. Please [report an issue](https://github.com/NicksPatties/sweet/issues) if something is wrong.
 
-4. Move the executable to a directory that is included in your `$PATH` variable.
+4. Use `chmod` to make the executable actually executable.
 
-If all is well, then you're ready to use `sweet`!
+  ```sh
+  chmod u+x <sweet_executable>
+  ```
+
+5. Move the executable to a directory that is included in your `$PATH`, and rename it to `sweet`.
+
+  ```sh
+  mv <sweet_executable> <somewhere_on_path>/sweet
+  ```
+
+You're now ready to use `sweet`!
+
+### Via your system's package manager
+
+[Todo](https://github.com/NicksPatties/sweet/issues/49)
 
 ## Usage
 
+### Run a typing exercise
+
+```sh
+sweet
 ```
-The Software Engineer Exercise for Typing.
 
-Usage:
-  sweet [flags]
-  sweet [command]
+This runs a random exercise from sweet's exercises directory. Once complete, you'll see the results of your exercise. Here's an example:
 
-Available Commands:
-  about       Print details about the application
-  add         Add an exercise
-  help        Help about any command
-  stats       Print statistics about typing exercises
+```txt 
+results of portfolio-site-burger.css:
+wpm:                 50
+uncorrected errors:  1
+duration:            31.418805317s
+mistakes:            13
+accuracy:            90.51%
+most missed keys:    g (2 times), o (2 times), : (1 time)
+graph:
+ 96 ┤       ╭╮  ╭╮         ╭╮
+ 86 ┤  ╭╮   ││  ││         ││
+ 77 ┤╭─╯│  ╭╯│╭╮││╭╮       ││╭─╮
+ 67 ┤│╭╮│  │╭──╮╭──╮       │││ │
+ 58 ┤╭╯││╭╭─╯││╰╯││╰──╮ ╭──╮│╭──╮
+ 48 ┼╯ ││╭╯  ╰╯╰╯│││  ╰─╯╯│╰─╯ │╰───
+ 38 ┤  ╰─╯       ╰╯│╭──╮│ ╰╯││ │││╭╮
+ 29 ┤   ││         ││  ╰╯   ╰╯ ╰╯││╰
+ 19 ┤   ││         ││            ││
+ 10 ┤   ││         ││            ││
+  0 ┤   ╰╯         ╰╯            ╰╯
 
-Flags:
-  -e, --end uint          Language for the typing game (default 18446744073709551615)
-  -h, --help              help for sweet
-  -l, --language string   Language for the typing game
-  -s, --start uint        Language for the typing game
+            ■ raw wpm   ■ wpm
+```
 
-Use "sweet [command] --help" for more information about a command.
+By default, exercises are located in `$HOME/.config/sweet/exercises`. If this directory doesn't exist, [it will be created](https://github.com/NicksPatties/sweet/blob/main/cmd/root/sweet.go#L516-L531), and [some default exercises will be added](https://github.com/NicksPatties/sweet/blob/main/cmd/root/sweet.go#L44-L89).
+
+Add more files to the exercises directory if you'd like to include them in the random exercise rotation!
+
+#### Using a specific language
+
+```sh
+sweet -l [extension]
+```
+
+Selects a random file within the exercises directory that matches a given extension. If no matching extension is found, then the program ends with an error.
+
+#### With a different exercises directory
+
+Use the `$SWEET_EXERCISES_DIR` environment variable.
+
+```sh
+$SWEET_EXERCISES_DIR="~/.exercises" sweet
+```
+
+#### With a specific file
+
+```sh
+sweet [file]
+```
+
+If your file is really large, use the `-s` and `-e` flags to select the starting and ending lines of the exercise, respectively.
+
+```sh
+sweet [really-large-file] -s 100 -e 110
+```
+
+#### Using piped input
+
+Use the `-` filename to create an exercise with standard input.
+
+```sh
+curl https://nickspatties.com/main.go | sweet -
+```
+
+You can still use the `-s` and `-e` flags if you want to filter your exercise input.
+
+```sh
+curl https://raw.githubusercontent.com/NicksPatties/sweet/refs/heads/main/cmd/root/sweet.go | sweet - -s 381 -e 385
 ```
 
 ## Contributions

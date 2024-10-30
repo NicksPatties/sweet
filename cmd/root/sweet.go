@@ -25,11 +25,34 @@ import (
 
 const eventTsFormat = "2006-01-02 15:04:05.000"
 
+func getProductTagline() string {
+	b := lg.NewStyle().Bold(true)
+	return fmt.Sprintf(
+		"%s: The %soft%sare %sngineer's %sxercise for %syping",
+		b.Render("sweet"),
+		b.Render("S"),
+		b.Render("w"),
+		b.Render("E"),
+		b.Render("E"),
+		b.Render("T"),
+	)
+}
+
+func getExamples() (msg string) {
+	msg += fmt.Sprintf("  Run a random exercise\n")
+	msg += fmt.Sprintf("  $ sweet\n\n")
+	msg += fmt.Sprintf("  Run an exercise from lines 2 to 10 of a file\n")
+	msg += fmt.Sprintf("  $ sweet file -s 2 -e 10\n\n")
+	msg += fmt.Sprintf("  Run an exercise with STDIN (use `-` as your file)\n")
+	msg += fmt.Sprintf("  $ curl https://nickspatties.com/main.go | sweet -")
+	return
+}
+
 var Cmd = &cobra.Command{
-	Use:   "sweet [file|-]",
-	Short: "The Software Engineer Exercise for Typing.",
-	Long:  "The Software Engineer Exercise for Typing. Starts a touch typing game, and prints the results.",
-	Args:  cobra.MaximumNArgs(1),
+	Use:     "sweet [file]",
+	Long:    fmt.Sprintf("%s.\nRuns an interactive touch typing game, and prints the results.", getProductTagline()),
+	Args:    cobra.MaximumNArgs(1),
+	Example: getExamples(),
 	Run: func(cmd *cobra.Command, args []string) {
 		ex, err := fromArgs(cmd, args)
 		if err != nil {
@@ -89,9 +112,9 @@ var defaultExercises = []Exercise{
 }
 
 func setRootCmdFlags(cmd *cobra.Command) {
-	cmd.Flags().StringP("language", "l", "", "language by extension")
-	cmd.Flags().UintP("start", "s", 0, "start line")
-	cmd.Flags().UintP("end", "e", math.MaxUint, "end line")
+	cmd.Flags().StringP("language", "l", "", "select a language by file extension")
+	cmd.Flags().UintP("start", "s", 0, "start exercise at this line")
+	cmd.Flags().UintP("end", "e", math.MaxUint, "end exercise at this line")
 	cmd.Flags().SortFlags = false
 }
 
