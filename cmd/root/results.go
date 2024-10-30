@@ -251,13 +251,16 @@ func mostMissedKeys(events []event) string {
 }
 
 func showResults(m exerciseModel) {
+	mistakes := numMistakes(m.events)
 	fmt.Printf("results of %s:\n", m.exercise.name)
 	fmt.Printf("wpm:                 %.f\n", wpm(m.events))
 	fmt.Printf("uncorrected errors:  %d\n", numUncorrectedErrors(m.events))
 	fmt.Printf("duration:            %s\n", duration(m.events))
 	fmt.Printf("mistakes:            %d\n", numMistakes(m.events))
 	fmt.Printf("accuracy:            %s%%\n", accuracy(m.events))
-	fmt.Printf("most missed keys:    %s\n", mostMissedKeys(m.events))
+	if mistakes > 0 {
+		fmt.Printf("most missed keys:    %s\n", mostMissedKeys(m.events))
+	}
 	fmt.Printf("graph:\n%s", wpmGraph(m.events))
 	fmt.Println()
 }
