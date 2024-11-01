@@ -459,33 +459,6 @@ func (m exerciseModel) exerciseTextView() (s string) {
 	return
 }
 
-func (m exerciseModel) currentCharacterView() string {
-	min := func(a int, b int) int {
-		if a <= b {
-			return a
-		}
-		return b
-	}
-	typedEnd := min(len(m.typedText), len(m.exercise.text)-1)
-	currChar := rune(m.exercise.text[typedEnd])
-	charString := string(currChar)
-	if currChar == Enter {
-		charString = Arrow
-	}
-	return fmt.Sprintf("Curr character: %#U %d %s", currChar, currChar, charString)
-}
-
-func (m exerciseModel) keymapView() (s string) {
-	s += fmt.Sprintf("Curr key: %s\n", m.currentCharacterView())
-	s += "`1234567890-=\n"
-	s += " qwertyuiop[]\\\n"
-	s += "  asdfghjkl;'\n"
-	s += "Sh zxcvbnm,./Sh\n"
-	s += "     [   ] \n"
-	s += "  4321  1234\n "
-	return
-}
-
 // Displays the text for the typing exercise.
 // Hides the view once the exercise is complete or the user quits early.
 //
@@ -497,8 +470,6 @@ func (m exerciseModel) View() (s string) {
 		s += m.exerciseNameView()
 		s += "\n\n"
 		s += m.exerciseTextView()
-		s += "\n"
-		s += m.keymapView()
 		s += "\n"
 	}
 	return
