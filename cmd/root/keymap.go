@@ -50,13 +50,6 @@ var qwerty = keymap{
 	margins: []int{3, 4, 5, 0, 8},
 }
 
-func spaces(n int) (s string) {
-	for i := 0; i < n; i++ {
-		s += " "
-	}
-	return
-}
-
 func (k keymap) findKeyCombo(char string) (combo []string) {
 
 	if char == "\n" {
@@ -89,8 +82,15 @@ func (k keymap) findKeyCombo(char string) (combo []string) {
 // Renders the keymap. Uses a key that needs to be
 // rendered as input.
 func (k keymap) render(char string) (km string) {
-	// red style
-	r := lg.NewStyle().Foreground(lg.Color("#FF0000")).Bold(true)
+	spaces := func(n int) (s string) {
+		for i := 0; i < n; i++ {
+			s += " "
+		}
+		return
+	}
+
+	// Highlighted key style
+	var hk = lg.NewStyle().Reverse(true).Bold(true)
 	combo := k.findKeyCombo(char)
 	var currKey string
 	if len(combo) == 0 {
@@ -104,7 +104,7 @@ func (k keymap) render(char string) (km string) {
 		km += spaces(k.margins[ri])
 		for _, key := range row {
 			if key == currKey || key == "shift" && isShift {
-				km += r.Render(key)
+				km += hk.Render(key)
 			} else {
 				km += key
 			}
