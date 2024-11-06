@@ -467,14 +467,14 @@ func (m exerciseModel) exerciseTextView() (s string) {
 func (m exerciseModel) View() (s string) {
 	if !m.finished() {
 		currKeyI := len(m.typedText)
-		currKey := m.exercise.text[currKeyI]
+		currKey := string(m.exercise.text[currKeyI])
 		s += "\n"
 		s += m.exerciseNameView()
 		s += "\n\n"
 		s += m.exerciseTextView()
 		s += "\n"
 		s += "keymap:\n\n"
-		s += qwerty.render(string(currKey))
+		s += qwerty.render(currKey)
 		s += "\n\n"
 	}
 	return
