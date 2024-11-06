@@ -466,11 +466,16 @@ func (m exerciseModel) exerciseTextView() (s string) {
 // a description of the exercise once it's done.
 func (m exerciseModel) View() (s string) {
 	if !m.finished() {
+		currKeyI := len(m.typedText)
+		currKey := m.exercise.text[currKeyI]
 		s += "\n"
 		s += m.exerciseNameView()
 		s += "\n\n"
 		s += m.exerciseTextView()
 		s += "\n"
+		s += "keymap:\n\n"
+		s += qwerty.render(string(currKey))
+		s += "\n\n"
 	}
 	return
 }
