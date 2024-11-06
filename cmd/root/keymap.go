@@ -2,6 +2,7 @@ package root
 
 import (
 	lg "github.com/charmbracelet/lipgloss"
+	"strconv"
 )
 
 type keymap struct {
@@ -111,6 +112,58 @@ func (k keymap) render(char string) (km string) {
 		}
 		if ri != rows-1 {
 			km += "\n"
+		}
+	}
+	return
+}
+
+// Returns a view of the fingers for the keymap.
+func fingerView(c rune, margin int) (view string) {
+	// fingers
+	f := [][]rune{
+		{'0', c},
+		{'1', c, c},
+		{'2', c, c},
+		{'3', c},
+		{'4'},
+		{'5'},
+		{'6', c},
+		{'7', c, c},
+		{'8', c, c},
+		{'9', c},
+	}
+
+	for row := 2; row >= 0; row-- {
+		for space := 0; space < margin; space++ {
+			view += " "
+		}
+		// curr fingers
+		for cf := 0; cf < len(f); cf++ {
+			// if this is a finger spot, then I should print the character
+			// in the finger view location
+			if isFingerSpot := row < len(f[cf]); isFingerSpot {
+				style := lg.NewStyle()
+				// testing the current finger highlighting,
+				// trying finger 1 for now.
+				if cf == 1 {
+					style = style.Reverse(true)
+				}
+				if row == 0 {
+					view += style.Render(strconv.Itoa(cf))
+				} else {
+					view += style.Render(string(c))
+				}
+			} else {
+				view += " "
+			}
+			// space in between the hands
+			if cf == 4 {
+				view += " "
+			}
+		}
+		// not last row
+		if row != 0 {
+			view += "\n"
 		}
 	}
 	return

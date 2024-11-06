@@ -1,7 +1,6 @@
 package root
 
 import (
-	"strconv"
 	"testing"
 )
 
@@ -20,63 +19,38 @@ const (
 
 var fm map[string][]int = make(map[string][]int)
 
-// func charToFingers() []int {
-
-// }
-
-func fingerView() (view string) {
-	c := "*"
-	// fingers
-	f := [][]string{
-		{"0", c},
-		{"1", c, c},
-		{"2", c, c},
-		{"3", c},
-		{"4"},
-		{"5"},
-		{"6", c},
-		{"7", c, c},
-		{"8", c, c},
-		{"9", c},
-	}
-
-	for row := 2; row >= 0; row-- {
-		// curr fingers
-		for cf := 0; cf < len(f); cf++ {
-			// if this is a finger spot, then I should print the character
-			// in the finger view location
-			if isFingerSpot := row < len(f[cf]); isFingerSpot {
-				// label?
-				if row == 0 {
-					view += strconv.Itoa(cf)
-				} else {
-					view += c
-				}
-			} else {
-				view += " "
-			}
-			// space in between the hands
-			if cf == 4 {
-				view += " "
-			}
-		}
-		// not last row
-		if row != 0 {
-			view += "\n"
-		}
-	}
-	return
-}
-
 func TestFingerView(t *testing.T) {
-	name := "No highlighted characters, stars for fingers"
-	want := "" +
-		" **     ** \n" +
-		"****   ****\n" +
-		"01234 56789"
-	got := fingerView()
-	if got != want {
-		t.Errorf("%s:\ngot:\n%s\n\nwant:\n%s", name, got, want)
+
+	testCases := []struct {
+		name   string
+		char   rune
+		margin int
+		want   string
+	}{
+		{
+			name:   "Stars for fingers",
+			char:   '*',
+			margin: 0,
+			want: "" +
+				" **     ** \n" +
+				"****   ****\n" +
+				"01234 56789",
+		},
+		{
+			name:   "Stars for fingers, margins",
+			char:   '*',
+			margin: 2,
+			want: "" +
+				"   **     ** \n" +
+				"  ****   ****\n" +
+				"  01234 56789",
+		},
+	}
+	for _, tc := range testCases {
+		got := fingerView(tc.char, tc.margin)
+		if got != tc.want {
+			t.Errorf("%s:\ngot:\n%s\n\nwant:\n%s", tc.name, got, tc.want)
+		}
 	}
 }
 
