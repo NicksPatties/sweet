@@ -117,21 +117,149 @@ func (k keymap) render(char string) (km string) {
 	return
 }
 
+const (
+	lpinky uint = iota
+	lring
+	lmiddle
+	lindex
+	lthumb
+	rthumb
+	rindex
+	rmiddle
+	rring
+	rpinky
+)
+
 // Returns a view of the fingers for the keymap.
-func fingerView(c rune, margin int) (view string) {
+// margin is the spacing on the left to push
+// fi is finger icon (which will actually be determined by)
+// c is character to type
+func fingerView(margin int, fIcon rune, currChar rune) (view string) {
+
+	// rune to fingers
+	// doing this _for each character change_ a good idea?
+	rtfs := make(map[rune][]uint)
+	rtfs['`'] = []uint{lpinky}
+	rtfs['1'] = []uint{lpinky}
+	rtfs['q'] = []uint{lpinky}
+	rtfs['a'] = []uint{lpinky}
+	rtfs['z'] = []uint{lpinky}
+	rtfs['~'] = []uint{lpinky, rpinky}
+	rtfs['!'] = []uint{lpinky, rpinky}
+	rtfs['Q'] = []uint{lpinky, rpinky}
+	rtfs['A'] = []uint{lpinky, rpinky}
+	rtfs['Z'] = []uint{lpinky, rpinky}
+
+	rtfs['2'] = []uint{lring}
+	rtfs['w'] = []uint{lring}
+	rtfs['s'] = []uint{lring}
+	rtfs['x'] = []uint{lring}
+	rtfs['@'] = []uint{lring, rpinky}
+	rtfs['W'] = []uint{lring, rpinky}
+	rtfs['S'] = []uint{lring, rpinky}
+	rtfs['X'] = []uint{lring, rpinky}
+
+	rtfs['3'] = []uint{lmiddle}
+	rtfs['e'] = []uint{lmiddle}
+	rtfs['d'] = []uint{lmiddle}
+	rtfs['c'] = []uint{lmiddle}
+	rtfs['#'] = []uint{lmiddle, rpinky}
+	rtfs['E'] = []uint{lmiddle, rpinky}
+	rtfs['D'] = []uint{lmiddle, rpinky}
+	rtfs['C'] = []uint{lmiddle, rpinky}
+
+	rtfs['4'] = []uint{lindex}
+	rtfs['r'] = []uint{lindex}
+	rtfs['f'] = []uint{lindex}
+	rtfs['v'] = []uint{lindex}
+	rtfs['$'] = []uint{lindex, rpinky}
+	rtfs['R'] = []uint{lindex, rpinky}
+	rtfs['F'] = []uint{lindex, rpinky}
+	rtfs['V'] = []uint{lindex, rpinky}
+	rtfs['5'] = []uint{lindex}
+	rtfs['t'] = []uint{lindex}
+	rtfs['g'] = []uint{lindex}
+	rtfs['b'] = []uint{lindex}
+	rtfs['%'] = []uint{lindex, rpinky}
+	rtfs['T'] = []uint{lindex, rpinky}
+	rtfs['G'] = []uint{lindex, rpinky}
+	rtfs['B'] = []uint{lindex, rpinky}
+
+	rtfs[' '] = []uint{lthumb}
+
+	rtfs['6'] = []uint{rindex}
+	rtfs['y'] = []uint{rindex}
+	rtfs['h'] = []uint{rindex}
+	rtfs['n'] = []uint{rindex}
+	rtfs['^'] = []uint{rindex, lpinky}
+	rtfs['Y'] = []uint{rindex, lpinky}
+	rtfs['H'] = []uint{rindex, lpinky}
+	rtfs['N'] = []uint{rindex, lpinky}
+	rtfs['7'] = []uint{rindex}
+	rtfs['u'] = []uint{rindex}
+	rtfs['j'] = []uint{rindex}
+	rtfs['m'] = []uint{rindex}
+	rtfs['&'] = []uint{rindex, lpinky}
+	rtfs['U'] = []uint{rindex, lpinky}
+	rtfs['J'] = []uint{rindex, lpinky}
+	rtfs['M'] = []uint{rindex, lpinky}
+
+	rtfs['8'] = []uint{rmiddle}
+	rtfs['i'] = []uint{rmiddle}
+	rtfs['k'] = []uint{rmiddle}
+	rtfs[','] = []uint{rmiddle}
+	rtfs['*'] = []uint{rmiddle, lpinky}
+	rtfs['I'] = []uint{rmiddle, lpinky}
+	rtfs['K'] = []uint{rmiddle, lpinky}
+	rtfs['<'] = []uint{rmiddle, lpinky}
+
+	rtfs['9'] = []uint{rring}
+	rtfs['o'] = []uint{rring}
+	rtfs['l'] = []uint{rring}
+	rtfs['.'] = []uint{rring}
+	rtfs['('] = []uint{rring, lpinky}
+	rtfs['O'] = []uint{rring, lpinky}
+	rtfs['L'] = []uint{rring, lpinky}
+	rtfs['>'] = []uint{rring, lpinky}
+
+	rtfs['0'] = []uint{rpinky}
+	rtfs['p'] = []uint{rpinky}
+	rtfs[';'] = []uint{rpinky}
+	rtfs['/'] = []uint{rpinky}
+	rtfs[')'] = []uint{rpinky, lpinky}
+	rtfs['P'] = []uint{rpinky, lpinky}
+	rtfs[':'] = []uint{rpinky, lpinky}
+	rtfs['?'] = []uint{rpinky, lpinky}
+
+	rtfs['-'] = []uint{rpinky}
+	rtfs['['] = []uint{rpinky}
+	rtfs['\''] = []uint{rpinky}
+	rtfs['='] = []uint{rpinky}
+	rtfs[']'] = []uint{rpinky}
+	rtfs['\n'] = []uint{rpinky}
+	rtfs['\\'] = []uint{rpinky}
+	rtfs['_'] = []uint{rpinky, lpinky}
+	rtfs['{'] = []uint{rpinky, lpinky}
+	rtfs['"'] = []uint{rpinky, lpinky}
+	rtfs['+'] = []uint{rpinky, lpinky}
+	rtfs['}'] = []uint{rpinky, lpinky}
+	rtfs['|'] = []uint{rpinky, lpinky}
+
 	// fingers
 	f := [][]rune{
-		{'0', c},
-		{'1', c, c},
-		{'2', c, c},
-		{'3', c},
+		{'0', fIcon},
+		{'1', fIcon, fIcon},
+		{'2', fIcon, fIcon},
+		{'3', fIcon},
 		{'4'},
 		{'5'},
-		{'6', c},
-		{'7', c, c},
-		{'8', c, c},
-		{'9', c},
+		{'6', fIcon},
+		{'7', fIcon, fIcon},
+		{'8', fIcon, fIcon},
+		{'9', fIcon},
 	}
+
+	activeFingers := rtfs[currChar]
 
 	for row := 2; row >= 0; row-- {
 		for space := 0; space < margin; space++ {
@@ -143,15 +271,20 @@ func fingerView(c rune, margin int) (view string) {
 			// in the finger view location
 			if isFingerSpot := row < len(f[cf]); isFingerSpot {
 				style := lg.NewStyle()
-				// testing the current finger highlighting,
-				// trying finger 1 for now.
-				if cf == 1 {
+
+				isActive := false
+				for _, finger := range activeFingers {
+					if finger == uint(cf) {
+						isActive = true
+					}
+				}
+				if isActive {
 					style = style.Reverse(true)
 				}
 				if row == 0 {
 					view += style.Render(strconv.Itoa(cf))
 				} else {
-					view += style.Render(string(c))
+					view += style.Render(string(fIcon))
 				}
 			} else {
 				view += " "

@@ -4,32 +4,20 @@ import (
 	"testing"
 )
 
-const (
-	lpinky uint = iota
-	lring
-	lmiddle
-	lindex
-	lthumb
-	rthumb
-	rindex
-	rmiddle
-	rring
-	rpinky
-)
-
 var fm map[string][]int = make(map[string][]int)
 
 func TestFingerView(t *testing.T) {
 
 	testCases := []struct {
 		name   string
+		icon   rune
 		char   rune
 		margin int
 		want   string
 	}{
 		{
 			name:   "Stars for fingers",
-			char:   '*',
+			icon:   '*',
 			margin: 0,
 			want: "" +
 				" **     ** \n" +
@@ -38,7 +26,7 @@ func TestFingerView(t *testing.T) {
 		},
 		{
 			name:   "Stars for fingers, margins",
-			char:   '*',
+			icon:   '*',
 			margin: 2,
 			want: "" +
 				"   **     ** \n" +
@@ -47,7 +35,8 @@ func TestFingerView(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-		got := fingerView(tc.char, tc.margin)
+		// just passing a character because
+		got := fingerView(tc.margin, tc.icon, 'a')
 		if got != tc.want {
 			t.Errorf("%s:\ngot:\n%s\n\nwant:\n%s", tc.name, got, tc.want)
 		}
