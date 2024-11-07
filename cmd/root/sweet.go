@@ -472,6 +472,7 @@ func (m exerciseModel) View() (s string) {
 		s += m.exerciseNameView()
 		s += "\n\n"
 		s += m.exerciseTextView()
+		s += "\n"
 		s += qwerty.render(string(currKey))
 		s += "\n"
 		s += fingerView(qwerty.fingersMargin, '*', rune(currKey))
