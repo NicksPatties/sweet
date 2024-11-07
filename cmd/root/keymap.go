@@ -130,122 +130,121 @@ const (
 	rpinky
 )
 
+// Rune to fingers
+var rtfs = map[rune][]uint{
+	'`': {lpinky},
+	'1': {lpinky},
+	'q': {lpinky},
+	'a': {lpinky},
+	'z': {lpinky},
+	'~': {lpinky, rpinky},
+	'!': {lpinky, rpinky},
+	'Q': {lpinky, rpinky},
+	'A': {lpinky, rpinky},
+	'Z': {lpinky, rpinky},
+
+	'2': {lring},
+	'w': {lring},
+	's': {lring},
+	'x': {lring},
+	'@': {lring, rpinky},
+	'W': {lring, rpinky},
+	'S': {lring, rpinky},
+	'X': {lring, rpinky},
+
+	'3': {lmiddle},
+	'e': {lmiddle},
+	'd': {lmiddle},
+	'c': {lmiddle},
+	'#': {lmiddle, rpinky},
+	'E': {lmiddle, rpinky},
+	'D': {lmiddle, rpinky},
+	'C': {lmiddle, rpinky},
+
+	'4': {lindex},
+	'r': {lindex},
+	'f': {lindex},
+	'v': {lindex},
+	'$': {lindex, rpinky},
+	'R': {lindex, rpinky},
+	'F': {lindex, rpinky},
+	'V': {lindex, rpinky},
+	'5': {lindex},
+	't': {lindex},
+	'g': {lindex},
+	'b': {lindex},
+	'%': {lindex, rpinky},
+	'T': {lindex, rpinky},
+	'G': {lindex, rpinky},
+	'B': {lindex, rpinky},
+
+	' ': {lthumb},
+
+	'6': {rindex},
+	'y': {rindex},
+	'h': {rindex},
+	'n': {rindex},
+	'^': {rindex, lpinky},
+	'Y': {rindex, lpinky},
+	'H': {rindex, lpinky},
+	'N': {rindex, lpinky},
+	'7': {rindex},
+	'u': {rindex},
+	'j': {rindex},
+	'm': {rindex},
+	'&': {rindex, lpinky},
+	'U': {rindex, lpinky},
+	'J': {rindex, lpinky},
+	'M': {rindex, lpinky},
+
+	'8': {rmiddle},
+	'i': {rmiddle},
+	'k': {rmiddle},
+	',': {rmiddle},
+	'*': {rmiddle, lpinky},
+	'I': {rmiddle, lpinky},
+	'K': {rmiddle, lpinky},
+	'<': {rmiddle, lpinky},
+
+	'9': {rring},
+	'o': {rring},
+	'l': {rring},
+	'.': {rring},
+	'(': {rring, lpinky},
+	'O': {rring, lpinky},
+	'L': {rring, lpinky},
+	'>': {rring, lpinky},
+
+	'0': {rpinky},
+	'p': {rpinky},
+	';': {rpinky},
+	'/': {rpinky},
+	')': {rpinky, lpinky},
+	'P': {rpinky, lpinky},
+	':': {rpinky, lpinky},
+	'?': {rpinky, lpinky},
+
+	'-':  {rpinky},
+	'[':  {rpinky},
+	'\'': {rpinky},
+	']':  {rpinky},
+	'\n': {rpinky},
+	'\\': {rpinky},
+	'_':  {rpinky, lpinky},
+	'{':  {rpinky, lpinky},
+	'"':  {rpinky, lpinky},
+	'+':  {rpinky, lpinky},
+	'}':  {rpinky, lpinky},
+	'|':  {rpinky, lpinky},
+}
+
 // Returns a view of the fingers for the keymap.
 // margin is the spacing on the left to push
 // fi is finger icon (which will actually be determined by)
 // c is character to type
 func fingerView(margin int, fIcon rune, currChar rune) (view string) {
 
-	// rune to fingers
-	// doing this _for each character change_ a good idea?
-	rtfs := make(map[rune][]uint)
-	rtfs['`'] = []uint{lpinky}
-	rtfs['1'] = []uint{lpinky}
-	rtfs['q'] = []uint{lpinky}
-	rtfs['a'] = []uint{lpinky}
-	rtfs['z'] = []uint{lpinky}
-	rtfs['~'] = []uint{lpinky, rpinky}
-	rtfs['!'] = []uint{lpinky, rpinky}
-	rtfs['Q'] = []uint{lpinky, rpinky}
-	rtfs['A'] = []uint{lpinky, rpinky}
-	rtfs['Z'] = []uint{lpinky, rpinky}
-
-	rtfs['2'] = []uint{lring}
-	rtfs['w'] = []uint{lring}
-	rtfs['s'] = []uint{lring}
-	rtfs['x'] = []uint{lring}
-	rtfs['@'] = []uint{lring, rpinky}
-	rtfs['W'] = []uint{lring, rpinky}
-	rtfs['S'] = []uint{lring, rpinky}
-	rtfs['X'] = []uint{lring, rpinky}
-
-	rtfs['3'] = []uint{lmiddle}
-	rtfs['e'] = []uint{lmiddle}
-	rtfs['d'] = []uint{lmiddle}
-	rtfs['c'] = []uint{lmiddle}
-	rtfs['#'] = []uint{lmiddle, rpinky}
-	rtfs['E'] = []uint{lmiddle, rpinky}
-	rtfs['D'] = []uint{lmiddle, rpinky}
-	rtfs['C'] = []uint{lmiddle, rpinky}
-
-	rtfs['4'] = []uint{lindex}
-	rtfs['r'] = []uint{lindex}
-	rtfs['f'] = []uint{lindex}
-	rtfs['v'] = []uint{lindex}
-	rtfs['$'] = []uint{lindex, rpinky}
-	rtfs['R'] = []uint{lindex, rpinky}
-	rtfs['F'] = []uint{lindex, rpinky}
-	rtfs['V'] = []uint{lindex, rpinky}
-	rtfs['5'] = []uint{lindex}
-	rtfs['t'] = []uint{lindex}
-	rtfs['g'] = []uint{lindex}
-	rtfs['b'] = []uint{lindex}
-	rtfs['%'] = []uint{lindex, rpinky}
-	rtfs['T'] = []uint{lindex, rpinky}
-	rtfs['G'] = []uint{lindex, rpinky}
-	rtfs['B'] = []uint{lindex, rpinky}
-
-	rtfs[' '] = []uint{lthumb}
-
-	rtfs['6'] = []uint{rindex}
-	rtfs['y'] = []uint{rindex}
-	rtfs['h'] = []uint{rindex}
-	rtfs['n'] = []uint{rindex}
-	rtfs['^'] = []uint{rindex, lpinky}
-	rtfs['Y'] = []uint{rindex, lpinky}
-	rtfs['H'] = []uint{rindex, lpinky}
-	rtfs['N'] = []uint{rindex, lpinky}
-	rtfs['7'] = []uint{rindex}
-	rtfs['u'] = []uint{rindex}
-	rtfs['j'] = []uint{rindex}
-	rtfs['m'] = []uint{rindex}
-	rtfs['&'] = []uint{rindex, lpinky}
-	rtfs['U'] = []uint{rindex, lpinky}
-	rtfs['J'] = []uint{rindex, lpinky}
-	rtfs['M'] = []uint{rindex, lpinky}
-
-	rtfs['8'] = []uint{rmiddle}
-	rtfs['i'] = []uint{rmiddle}
-	rtfs['k'] = []uint{rmiddle}
-	rtfs[','] = []uint{rmiddle}
-	rtfs['*'] = []uint{rmiddle, lpinky}
-	rtfs['I'] = []uint{rmiddle, lpinky}
-	rtfs['K'] = []uint{rmiddle, lpinky}
-	rtfs['<'] = []uint{rmiddle, lpinky}
-
-	rtfs['9'] = []uint{rring}
-	rtfs['o'] = []uint{rring}
-	rtfs['l'] = []uint{rring}
-	rtfs['.'] = []uint{rring}
-	rtfs['('] = []uint{rring, lpinky}
-	rtfs['O'] = []uint{rring, lpinky}
-	rtfs['L'] = []uint{rring, lpinky}
-	rtfs['>'] = []uint{rring, lpinky}
-
-	rtfs['0'] = []uint{rpinky}
-	rtfs['p'] = []uint{rpinky}
-	rtfs[';'] = []uint{rpinky}
-	rtfs['/'] = []uint{rpinky}
-	rtfs[')'] = []uint{rpinky, lpinky}
-	rtfs['P'] = []uint{rpinky, lpinky}
-	rtfs[':'] = []uint{rpinky, lpinky}
-	rtfs['?'] = []uint{rpinky, lpinky}
-
-	rtfs['-'] = []uint{rpinky}
-	rtfs['['] = []uint{rpinky}
-	rtfs['\''] = []uint{rpinky}
-	rtfs['='] = []uint{rpinky}
-	rtfs[']'] = []uint{rpinky}
-	rtfs['\n'] = []uint{rpinky}
-	rtfs['\\'] = []uint{rpinky}
-	rtfs['_'] = []uint{rpinky, lpinky}
-	rtfs['{'] = []uint{rpinky, lpinky}
-	rtfs['"'] = []uint{rpinky, lpinky}
-	rtfs['+'] = []uint{rpinky, lpinky}
-	rtfs['}'] = []uint{rpinky, lpinky}
-	rtfs['|'] = []uint{rpinky, lpinky}
-
-	// fingers
+	// fingers view
 	f := [][]rune{
 		{'0', fIcon},
 		{'1', fIcon, fIcon},
@@ -261,7 +260,7 @@ func fingerView(margin int, fIcon rune, currChar rune) (view string) {
 
 	activeFingers := rtfs[currChar]
 
-	for row := 2; row >= 0; row-- {
+	for row := len(f[lring]) - 1; row >= 0; row-- {
 		for space := 0; space < margin; space++ {
 			view += " "
 		}

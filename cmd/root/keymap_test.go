@@ -4,8 +4,6 @@ import (
 	"testing"
 )
 
-var fm map[string][]int = make(map[string][]int)
-
 func TestFingerView(t *testing.T) {
 
 	testCases := []struct {
