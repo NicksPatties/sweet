@@ -468,7 +468,6 @@ func (m exerciseModel) View() (s string) {
 	if !m.finished() {
 		currKeyI := len(m.typedText)
 		currKey := m.exercise.text[currKeyI]
-		margin := 5
 		s += "\n"
 		s += m.exerciseNameView()
 		s += "\n\n"
@@ -477,7 +476,7 @@ func (m exerciseModel) View() (s string) {
 		s += "keymap:\n\n"
 		s += qwerty.render(string(currKey))
 		s += "\n"
-		s += fingerView(margin, '*', rune(currKey))
+		s += fingerView(qwerty.fingersMargin, '*', rune(currKey))
 	}
 	return
 }

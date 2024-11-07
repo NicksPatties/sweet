@@ -6,9 +6,10 @@ import (
 )
 
 type keymap struct {
-	keys         [][]string
-	modifiedKeys [][]string
-	margins      []int
+	keys          [][]string
+	modifiedKeys  [][]string
+	margins       []int
+	fingersMargin int
 }
 
 var qwerty = keymap{
@@ -48,7 +49,8 @@ var qwerty = keymap{
 			"space",
 		},
 	},
-	margins: []int{3, 4, 5, 0, 8},
+	margins:       []int{3, 4, 5, 0, 8},
+	fingersMargin: 5,
 }
 
 func (k keymap) findKeyCombo(char string) (combo []string) {
@@ -246,16 +248,16 @@ func fingerView(margin int, fIcon rune, currChar rune) (view string) {
 
 	// fingers view
 	f := [][]rune{
-		{'0', fIcon},
-		{'1', fIcon, fIcon},
-		{'2', fIcon, fIcon},
-		{'3', fIcon},
-		{'4'},
-		{'5'},
-		{'6', fIcon},
-		{'7', fIcon, fIcon},
-		{'8', fIcon, fIcon},
-		{'9', fIcon},
+		{rune(lpinky), fIcon},
+		{rune(lring), fIcon, fIcon},
+		{rune(lmiddle), fIcon, fIcon},
+		{rune(lindex), fIcon},
+		{rune(lthumb)},
+		{rune(rthumb)},
+		{rune(rindex), fIcon},
+		{rune(rmiddle), fIcon, fIcon},
+		{rune(rring), fIcon, fIcon},
+		{rune(rpinky), fIcon},
 	}
 
 	activeFingers := rtfs[currChar]
