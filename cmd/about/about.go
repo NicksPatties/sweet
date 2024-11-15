@@ -7,8 +7,8 @@ package about
 
 import (
 	"fmt"
-
 	"github.com/spf13/cobra"
+	"os"
 )
 
 // used to fill in the version number
@@ -19,11 +19,31 @@ var Command = &cobra.Command{
 	Use:   "about",
 	Short: "Print details about the application",
 	Run: func(cmd *cobra.Command, args []string) {
-		printAbout(version, "issueLink", "supportLink", "executableName")
+		issueLink := "https://github.com/NicksPatties/sweet/issues"
+		// This should be a support link on my personal website,
+		// but for now this will do.
+		supportLink := "https://liberapay.com/NicksPatties/"
+		executableName := os.Args[0]
+		if version == "" {
+			version = "dev"
+		}
+		printAbout(version, issueLink, supportLink, executableName)
 	},
 }
 
+func bold(text string) string {
+	return fmt.Sprintf("\033[1m%s\033[0m", text)
+}
+
 func printAbout(version, issueLink, supportLink, executableName string) {
+	tagline := fmt.Sprintf(
+		"The %soft%sare %sngineer's %sxercise for %syping",
+		bold("S"),
+		bold("w"),
+		bold("E"),
+		bold("E"),
+		bold("T"),
+	)
 	msg := `Hey! That's
 
       ,gg,                                                  gg  
@@ -37,7 +57,7 @@ _ ,dP'     I8 I8    I8    8I   I8, ,8I  I8, ,8I   ,I8,
 "888,,____,dP,d8,  ,d8,  ,8I   ` + "`YbadP'" + `  ` + "`YbadP'" + `  ,d88b,     aa  
 a8P"Y88888P" P""Y88P""Y88P"   888P"Y888888P"Y88888P""Y88    88  
 
-The Software Engineering Exercise for Typing 
+%s 
 
 Written by:
 	NicksPatties
@@ -53,5 +73,5 @@ Interested in supporting %s? You can do so here!
 
 Copyright (c) 2023-2024 NicksPatties
 `
-	fmt.Printf(msg, version, issueLink, executableName, supportLink)
+	fmt.Printf(msg, tagline, version, issueLink, executableName, supportLink)
 }
