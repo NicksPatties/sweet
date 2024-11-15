@@ -409,11 +409,11 @@ func (m exerciseModel) exerciseNameView() string {
 
 func (m exerciseModel) exerciseTextView() (s string) {
 	// typed style
-	ts := lg.NewStyle().Foreground(lg.Color("#FFFFFF"))
+	ts := lg.NewStyle()
 	// untyped style
 	us := lg.NewStyle().Foreground(lg.Color("7"))
 	// cursor style
-	cs := lg.NewStyle().Background(lg.Color("255")).Foreground(lg.Color("0"))
+	cs := lg.NewStyle().Background(lg.Color("15")).Foreground(lg.Color("0"))
 	// incorrest style
 	is := lg.NewStyle().Background(lg.Color("1")).Foreground(lg.Color("15"))
 
