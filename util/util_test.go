@@ -65,3 +65,13 @@ func TestSweetConfigDir(t *testing.T) {
 		}
 	})
 }
+
+func TestMD5Hash(t *testing.T) {
+	testString := "what's up?"
+	want := "0d0a3c37bc7f0d527b832c6460569d18"
+	got := MD5Hash(testString)
+
+	if want != got {
+		t.Errorf("\nwant:\n%s\ngot:\n%s", want, got)
+	}
+}

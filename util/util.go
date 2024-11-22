@@ -1,35 +1,21 @@
 package util
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
-	"hash/crc32"
-	"io"
 	"net/url"
 	"os"
 	"path"
 )
 
-// Converts a file from the filePath into a hashed value
-func HashFile(filePath string) (uint32, error) {
-	// Open the file
-	file, err := os.Open(filePath)
-	if err != nil {
-		return 0, err
-	}
-	defer file.Close()
-
-	// Create a new CRC-32 hash object using the IEEE polynomial
-	hasher := crc32.NewIEEE()
-
-	// Copy the file contents to the hasher
-	if _, err := io.Copy(hasher, file); err != nil {
-		return 0, err
-	}
-
-	// Get the checksum
-	checksum := hasher.Sum32()
-
-	return checksum, nil
+// Converts a string to an md5 hash. Used to
+// convert the contents of an exercise into a string
+// to verify if their contents are the same.
+func MD5Hash(contents string) string {
+	bytes := []byte(contents)
+	hash := md5.Sum(bytes)
+	return hex.EncodeToString(hash[:])
 }
 
 // Gets the path for sweet's configuration directory.
