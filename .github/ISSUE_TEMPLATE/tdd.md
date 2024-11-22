@@ -15,9 +15,20 @@ Date: _YYYY-MM-DD_ (updated), _YYYY-MM-DD_ (created)
 
 _Short description of the change and/or feature that is being proposed._
 
-## Problem Statement
+## Key User Stories and tasks
 
-*Use "as a _____, I would like _____" format.*
+- _User story one title_
+  - User story description
+    - *As a ______, I need _____, so that ______* 
+  - Priority
+    - (must have/should have/could have)
+  - Tasks needed to achieve goal (aka: "User Flow")
+    1. _Task one_
+      - _Links to details about task one_
+    2. _Task two_
+      - _Links to details about task two_
+      - _Another link..._
+    3. _Task three_
 
 ## What
 
@@ -33,43 +44,58 @@ If the document uses any special words or terms, list them here.
 
 ### Non-Goals
 
-_Describe a list of items that are **not** included in this design document_.
-
-- _Item one_
-- _Item two_
-- _Item three_
+- _Non-goal one_
+- _Non-goal two_
+- _Non-goal three_
 
 ### Technical requirements
 
-_The below sections contains some sample considerations in your design._
+#### New Entrypoints
 
-#### Additions/Changes to Endpoints
+_"Entrypoints" could be web server endpoints, commands in a CLI application, or something smiliar._
 
-_These could be web server endpoints, or commands in a CLI application._
+- _Entrypoint name_
+  - _Request type_
+    - (GET/POST/...)
+  - Why is this new entrypoint needed?
+    - _Reason for why this entrypoint is necessary_ 
+  - Description of input/output contract
+    - _If request X is sent in with Y, then Z should be returned_
+    - _If command X is executed with Y flag, then Z should be returned_
+
+#### Additions/Changes to Existing Entrypoints
+
+- _Entrypoint name_
+  - _Request type_
+    - (GET/POST/...)
+  - Why is this change required?
+    - _Reason for why this entrypoint is necessary_ 
+  - Description of input/output contract
+    - _If request X is sent in with Y, then Z should be returned_
+    - _If command X is executed with Y flag, then Z should be returned_
 
 #### Storage Model Additions/Changes
 
 _These are changes to ways that data is stored in the application._
 
 - _Model name_
-  - Description of changes
-    - _These are the things that will be changed_
+  - Additions and/or changes
+    - _Change one_
+    - _Change two_
+    - _Change three_
   - How will existing data be handled?
     - _This is how existing data will be handled_
 
 #### UI Screens/Components
 
 - _UI component title_
-  - Description:
-    - _A description of the UI component_
-
-_Place mockups of UI component here_
+  - _A description of the UI component_
+  - Mockups: _Place mockups of UI component here_
 
 #### Data Handling and Privacy
 
 - _Type of data_
-  - Description
-    - _A description of the data_
+  - _A description of the data_
   - Why do we need to store this data?
     - _A reason why_
   - Anonymized?
@@ -93,12 +119,12 @@ _Add any other technical considerations that have not been mentioned yet._
 
 - Test Description: _What should the test demonstrate?_
   - Initial setup steps
-    _1. Do a thing_
-    _2. Do another thing_
+    1. _Do a thing_
+    2. _Do another thing_
   - Test steps
-    _1. Click this thing_
+    1. _Click this thing_
       - [ ] _The expected behavior should be this_
-    _2. Type this thing_
+    2. _Type this thing_
       - [ ] _The expected behavior should be that_
 
 ### Remaining Open Questions
@@ -108,19 +134,29 @@ _Add any questions that you do not konw the answer to at this moment. If there a
 - _Question 1_
 - _Question 2_ 
 
-**Review the What section and verify that it looks good before moving to the next section.**
+> **STOP.
+> Review the [WHAT section](#what) again. If the proposal looks good, then move on.**
+
+<details>
+<summary>Review considerations</summary>
+
+- Should we tackle this problem at this time? (yes/no)
+- Do the requirements in this TDD match those in the [user stories](#key-user-stories-and-tasks)? (yes/no)
+- Can the project be done using only existing patterns in the codebase? (yes/no)
+  - Are there any approaches/insights that might be useful for designing the solution? 
+- Are all assertions properly justified (with links to sources/proof, if appropriate)? (yes/no)
+- Does the testing plan validate all required user stories in the product spec? (yes/no)
+</details>
 
 </details>
 
 ## How
 
-**Only do this step once you have a solid understanding of what needs to be accomplished in the [What section](#what).**
-
 <details>
 
 ### Existing Status Quo
 
-_If a similar task was performed previously, then state it here._
+_If a similar task was performed previously, then link it here._
 
 ### Solution Overview
 
@@ -128,8 +164,7 @@ _Add a sketch of a sequence or dependency diagram here. Give a high level view o
 
 #### Third party libraries
 
-- _Library name_
-  - [link](_link to dependency_)
+- [_libraryname:version_](link)
   - Why is it needed?
     - _It's needed to do XYZ_
   - License
@@ -139,8 +174,7 @@ _Add a sketch of a sequence or dependency diagram here. Give a high level view o
 
 _Things like external APIs (Google Maps, OpenAI, etc.) are stated here._
 
-- _Service name_
-  - [link](_link to dependency_)
+- [_Service name_](link)
   - Why is it needed?
     - _Reason_
   - What is the plan if the dependency fails?
@@ -152,29 +186,46 @@ _Things like external APIs (Google Maps, OpenAI, etc.) are stated here._
 
 The following options have been considered.
 
-*Option 1*
-*Option 2*
+- _Option one_
+- _Option two_
+- _..._
 
-_Now, list the impacted topics, and compare the options together._
+Among these, _this one_ may be the best option, because:
+- _Reason one_
+- _Reason two_
+- _..._
 
-- (Example) Data storage efficiency
-  - ~Option 1~
-    - _some data_
-  - Option 2
-    - _some other data_
+The options are compared in detail in the table below
 
-_Mark options that are no longer in consideration with a ~strikethrough~._
+|    |  Option one | Option two |
+| --- | --- | --- |
+| _Consideration one_ | _Option one impact_ | _Option two impact_ |
+| _Consideration two_ | _Option one impact_ | _Option two impact_ |
+| ... | | |
 
 #### Decision 2: *Decision name*
 
 _Repeat as many decision sections as needed._
 
-### Risk and mitigations
+### Risks and mitigations
 
-- Potential risk: _there is something bad that could happen here._
+- _Describe the potential risk here_
   - Mitigation: _This is the mitigation for the above risk_
 
-**At this point, you should verify your data and risks have properly been assessed before moving to implementation**.
+> **STOP. 
+> Review from the top of the [HOW section](#how).**
+
+<details>
+<summary>Review considerations</summary>
+
+- Is the proposed solution understandable to others? (yes/no)
+- Is the architectural decision analysis solid, and are the conclusions well-reasoned and supported by the data? (yes/no)
+  - Are there other key architectural decisions that should be considered (but haven’t been)? (yes/no)
+- Will the proposed approach scale? (yes/no)
+- Are there any potential red flags or risks (particularly around security and compatibility) in the proposed solution that need further investigation? (yes/no)
+- Are the architectural patterns being implemented consistent with the rest of the affected codebase? (yes/no)
+  - If new patterns are being introduced, do they set the right precedents and are they well-designed? (yes/no)
+</details>
 
 ### Implementation approach
 
@@ -182,21 +233,50 @@ _Describe the changes that you intend to make to the codebase. **You are not req
 
 _Also, describe explicit contracts that should be followed in the implementation, including function definitions and comments that describe what they should be doing._
 
-#### Data Model
+#### Storage Model
 
-_Describe how the data is stored. This could include a description of the database schema._
+_Describe how the data is stored. Some questions below to consider:_
 
-#### Interface/API Definitions
+_How their IDs are generated?_
+_What are their fields (including descriptions)?_
+_Any constraints on validation?_
+_Is the data a source of truth, or is it derived from something else?_
+_How can the user export this data? (Takeout policy)_
+_How is the data removed if a user no longer wants to use the app? (Wipeout policy)_
+_How will you query this data? Will you require pagination?_
+_What are the method signatures that will be needed? Include doc comments, but you don't need to include code._
 
-_Describe how the various components talk to each other. For example, if there are REST endpoints, describe the endpoint URL and the format of the data and parameters used._
+#### Storage Model Migrations 
 
-#### Business Logic
+_Describe any required migrations for your data storage. Be especially cognizant if you require backfilling any rows with existing data!_
 
-_If the design requires any non-trivial algorithms or logic, describe them._
+#### Domain Objects
 
-#### Migration Strategy
+_Describe any new objects related to your business logic that will be created. Give its name, fields (descriptions and types), and methods that will be supported. Include doc comments, but no need to include code._
 
-_If the design incurs non-backwards-compatible changes to an existing system, describe the process whereby entities that depend on the system are going to migrate to the new design._
+#### User flow
+
+_For each [user story and task](#key-user-stories-and-tasks), create a flow diagram for any interaction with entrypoints into the application. Consider the following:_
+
+- _if making a web application/feature, consider the series of request/response operations (endpoint, handlers, pseudocode describing what happens on the server, etc.)_
+- _domain controllers_
+- _utiliy functions_
+- _core business logic_
+
+#### UI Changes
+
+_For each [user story and task](#key-user-stories-and-tasks), create a series of screens that the user will see when using the application. Take extra consideration to ensure that the following are considered:_
+
+- _screen constraints (height, width, landscape, vertical orientation)_
+- _light and dark themes_
+- _high pixel density devices_
+- _left-to-right and right-to-left languages_
+- _accessibility concerns_
+- _how data is bound or transformed to show these UI components_
+
+#### Documentation Changes
+
+_List changes to documentation for the feature to be clearly described. Be sure to include changes to READMEs, help messages, wiki pages, and so on._ 
 
 ### Metrics plan
 
@@ -210,9 +290,9 @@ _Break down the list of tasks into issues here._
 
 ## Launch Plan
 
-_Share how this feature will be released to the public. Will this feature be behind a feature flag? Will it be released in an upcoming update?
+_Share how this feature will be released to the public. Will this feature be behind a feature flag? Will it be released in an upcoming update?_
 
 ### Future work
 
-_Is there any work that needs to be done in the future to maintain this feature, or is related to this feature in some way? This is similar to the [non-goals section](#non-goals) of the document.
+_Is there any work that needs to be done in the future to maintain this feature, or is related to this feature in some way?_
 
