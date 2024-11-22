@@ -1,9 +1,9 @@
 package util
 
 import (
+	"fmt"
 	"hash/crc32"
 	"io"
-	l "log"
 	"net/url"
 	"os"
 	"path"
@@ -32,15 +32,16 @@ func HashFile(filePath string) (uint32, error) {
 	return checksum, nil
 }
 
-func GetConfigDirectory() string {
-
-	exeName := path.Base(os.Args[0])
-
+// Gets the path for sweet's configuration directory.
+//
+// See `os.UserConfigDir` for the default configuration
+// location depending on the current operating system.
+func SweetConfigDir() (string, error) {
 	configDir, err := os.UserConfigDir()
 	if err != nil {
-		l.Fatalf("Failed to get user's config directory: %s\n", err.Error())
+		return "", fmt.Errorf("failed to get config directory: %v", err)
 	}
-	return path.Join(configDir, exeName)
+	return path.Join(configDir, "sweet"), nil
 }
 
 // Filters a list of file names by the given language extension.

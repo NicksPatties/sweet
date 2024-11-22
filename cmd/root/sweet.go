@@ -17,6 +17,7 @@ import (
 	"github.com/NicksPatties/sweet/cmd/add"
 	"github.com/NicksPatties/sweet/cmd/version"
 	"github.com/NicksPatties/sweet/db"
+	"github.com/NicksPatties/sweet/util"
 	"github.com/spf13/cobra"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -547,12 +548,12 @@ func fromArgs(cmd *cobra.Command, args []string) (exercise Exercise, err error) 
 			exercisesDir = envDir
 
 		} else {
-			var configDir string
-			configDir, err = os.UserConfigDir()
+			var sweetConfigDir string
+			sweetConfigDir, err = util.SweetConfigDir()
 			if err != nil {
 				return
 			}
-			exercisesDir = path.Join(configDir, "sweet", "exercises")
+			exercisesDir = path.Join(sweetConfigDir, "exercises")
 		}
 
 		if err = os.MkdirAll(exercisesDir, 0775); err != nil {
@@ -626,13 +627,6 @@ func fromArgs(cmd *cobra.Command, args []string) (exercise Exercise, err error) 
 }
 
 func Run(exercise Exercise) {
-	statsDb, err := db.GetStatsDb()
-	if err != nil {
-		fmt.Println(err)
-	} else {
-		fmt.Printf("got the db! %v\n", statsDb)
-	}
-
 	exModel := NewExerciseModel(exercise)
 	teaModel, err := tea.NewProgram(exModel).Run()
 
@@ -651,5 +645,11 @@ func Run(exercise Exercise) {
 	}
 
 	showResults(exModel)
-
+	// open connection to db once exercise is complete
+	statsDb, err := db.SweetDb()
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		fmt.Printf("got the db! %v\n", statsDb)
+	}
 }

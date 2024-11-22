@@ -20,7 +20,7 @@ func TestGetStatsDb(t *testing.T) {
 
 		os.Unsetenv("SWEET_DB_LOCATION")
 
-		db, err := GetStatsDb()
+		db, err := SweetDb()
 		if err != nil {
 			t.Fatalf("Should create database without error: %v", err)
 		}
@@ -39,7 +39,7 @@ func TestGetStatsDb(t *testing.T) {
 		os.Setenv("SWEET_DB_LOCATION", tempDir)
 		defer os.Unsetenv("SWEET_DB_LOCATION")
 
-		db, err := GetStatsDb()
+		db, err := SweetDb()
 		if err != nil {
 			t.Fatalf("Should create database at custom location: %v", err)
 		}
@@ -55,7 +55,7 @@ func TestGetStatsDb(t *testing.T) {
 	})
 
 	t.Run("validate db schema is correct", func(t *testing.T) {
-		db, err := GetStatsDb()
+		db, err := SweetDb()
 		if err != nil {
 			t.Fatalf("Should create database: %v", err)
 		}
@@ -112,7 +112,7 @@ func TestGetStatsDb(t *testing.T) {
 		os.Setenv("SWEET_DB_LOCATION", "/absolutely/impossible/path/that/cannot/exist")
 		defer os.Unsetenv("SWEET_DB_LOCATION")
 
-		_, err := GetStatsDb()
+		_, err := SweetDb()
 		if err == nil {
 			t.Error("Should return an error for invalid path")
 		}

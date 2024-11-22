@@ -1,6 +1,10 @@
 package util
 
-import "testing"
+import (
+	"os"
+	"path"
+	"testing"
+)
 
 func TestFilterFileNames(t *testing.T) {
 	type testCase struct {
@@ -43,4 +47,21 @@ func TestFilterFileNames(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestSweetConfigDir(t *testing.T) {
+	t.Run("correct directory is returned", func(t *testing.T) {
+		userConfig, _ := os.UserConfigDir()
+		expected := path.Join(userConfig, "sweet")
+
+		actual, err := SweetConfigDir()
+
+		if err != nil {
+			t.Errorf("expected no error, got: %v", err)
+		}
+
+		if expected != actual {
+			t.Errorf("expected %s, got %s", expected, actual)
+		}
+	})
 }
