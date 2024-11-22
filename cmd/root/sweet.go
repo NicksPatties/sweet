@@ -141,6 +141,40 @@ func init() {
 
 // STRUCTS
 
+// A single repetition of an exercise.
+//
+// This is the structure of a row in the sweet db module.
+// See `db/db.go` for more details.
+type Rep struct {
+	hash   string
+	start  time.Time // use
+	end    time.Time
+	name   string
+	lang   string
+	wpm    float64
+	dur    time.Duration
+	acc    float64
+	miss   int
+	errs   int
+	events []event
+}
+
+func (r Rep) String() (s string) {
+	s += fmt.Sprintf("rep:\n")
+	s += fmt.Sprintf("  hash:  %s\n", r.hash)
+	s += fmt.Sprintf("  start: %s\n", r.start)
+	s += fmt.Sprintf("  end:   %s\n", r.end)
+	s += fmt.Sprintf("  name:  %s\n", r.name)
+	s += fmt.Sprintf("  lang:  %s\n", r.lang)
+	s += fmt.Sprintf("  wpm:   %.f\n", r.wpm)
+	s += fmt.Sprintf("  dur:   %s\n", r.dur)
+	s += fmt.Sprintf("  acc:   %2.f%%\n", r.acc)
+	s += fmt.Sprintf("  miss:  %d\n", r.miss)
+	s += fmt.Sprintf("  errs:  %d\n", r.errs)
+	s += fmt.Sprintf("  events: %d events\n", len(r.events))
+	return
+}
+
 // A single Exercise.
 //
 // This contains the data that is required to display and perform
@@ -626,6 +660,24 @@ func fromArgs(cmd *cobra.Command, args []string) (exercise Exercise, err error) 
 	return
 }
 
+// Converts the exercise model to a Rep, in preparation for
+// inserting it into the database.
+func exerciseModelToRep(m exerciseModel) Rep {
+	return Rep{
+		hash:   util.MD5Hash(m.exercise.text),
+		start:  m.events[0].ts,
+		end:    m.events[len(m.events)-1].ts,
+		name:   m.exercise.name,
+		lang:   util.Lang(m.exercise.name),
+		wpm:    wpm(m.events),
+		dur:    duration(m.events),
+		acc:    accuracy(m.events),
+		miss:   numMistakes(m.events),
+		errs:   numUncorrectedErrors(m.events),
+		events: m.events,
+	}
+}
+
 func Run(exercise Exercise) {
 	exModel := NewExerciseModel(exercise)
 	teaModel, err := tea.NewProgram(exModel).Run()
@@ -644,7 +696,10 @@ func Run(exercise Exercise) {
 		os.Exit(0)
 	}
 
-	showResults(exModel)
+	rep := exerciseModelToRep(exModel)
+
+	showResults(rep)
+
 	// open connection to db once exercise is complete
 	statsDb, err := db.SweetDb()
 	if err != nil {

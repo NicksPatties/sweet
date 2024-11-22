@@ -75,3 +75,30 @@ func TestMD5Hash(t *testing.T) {
 		t.Errorf("\nwant:\n%s\ngot:\n%s", want, got)
 	}
 }
+
+func TestLang(t *testing.T) {
+	testCases := []struct {
+		in   string
+		want string
+	}{
+		{
+			in:   "myfile",
+			want: "",
+		},
+		{
+			in:   "myfile.py",
+			want: "py",
+		},
+		{
+			in:   "myfile.today.go",
+			want: "go",
+		},
+	}
+
+	for _, tc := range testCases {
+		got := Lang(tc.in)
+		if got != tc.want {
+			t.Errorf("got %s, want %s", got, tc.want)
+		}
+	}
+}

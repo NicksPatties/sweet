@@ -49,8 +49,10 @@ func TestAccuracy(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		if got := accuracy(tc.events); got != tc.want {
-			t.Errorf("%s want %s, got %s\n", tc.name, tc.want, got)
+		got := accuracy(tc.events)
+		fGot := fmt.Sprintf("%.2f", got)
+		if fGot != tc.want {
+			t.Errorf("%s want %s, got %s\n", tc.name, tc.want, fGot)
 		}
 	}
 

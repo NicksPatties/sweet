@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"strings"
 )
 
 // Converts a string to an md5 hash. Used to
@@ -16,6 +17,18 @@ func MD5Hash(contents string) string {
 	bytes := []byte(contents)
 	hash := md5.Sum(bytes)
 	return hex.EncodeToString(hash[:])
+}
+
+// Gets the language of the provided filename.
+// Unlike `path.Ext`, the language doesn't include the
+// leading dot.
+func Lang(filename string) (lang string) {
+	lang = ""
+	split := strings.Split(filename, ".")
+	if len(split) > 1 {
+		lang = split[len(split)-1]
+	}
+	return
 }
 
 // Gets the path for sweet's configuration directory.
