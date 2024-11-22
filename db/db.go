@@ -11,27 +11,32 @@ import (
 
 // Gets a pointer to the stats database. If the
 // database doesn't exist already, then create it, and place
-// it in the location specified by the SWEET_DB_DIR environment
+// it in the location specified by the SWEET_DB_LOCATION environment
 // variable.
 //
-// The default path to the database is `~/.config/sweet/sweet.db`.
+// The default location of the database file `sweet.db` is
+// `~/.config/sweet/`
 func GetStatsDb() (*sql.DB, error) {
 	// get the path for the database
-	dbName := "sweet.db"
 	var dbPath string
 	if envDir := os.Getenv("SWEET_DB_LOCATION"); envDir != "" {
-		dbPath = path.Join(envDir, dbName)
+		dbPath = envDir
 	} else {
 		configDir, err := os.UserConfigDir()
 		if err != nil {
 			return nil, fmt.Errorf("failed to find user config directory: %v", err)
 		}
-		dbPath = path.Join(configDir, "sweet", dbName)
+		dbPath = path.Join(configDir, "sweet")
 	}
 
-	// The directory should be available by the tim
+	// create the sweet config directory
+	if err := os.MkdirAll(dbPath, 0775); err != nil {
+		return nil, fmt.Errorf("failed to find or create sweet config directory: %v", err)
+	}
+	// The directory should be available by the time
 	// Open a connection to the SQLite database
-	db, err := sql.Open("sqlite3", dbPath)
+	db, err := sql.Open("sqlite3", path.Join(dbPath, "sweet.db"))
+	defer db.Close()
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %v", err)
 	}
@@ -39,7 +44,6 @@ func GetStatsDb() (*sql.DB, error) {
 	// Test the connection
 	err = db.Ping()
 	if err != nil {
-		db.Close()
 		return nil, fmt.Errorf("failed to connect to database: %v", err)
 	}
 
@@ -75,7 +79,6 @@ func GetStatsDb() (*sql.DB, error) {
     `)
 
 	if err != nil {
-		db.Close()
 		return nil, fmt.Errorf("failed to create table: %v", err)
 	}
 
