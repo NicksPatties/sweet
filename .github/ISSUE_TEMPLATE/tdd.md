@@ -1,8 +1,8 @@
 ---
-name: Bug report
-about: Create a report to help improve Sweet
-title: '[BUG] '
-labels: ['bug']
+name: Design document
+about: Clearly define the scope of a large feature
+title: '[TDD] '
+labels: ['design document']
 assignees: ''
 ---
 

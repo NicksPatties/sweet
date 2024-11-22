@@ -1,8 +1,8 @@
 ---
 name: Feature request
 about: Suggest an idea for Sweet
-title: ''
-labels: ''
+title: '[Feature] '
+labels: ['enhancement']
 assignees: ''
 ---
 
