@@ -16,6 +16,7 @@ import (
 	"github.com/NicksPatties/sweet/cmd/about"
 	"github.com/NicksPatties/sweet/cmd/add"
 	"github.com/NicksPatties/sweet/cmd/version"
+	"github.com/NicksPatties/sweet/db"
 	"github.com/spf13/cobra"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -625,6 +626,13 @@ func fromArgs(cmd *cobra.Command, args []string) (exercise Exercise, err error) 
 }
 
 func Run(exercise Exercise) {
+	statsDb, err := db.GetStatsDb()
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		fmt.Printf("got the db! %v\n", statsDb)
+	}
+
 	exModel := NewExerciseModel(exercise)
 	teaModel, err := tea.NewProgram(exModel).Run()
 
