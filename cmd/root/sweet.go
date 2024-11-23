@@ -705,8 +705,13 @@ func Run(exercise Exercise) {
 	statsDb, err := SweetDb()
 	if err != nil {
 		fmt.Println(err)
+	}
+	// insert the row into the database
+	var repId int64
+	repId, err = InsertRep(statsDb, rep)
+	if err != nil {
+		fmt.Printf("Error saving rep to the database: %v\n", err)
 	} else {
-		// db is ready! Write the rep to the database
-		fmt.Printf("got the db! %v\n", statsDb)
+		fmt.Printf("Rep %d saved to the database! Keep it up!\n", repId)
 	}
 }

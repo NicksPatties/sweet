@@ -54,7 +54,7 @@ func SweetDb() (*sql.DB, error) {
 		CREATE TABLE if not exists reps(
 		    id integer primary key autoincrement not null,
 		    -- md5 hash of the exercise file's contents
-		    hash string NOT NULL,
+		    hash string not null,
 		    -- start time in unix milliseconds
 		    start integer not null,
 		    -- end time in unix milliseconds
@@ -88,6 +88,48 @@ func SweetDb() (*sql.DB, error) {
 	return db, nil
 }
 
-func InsertRep(db *sql.DB, rep Rep) {
+func eventsToColumn(events []event) (s string) {
+	for i, event := range events {
+		s += event.String()
+		if i != len(events)-1 {
+			s += "\n"
+		}
+	}
+	return
+}
 
+// Inserts a repetition into the database.
+// On successful insert, returns the id of the inserted row and nil.
+// If an error is returned, the returned id is 0.
+func InsertRep(db *sql.DB, rep Rep) (int64, error) {
+	hash := rep.hash
+	start := rep.start.UnixMilli()
+	end := rep.end.UnixMilli()
+	name := rep.name
+	lang := rep.lang
+	wpm := rep.wpm
+	raw := rep.raw
+	dur := rep.dur
+	acc := rep.acc
+	miss := rep.miss
+	errs := rep.errs
+	events := eventsToColumn(rep.events)
+	query := `insert into reps (
+	    hash, start, end, name, lang, wpm,
+	    raw, dur, acc, miss, errs, events
+	   ) values (
+	   	?, ?, ?, ?, ?, ?,
+	   	?, ?, ?, ?, ?, ?
+	   );`
+
+	result, err := db.Exec(query,
+		hash, start, end, name, lang, wpm,
+		raw, dur, acc, miss, errs, events,
+	)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return result.LastInsertId()
 }
