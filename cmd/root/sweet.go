@@ -15,8 +15,8 @@ import (
 
 	"github.com/NicksPatties/sweet/cmd/about"
 	"github.com/NicksPatties/sweet/cmd/add"
+	. "github.com/NicksPatties/sweet/cmd/root/db"
 	"github.com/NicksPatties/sweet/cmd/version"
-	"github.com/NicksPatties/sweet/db"
 	"github.com/NicksPatties/sweet/util"
 	"github.com/spf13/cobra"
 
@@ -701,10 +701,11 @@ func Run(exercise Exercise) {
 	showResults(rep)
 
 	// open connection to db once exercise is complete
-	statsDb, err := db.SweetDb()
+	statsDb, err := SweetDb()
 	if err != nil {
 		fmt.Println(err)
 	} else {
+		// db is ready! Write the rep to the database
 		fmt.Printf("got the db! %v\n", statsDb)
 	}
 }

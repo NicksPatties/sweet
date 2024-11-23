@@ -1,4 +1,4 @@
-package db
+package root
 
 import (
 	"database/sql"
@@ -86,4 +86,8 @@ func SweetDb() (*sql.DB, error) {
 	}
 
 	return db, nil
+}
+
+func InsertRep(db *sql.DB, rep Rep) {
+
 }
