@@ -15,7 +15,6 @@ import (
 
 	"github.com/NicksPatties/sweet/cmd/about"
 	"github.com/NicksPatties/sweet/cmd/add"
-	. "github.com/NicksPatties/sweet/cmd/root/db"
 	"github.com/NicksPatties/sweet/cmd/version"
 	"github.com/NicksPatties/sweet/util"
 	"github.com/spf13/cobra"
@@ -152,6 +151,7 @@ type Rep struct {
 	name   string
 	lang   string
 	wpm    float64
+	raw    float64
 	dur    time.Duration
 	acc    float64
 	miss   int
@@ -670,6 +670,7 @@ func exerciseModelToRep(m exerciseModel) Rep {
 		name:   m.exercise.name,
 		lang:   util.Lang(m.exercise.name),
 		wpm:    wpm(m.events),
+		raw:    wpmRaw(m.events),
 		dur:    duration(m.events),
 		acc:    accuracy(m.events),
 		miss:   numMistakes(m.events),

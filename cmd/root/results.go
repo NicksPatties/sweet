@@ -45,6 +45,9 @@ func removeBackspaces(events []event) []event {
 // Also allows the duration to be overridden, which is useful
 // for calculating wpm per second, which is used in the `wpmGraph` function.
 //
+// If `d` is equal to 0, then divide the words typed by the duration
+// of the start and the end of the exercise.
+//
 // You should avoid using this function in favor of specific wpm
 // functions, including `wpm`, `wpmRaw`, `wpmRawPerSecond`, and so on.
 func wpmBase(e []event, raw bool, d time.Duration) float64 {
@@ -80,6 +83,13 @@ func wpmBase(e []event, raw bool, d time.Duration) float64 {
 // events that occurred during the exercise.
 func wpm(events []event) float64 {
 	return wpmBase(events, false, 0)
+}
+
+// Calculates the raw words per minute.
+// Raw wpm does not subtract mistakes from the final
+// wpm calculation
+func wpmRaw(events []event) float64 {
+	return wpmBase(events, true, 0)
 }
 
 // Calculates the wpm of a series of events that
