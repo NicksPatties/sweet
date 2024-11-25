@@ -109,7 +109,6 @@ func TestGetStatsDb(t *testing.T) {
 	})
 
 	t.Run("should error if the location doesn't exist", func(t *testing.T) {
-		// Set an environment variable with an impossible path
 		os.Setenv("SWEET_DB_LOCATION", "/absolutely/impossible/path/that/cannot/exist")
 		defer os.Unsetenv("SWEET_DB_LOCATION")
 
