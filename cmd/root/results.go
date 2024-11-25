@@ -45,6 +45,9 @@ func removeBackspaces(events []event) []event {
 // Also allows the duration to be overridden, which is useful
 // for calculating wpm per second, which is used in the `wpmGraph` function.
 //
+// If `d` is equal to 0, then divide by the duration
+// between the first and last events.
+//
 // You should avoid using this function in favor of specific wpm
 // functions, including `wpm`, `wpmRaw`, `wpmRawPerSecond`, and so on.
 func wpmBase(e []event, raw bool, d time.Duration) float64 {
@@ -80,6 +83,13 @@ func wpmBase(e []event, raw bool, d time.Duration) float64 {
 // events that occurred during the exercise.
 func wpm(events []event) float64 {
 	return wpmBase(events, false, 0)
+}
+
+// Calculates the raw words per minute.
+// Raw wpm does not subtract mistakes from the final
+// wpm calculation
+func wpmRaw(events []event) float64 {
+	return wpmBase(events, true, 0)
 }
 
 // Calculates the wpm of a series of events that
@@ -135,9 +145,9 @@ func wpmGraph(events []event) string {
 // Note, even if all characters at the end of an exercise
 // are correct, you can have an accuracy of less than 100%
 // if you made any mistakes.
-func accuracy(events []event) string {
+func accuracy(events []event) float64 {
 	if len(events) == 0 {
-		return "0.00"
+		return 0.0
 	}
 	mistakes := float64(0)
 	total := float64(0)
@@ -151,8 +161,7 @@ func accuracy(events []event) string {
 		total++
 	}
 
-	acc := (total - mistakes) / total * 100.0
-	return fmt.Sprintf("%.2f", acc)
+	return (total - mistakes) / total * 100.0
 }
 
 // Returns the number of uncorrected errors in
@@ -250,17 +259,17 @@ func mostMissedKeys(events []event) string {
 	return strings.Join(missesStrs, ", ")
 }
 
-func showResults(m exerciseModel) {
-	mistakes := numMistakes(m.events)
-	fmt.Printf("results of %s:\n", m.exercise.name)
-	fmt.Printf("wpm:                 %.f\n", wpm(m.events))
-	fmt.Printf("uncorrected errors:  %d\n", numUncorrectedErrors(m.events))
-	fmt.Printf("duration:            %s\n", duration(m.events))
-	fmt.Printf("mistakes:            %d\n", numMistakes(m.events))
-	fmt.Printf("accuracy:            %s%%\n", accuracy(m.events))
-	if mistakes > 0 {
-		fmt.Printf("most missed keys:    %s\n", mostMissedKeys(m.events))
+// Prints the results of a repetition.
+func printExerciseResults(rep Rep) {
+	fmt.Printf("results of %s:\n", rep.name)
+	fmt.Printf("wpm:                 %.f\n", rep.wpm)
+	fmt.Printf("uncorrected errors:  %d\n", rep.errs)
+	fmt.Printf("duration:            %s\n", rep.dur)
+	fmt.Printf("mistakes:            %d\n", rep.miss)
+	fmt.Printf("accuracy:            %.2f%%\n", rep.acc)
+	if rep.miss > 0 {
+		fmt.Printf("most missed keys:    %s\n", mostMissedKeys(rep.events))
 	}
-	fmt.Printf("graph:\n%s", wpmGraph(m.events))
+	fmt.Printf("graph:\n%s", wpmGraph(rep.events))
 	fmt.Println()
 }

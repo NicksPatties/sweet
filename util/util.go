@@ -1,46 +1,48 @@
 package util
 
 import (
-	"hash/crc32"
-	"io"
-	l "log"
+	"crypto/md5"
+	"encoding/hex"
+	"fmt"
 	"net/url"
 	"os"
 	"path"
+	"strings"
 )
 
-// Converts a file from the filePath into a hashed value
-func HashFile(filePath string) (uint32, error) {
-	// Open the file
-	file, err := os.Open(filePath)
-	if err != nil {
-		return 0, err
-	}
-	defer file.Close()
-
-	// Create a new CRC-32 hash object using the IEEE polynomial
-	hasher := crc32.NewIEEE()
-
-	// Copy the file contents to the hasher
-	if _, err := io.Copy(hasher, file); err != nil {
-		return 0, err
-	}
-
-	// Get the checksum
-	checksum := hasher.Sum32()
-
-	return checksum, nil
+// Converts a string to an md5 hash. Used to
+// convert the contents of an exercise into a string
+// to verify if their contents are the same.
+//
+// see: https://stackoverflow.com/a/25286918
+func MD5Hash(contents string) string {
+	bytes := []byte(contents)
+	hash := md5.Sum(bytes)
+	return hex.EncodeToString(hash[:])
 }
 
-func GetConfigDirectory() string {
+// Gets the language of the provided filename.
+// Unlike `path.Ext`, the language doesn't include the
+// leading dot.
+func Lang(filename string) (lang string) {
+	lang = ""
+	split := strings.Split(filename, ".")
+	if len(split) > 1 {
+		lang = split[len(split)-1]
+	}
+	return
+}
 
-	exeName := path.Base(os.Args[0])
-
+// Gets the path for sweet's configuration directory.
+//
+// See `os.UserConfigDir` for the default configuration
+// location depending on the current operating system.
+func SweetConfigDir() (string, error) {
 	configDir, err := os.UserConfigDir()
 	if err != nil {
-		l.Fatalf("Failed to get user's config directory: %s\n", err.Error())
+		return "", fmt.Errorf("failed to get config directory: %v", err)
 	}
-	return path.Join(configDir, exeName)
+	return path.Join(configDir, "sweet"), nil
 }
 
 // Filters a list of file names by the given language extension.
