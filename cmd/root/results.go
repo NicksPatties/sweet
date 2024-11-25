@@ -45,8 +45,8 @@ func removeBackspaces(events []event) []event {
 // Also allows the duration to be overridden, which is useful
 // for calculating wpm per second, which is used in the `wpmGraph` function.
 //
-// If `d` is equal to 0, then divide the words typed by the duration
-// of the start and the end of the exercise.
+// If `d` is equal to 0, then divide by the duration
+// between the first and last events.
 //
 // You should avoid using this function in favor of specific wpm
 // functions, including `wpm`, `wpmRaw`, `wpmRawPerSecond`, and so on.
@@ -260,7 +260,7 @@ func mostMissedKeys(events []event) string {
 }
 
 // Prints the results of a repetition.
-func showResults(rep Rep) {
+func printExerciseResults(rep Rep) {
 	fmt.Printf("results of %s:\n", rep.name)
 	fmt.Printf("wpm:                 %.f\n", rep.wpm)
 	fmt.Printf("uncorrected errors:  %d\n", rep.errs)

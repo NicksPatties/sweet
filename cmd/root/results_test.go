@@ -317,7 +317,7 @@ func TestWpm(t *testing.T) {
 	for _, tc := range testCases {
 		got := wpm(tc.events)
 		if !aboutTheSame(got, tc.want) {
-			t.Errorf("%s: got %f, wanted %f\n", tc.name, got, tc.want)
+			t.Errorf("%s: got about %.2f, wanted about %.2f\n", tc.name, got, tc.want)
 		}
 	}
 }
@@ -340,7 +340,7 @@ func TestWpmRaw(t *testing.T) {
 	got := wpmRaw(events)
 
 	if !aboutTheSame(got, want) {
-		t.Errorf("got %f, wanted %f\n", got, want)
+		t.Errorf("got about %.2f, wanted about %.2f\n", got, want)
 	}
 
 }

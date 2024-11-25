@@ -699,7 +699,7 @@ func Run(exercise Exercise) {
 
 	rep := exerciseModelToRep(exModel)
 
-	showResults(rep)
+	printExerciseResults(rep)
 
 	// open connection to db once exercise is complete
 	statsDb, err := SweetDb()

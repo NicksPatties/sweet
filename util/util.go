@@ -13,6 +13,8 @@ import (
 // Converts a string to an md5 hash. Used to
 // convert the contents of an exercise into a string
 // to verify if their contents are the same.
+//
+// see: https://stackoverflow.com/a/25286918
 func MD5Hash(contents string) string {
 	bytes := []byte(contents)
 	hash := md5.Sum(bytes)
