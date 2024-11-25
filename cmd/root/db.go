@@ -51,34 +51,33 @@ func SweetDb() (*sql.DB, error) {
 
 	// create the reps table if it doesn't exist
 	_, err = db.Exec(`
-		CREATE TABLE if not exists reps(
-		    id integer primary key autoincrement not null,
-		    -- md5 hash of the exercise file's contents
-		    hash string not null,
-		    -- start time in unix milliseconds
-		    start integer not null,
-		    -- end time in unix milliseconds
-		    end integer not null,
-		    -- name of the exercise file, includes extension if present
-		    name text not null,
-		    -- language: extension of the exercise file, or "" if there is none.
-		    lang text,
-		    -- words per minute
-		    wpm real not null,
-		    -- raw words per minute
-		    raw real not null,
-		    -- duration: duration of rep in **nanoseconds**
-		    dur integer not null,
-		    -- accuracy: float between [0, 100]
-		    acc real not null,
-		    -- mistakes: must be gte 0
-		    miss integer not null,
-		    -- uncorrected errors: must be gte 0
-		    errs integer not null,
-		    -- array of events, events are separated by '\n'
-		    events text not null
-		);
-    `)
+CREATE TABLE if not exists reps(
+  id integer primary key autoincrement not null,
+  -- md5 hash of the exercise file's contents
+  hash string NOT NULL,
+  -- start time in unix milliseconds
+  start integer not null,
+  -- end time in unix milliseconds
+  end integer not null,
+  -- name of the exercise file, includes extension if present
+  name text not null,
+  -- language: extension of the exercise file, or "" if there is none.
+  lang text,
+  -- words per minute
+  wpm real not null check(wpm >= 0.0),
+  -- raw words per minute
+  raw real not null check(raw >= 0.0),
+  -- duration: duration of rep in **nanoseconds**
+  dur integer not null check(dur >= 0),
+  -- accuracy: float between [0, 100]
+  acc real not null check(acc >= 0.0),
+  -- mistakes: must be gte 0
+  miss integer not null check(miss >= 0),
+  -- uncorrected errors: must be gte 0
+  errs integer not null check(errs >= 0),
+  -- array of events, events are separated by '\n'
+  events text not null
+);`)
 
 	if err != nil {
 		db.Close()

@@ -182,4 +182,45 @@ func TestInsertRep(t *testing.T) {
 		}
 
 	})
+
+	t.Run("inserting an invalid rep fails", func(t *testing.T) {
+		tempDir := t.TempDir()
+		os.Setenv("SWEET_DB_LOCATION", tempDir)
+		defer os.Unsetenv("SWEET_DB_LOCATION")
+
+		// create a test database
+		db, err := SweetDb()
+		if err != nil {
+			db.Close()
+			t.Fatalf("failed to initialize sweet db: %v", err)
+		}
+
+		// initialize the rep
+		start := time.Now()
+		end := time.Date(start.Year(), start.Month(), start.Day(), start.Hour(), start.Minute()+int(time.Minute), start.Second(), start.Nanosecond(), time.UTC)
+
+		rep := Rep{
+			hash:  "abcef123456",
+			start: start,
+			end:   end,
+			name:  "exercise.go",
+			lang:  "go",
+			wpm:   -60.333, // should fail
+			raw:   65.5,
+			dur:   end.Sub(start),
+			acc:   98.98,
+			miss:  2,
+			errs:  1,
+			events: parseEvents(
+				"2024-10-07 13:46:47.679\t0\th\th\n" +
+					"2024-10-07 13:46:56.521\t3\tenter\tenter",
+			),
+		}
+
+		_, err = InsertRep(db, rep)
+		if err == nil {
+			t.Error("should have error")
+		}
+	})
+
 }
