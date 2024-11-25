@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	. "github.com/NicksPatties/sweet/cmd/root"
+	. "github.com/NicksPatties/sweet/db"
 	"github.com/spf13/cobra"
 )
 
@@ -49,8 +49,14 @@ func printStats(query string) {
 	}
 
 	// query the data
+	rows, err := statsDb.Query(query)
+
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	// print the data
+	fmt.Printf("rows: %v\n", rows)
 }
 
 func init() {

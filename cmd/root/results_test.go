@@ -2,6 +2,7 @@ package root
 
 import (
 	"fmt"
+	. "github.com/NicksPatties/sweet/util"
 	"testing"
 	"time"
 )
@@ -24,18 +25,18 @@ var defaultCaseEventsList string = "2024-10-07 13:46:47.679\t0\ta\th\n" + // mis
 func TestAccuracy(t *testing.T) {
 	testCases := []struct {
 		name   string
-		events []event
+		events []Event
 		want   string
 	}{
 		{
 			name:   "default case",
-			events: parseEvents(defaultCaseEventsList),
+			events: ParseEvents(defaultCaseEventsList),
 			// (7 - 3) / 7 = 4 / 7 ~ 57%
 			want: "57.14",
 		},
 		{
 			name: "100 percent",
-			events: parseEvents(
+			events: ParseEvents(
 				"2024-10-07 13:46:47.679\t0\th\th\n" +
 					"2024-10-07 13:46:56.521\t3\tenter\tenter",
 			),
@@ -43,7 +44,7 @@ func TestAccuracy(t *testing.T) {
 		},
 		{
 			name:   "no events",
-			events: []event{},
+			events: []Event{},
 			want:   "0.00",
 		},
 	}
@@ -61,21 +62,21 @@ func TestAccuracy(t *testing.T) {
 func TestUncorrectedErrors(t *testing.T) {
 	type testCase struct {
 		name   string
-		events []event
+		events []Event
 		want   int
 	}
 
 	testCases := []testCase{
 		{
 			name:   "no uncorrected errors",
-			events: parseEvents(defaultCaseEventsList),
+			events: ParseEvents(defaultCaseEventsList),
 			want:   0,
 		},
 		{
 			name: "no uncorrected errors, i offset",
 			// typed:    console↲
 			// expected: console↲
-			events: parseEvents(
+			events: ParseEvents(
 				"2024-10-07 16:29:26.916\t10\tc\tc\n" +
 					"2024-10-07 16:29:27.004\t11\to\to\n" +
 					"2024-10-07 16:29:27.095\t12\tn\tn\n" +
@@ -89,7 +90,7 @@ func TestUncorrectedErrors(t *testing.T) {
 		},
 		{
 			name: "all backspaces",
-			events: parseEvents(
+			events: ParseEvents(
 				"2024-10-07 13:46:47.679\t4\tbackspace\n" +
 					"2024-10-07 13:46:48.298\t3\tbackspace\n" +
 					"2024-10-07 13:46:49.442\t2\tbackspace\n" +
@@ -101,7 +102,7 @@ func TestUncorrectedErrors(t *testing.T) {
 			name: "some uncorrected errors",
 			// typed:    hei↲
 			// expected: hey↲
-			events: parseEvents(
+			events: ParseEvents(
 				"2024-10-07 13:46:49.442\t0\th\th\n" +
 					"2024-10-07 13:46:51.160\t1\te\te\n" +
 					"2024-10-07 13:46:52.781\t2\ti\ty\n" +
@@ -113,7 +114,7 @@ func TestUncorrectedErrors(t *testing.T) {
 			name: "all uncorrected errors",
 			// expected: hey↲
 			// typed:    omg!
-			events: parseEvents(
+			events: ParseEvents(
 				"2024-10-07 13:46:49.442\t0\to\th\n" +
 					"2024-10-07 13:46:51.160\t1\tm\te\n" +
 					"2024-10-07 13:46:52.781\t2\tg\ty\n" +
@@ -123,7 +124,7 @@ func TestUncorrectedErrors(t *testing.T) {
 		},
 		{
 			name:   "empty event list",
-			events: []event{},
+			events: []Event{},
 			want:   0,
 		},
 		{
@@ -131,7 +132,7 @@ func TestUncorrectedErrors(t *testing.T) {
 			// expected and typed:
 			// Todo
 			//    - Drink milk
-			events: parseEvents(
+			events: ParseEvents(
 				"2024-10-25 13:30:22.846\t0\tT\tT\n" +
 					"2024-10-25 13:30:22.958\t1\to\to\n" +
 					"2024-10-25 13:30:23.029\t2\td\td\n" +
@@ -166,23 +167,23 @@ func TestUncorrectedErrors(t *testing.T) {
 func TestDuration(t *testing.T) {
 	testCases := []struct {
 		name   string
-		events []event
+		events []Event
 		want   time.Duration
 	}{
 		{
 			name: "default case",
-			events: parseEvents("2024-10-25 13:30:25.000\t17\tk\tk\n" +
+			events: ParseEvents("2024-10-25 13:30:25.000\t17\tk\tk\n" +
 				"2024-10-25 13:30:26.000\t18\tenter\tenter"),
 			want: time.Second,
 		},
 		{
 			name:   "no events",
-			events: []event{},
+			events: []Event{},
 			want:   0.0,
 		},
 		{
 			name:   "one event",
-			events: parseEvents("2024-10-25 13:30:26.000\t18\tenter\tenter"),
+			events: ParseEvents("2024-10-25 13:30:26.000\t18\tenter\tenter"),
 			want:   0.0,
 		},
 	}
@@ -205,14 +206,14 @@ func aboutTheSame(a float64, b float64) bool {
 func TestWpm(t *testing.T) {
 	testCases := []struct {
 		name   string
-		events []event
+		events []Event
 		want   float64
 	}{
 		{
 			name: "no mistakes",
 			// typed:    console↲
 			// expected: console↲
-			events: parseEvents(
+			events: ParseEvents(
 				"2024-10-07 16:29:26.916\t0\tc\tc\n" +
 					"2024-10-07 16:29:27.004\t1\to\to\n" +
 					"2024-10-07 16:29:27.095\t2\tn\tn\n" +
@@ -229,7 +230,7 @@ func TestWpm(t *testing.T) {
 			name: "no mistakes, but i is offset",
 			// typed:    console↲
 			// expected: console↲
-			events: parseEvents(
+			events: ParseEvents(
 				"2024-10-07 16:29:26.916\t10\tc\tc\n" +
 					"2024-10-07 16:29:27.004\t11\to\to\n" +
 					"2024-10-07 16:29:27.095\t12\tn\tn\n" +
@@ -247,7 +248,7 @@ func TestWpm(t *testing.T) {
 			// uncorrected: 1
 			// typed:       consold↲
 			// expected:    console↲
-			events: parseEvents(
+			events: ParseEvents(
 				"2024-10-07 16:29:26.916\t0\tc\tc\n" +
 					"2024-10-07 16:29:27.004\t1\to\to\n" +
 					"2024-10-07 16:29:27.095\t2\tn\tn\n" +
@@ -264,7 +265,7 @@ func TestWpm(t *testing.T) {
 			name: "longer than one minute",
 			// typed:       consold↲
 			// expected:    console↲
-			events: parseEvents(
+			events: ParseEvents(
 				"2024-10-07 16:29:26.916\t0\tc\tc\n" +
 					"2024-10-07 16:29:27.004\t1\to\to\n" +
 					"2024-10-07 16:29:27.095\t2\tn\tn\n" +
@@ -279,19 +280,19 @@ func TestWpm(t *testing.T) {
 		},
 		{
 			name:   "no events",
-			events: []event{},
+			events: []Event{},
 			want:   0.0,
 		},
 		{
 			name:   "one event",
-			events: parseEvents("2024-10-07 16:29:26.916\t0\tc\tc"),
+			events: ParseEvents("2024-10-07 16:29:26.916\t0\tc\tc"),
 			want:   0.0,
 		},
 		{
 			name: "going backwards in index, only one typed character",
 			// I type one character in this time period, so this should
 			// return 0.0 becuase I don't have two characters to compare.
-			events: parseEvents(
+			events: ParseEvents(
 				"2024-10-07 16:29:27.279\t3\tbackspace\n" +
 					"2024-10-07 16:29:27.416\t2\tbackspace\n" +
 					"2024-10-07 16:29:27.667\t1\tbackspace\n" +
@@ -301,7 +302,7 @@ func TestWpm(t *testing.T) {
 		},
 		{
 			name: "going backwards in index, typed multiple characters",
-			events: parseEvents(
+			events: ParseEvents(
 				"2024-10-07 16:29:27.279\t3\tbackspace\n" +
 					"2024-10-07 16:29:27.416\t2\tbackspace\n" +
 					"2024-10-07 16:29:27.667\t1\tbackspace\n" +
@@ -323,7 +324,7 @@ func TestWpm(t *testing.T) {
 }
 
 func TestWpmRaw(t *testing.T) {
-	events := parseEvents(
+	events := ParseEvents(
 		"2024-10-07 16:29:26.916\t0\tc\tc\n" +
 			"2024-10-07 16:29:27.004\t1\to\to\n" +
 			"2024-10-07 16:29:27.095\t2\tn\tn\n" +
@@ -349,14 +350,14 @@ func TestMostMissedKeys(t *testing.T) {
 
 	type testCase struct {
 		name   string
-		events []event
+		events []Event
 		want   string
 	}
 
 	testCases := []testCase{
 		{
 			name:   "default case",
-			events: parseEvents(defaultCaseEventsList),
+			events: ParseEvents(defaultCaseEventsList),
 			want:   "y (2 times), h (1 time)",
 		},
 		{
@@ -365,7 +366,7 @@ func TestMostMissedKeys(t *testing.T) {
 			// mistakes: 9
 			// typed:    console.log("Ey")↲
 			// expected: console.log("Ey")↲
-			events: parseEvents("2024-10-07 16:29:26.916\t0\tc\tc\n" +
+			events: ParseEvents("2024-10-07 16:29:26.916\t0\tc\tc\n" +
 				"2024-10-07 16:29:27.004\t1\to\to\n" +
 				"2024-10-07 16:29:27.095\t2\tn\tn\n" +
 				"2024-10-07 16:29:27.279\t3\ts\ts\n" +
@@ -408,7 +409,7 @@ func TestMostMissedKeys(t *testing.T) {
 			// expected:
 			// hey there↲
 			// two lines↲
-			events: parseEvents("2024-10-07 16:09:16.628\t0\th\th\n" +
+			events: ParseEvents("2024-10-07 16:09:16.628\t0\th\th\n" +
 				"2024-10-07 16:09:17.177\t1\te\te\n" +
 				"2024-10-07 16:09:17.274\t2\ty\ty\n" +
 				"2024-10-07 16:09:18.290\t3\td\tspace\n" + // miss
@@ -443,7 +444,7 @@ func TestMostMissedKeys(t *testing.T) {
 			// mistakes: 4
 			// typed:    asdf↲
 			// expected: asdf↲
-			events: parseEvents("2024-10-07 16:46:36.929\t0\tq\ta\n" + // miss
+			events: ParseEvents("2024-10-07 16:46:36.929\t0\tq\ta\n" + // miss
 				"2024-10-07 16:46:37.331\t1\tbackspace\n" +
 				"2024-10-07 16:46:38.067\t0\ta\ta\n" +
 				"2024-10-07 16:46:39.145\t1\tw\ts\n" + // miss
@@ -460,12 +461,12 @@ func TestMostMissedKeys(t *testing.T) {
 		},
 		{
 			name:   "no events",
-			events: []event{},
+			events: []Event{},
 			want:   "",
 		},
 		{
 			name: "no mistakes",
-			events: parseEvents(
+			events: ParseEvents(
 				"2024-10-07 16:29:26.916\t0\tc\tc\n" +
 					"2024-10-07 16:29:27.004\t1\to\to\n" +
 					"2024-10-07 16:29:27.095\t2\tn\tn\n" +

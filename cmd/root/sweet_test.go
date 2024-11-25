@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	. "github.com/NicksPatties/sweet/util"
 	"github.com/spf13/cobra"
 )
 
@@ -477,23 +478,23 @@ func TestFromArgsWithEmptyExerciseFiles(t *testing.T) {
 }
 
 func getEventTs(s string) (t time.Time) {
-	t, _ = time.Parse(eventTsLayout, s)
+	t, _ = time.Parse(EventTsLayout, s)
 	return
 }
 
 func TestEventString(t *testing.T) {
 	testCases := []struct {
 		name string
-		in   event
+		in   Event
 		want string
 	}{
 		{
 			name: "all fields",
-			in: event{
-				ts:       getEventTs("2024-10-07 13:46:47.679"),
-				i:        0,
-				typed:    "a",
-				expected: "b",
+			in: Event{
+				Ts:       getEventTs("2024-10-07 13:46:47.679"),
+				I:        0,
+				Typed:    "a",
+				Expected: "b",
 			},
 			want: "2024-10-07 13:46:47.679\t0\ta\tb",
 		},
@@ -509,44 +510,37 @@ func TestEventString(t *testing.T) {
 
 }
 
-func (a event) matches(b event) bool {
-	return a.ts.Equal(b.ts) &&
-		a.i == b.i &&
-		a.typed == b.typed &&
-		a.expected == b.expected
-}
-
 func TestParseEvent(t *testing.T) {
 	testCases := []struct {
 		name  string
 		input string
-		want  event
+		want  Event
 	}{
 		{
 			name:  "all fields",
 			input: "2024-10-07 13:46:47.679\t0\ta\th",
-			want: event{
-				ts:       getEventTs("2024-10-07 13:46:47.679"),
-				i:        0,
-				typed:    "a",
-				expected: "h",
+			want: Event{
+				Ts:       getEventTs("2024-10-07 13:46:47.679"),
+				I:        0,
+				Typed:    "a",
+				Expected: "h",
 			},
 		},
 		{
 			name:  "backspace",
 			input: "2024-10-07 13:46:47.679\t0\tbackspace",
-			want: event{
-				ts:       getEventTs("2024-10-07 13:46:47.679"),
-				i:        0,
-				typed:    "backspace",
-				expected: "",
+			want: Event{
+				Ts:       getEventTs("2024-10-07 13:46:47.679"),
+				I:        0,
+				Typed:    "backspace",
+				Expected: "",
 			},
 		},
 	}
 
 	for _, tc := range testCases {
-		got := parseEvent(tc.input)
-		if !got.matches(tc.want) {
+		got := ParseEvent(tc.input)
+		if !got.Matches(tc.want) {
 			t.Errorf("%s: got\n%s\n\nwant:\n%s", tc.name, got, tc.want)
 		}
 	}
@@ -557,33 +551,33 @@ func TestParseEvents(t *testing.T) {
 	testCases := []struct {
 		name string
 		in   string
-		want []event
+		want []Event
 	}{
 		{
 			name: "two events",
 			in: "2024-10-07 13:46:47.679\t0\ta\th\n" +
 				"2024-10-07 13:46:48.298\t1\tbackspace",
-			want: []event{
+			want: []Event{
 				{
-					ts:       getEventTs("2024-10-07 13:46:47.679"),
-					i:        0,
-					typed:    "a",
-					expected: "h",
+					Ts:       getEventTs("2024-10-07 13:46:47.679"),
+					I:        0,
+					Typed:    "a",
+					Expected: "h",
 				},
 				{
-					ts:       getEventTs("2024-10-07 13:46:48.298"),
-					i:        1,
-					typed:    "backspace",
-					expected: "",
+					Ts:       getEventTs("2024-10-07 13:46:48.298"),
+					I:        1,
+					Typed:    "backspace",
+					Expected: "",
 				},
 			},
 		},
 	}
 
 	for _, tc := range testCases {
-		gotEvents := parseEvents(tc.in)
+		gotEvents := ParseEvents(tc.in)
 		for i, got := range gotEvents {
-			if !got.matches(tc.want[i]) {
+			if !got.Matches(tc.want[i]) {
 				t.Errorf(
 					"%s [%d]:\ngot\n  %s\nwant\n  %s",
 					tc.name,

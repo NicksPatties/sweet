@@ -5,10 +5,46 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"time"
 
-	"github.com/NicksPatties/sweet/util"
+	. "github.com/NicksPatties/sweet/util"
 	_ "github.com/mattn/go-sqlite3"
 )
+
+// A single repetition of an exercise.
+//
+// This is the structure of a row in the sweet db module.
+// See `db/db.go` for more details.
+type Rep struct {
+	Hash   string
+	Start  time.Time // use
+	End    time.Time
+	Name   string
+	Lang   string
+	Wpm    float64
+	Raw    float64
+	Dur    time.Duration
+	Acc    float64
+	Miss   int
+	Errs   int
+	Events []Event // one string is one event
+}
+
+func (r Rep) String() (s string) {
+	s += fmt.Sprintf("rep:\n")
+	s += fmt.Sprintf("  hash:  %s\n", r.Hash)
+	s += fmt.Sprintf("  start: %s\n", r.Start)
+	s += fmt.Sprintf("  end:   %s\n", r.End)
+	s += fmt.Sprintf("  name:  %s\n", r.Name)
+	s += fmt.Sprintf("  lang:  %s\n", r.Lang)
+	s += fmt.Sprintf("  wpm:   %.f\n", r.Wpm)
+	s += fmt.Sprintf("  dur:   %s\n", r.Dur)
+	s += fmt.Sprintf("  acc:   %2.f%%\n", r.Acc)
+	s += fmt.Sprintf("  miss:  %d\n", r.Miss)
+	s += fmt.Sprintf("  errs:  %d\n", r.Errs)
+	s += fmt.Sprintf("  events: %d events\n", len(r.Events))
+	return
+}
 
 // Gets a pointer to the stats database. If the database file
 // doesn't exist already, it will be created at sweet's default
@@ -23,7 +59,7 @@ func SweetDb() (*sql.DB, error) {
 	if envDir := os.Getenv("SWEET_DB_LOCATION"); envDir != "" {
 		dbPath = envDir
 	} else {
-		sweetDir, err := util.SweetConfigDir()
+		sweetDir, err := SweetConfigDir()
 		if err != nil {
 			return nil, fmt.Errorf("failed to find user config directory: %v", err)
 		}
@@ -87,7 +123,7 @@ CREATE TABLE if not exists reps(
 	return db, nil
 }
 
-func eventsToColumn(events []event) (s string) {
+func eventsStringToColumn(events []Event) (s string) {
 	for i, event := range events {
 		s += event.String()
 		if i != len(events)-1 {
@@ -101,18 +137,18 @@ func eventsToColumn(events []event) (s string) {
 // On successful insert, returns the id of the inserted row and nil.
 // If an error is returned, the returned id is 0.
 func InsertRep(db *sql.DB, rep Rep) (int64, error) {
-	hash := rep.hash
-	start := rep.start.UnixMilli()
-	end := rep.end.UnixMilli()
-	name := rep.name
-	lang := rep.lang
-	wpm := rep.wpm
-	raw := rep.raw
-	dur := rep.dur
-	acc := rep.acc
-	miss := rep.miss
-	errs := rep.errs
-	events := eventsToColumn(rep.events)
+	hash := rep.Hash
+	start := rep.Start.UnixMilli()
+	end := rep.End.UnixMilli()
+	name := rep.Name
+	lang := rep.Lang
+	wpm := rep.Wpm
+	raw := rep.Raw
+	dur := rep.Dur
+	acc := rep.Acc
+	miss := rep.Miss
+	errs := rep.Errs
+	events := eventsStringToColumn(rep.Events)
 	query := `insert into reps (
 	    hash, start, end, name, lang, wpm,
 	    raw, dur, acc, miss, errs, events
