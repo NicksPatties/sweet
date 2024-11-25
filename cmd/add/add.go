@@ -17,7 +17,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var Command = &cobra.Command{
+var Cmd = &cobra.Command{
 	Use:   "add [flags] path",
 	Short: "Add an exercise",
 	Run: func(cmd *cobra.Command, args []string) {
@@ -36,8 +36,8 @@ var Command = &cobra.Command{
 }
 
 func init() {
-	Command.Flags().IntP("start", "s", 1, "The start line number to extract the sample")
-	Command.Flags().IntP("end", "e", math.MaxUint32, "The end line number to extract the sample")
+	Cmd.Flags().IntP("start", "s", 1, "The start line number to extract the sample")
+	Cmd.Flags().IntP("end", "e", math.MaxUint32, "The end line number to extract the sample")
 }
 
 // Adds an exercise to sweet's configured exercises directory.

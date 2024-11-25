@@ -15,6 +15,7 @@ import (
 
 	"github.com/NicksPatties/sweet/cmd/about"
 	"github.com/NicksPatties/sweet/cmd/add"
+	"github.com/NicksPatties/sweet/cmd/stats"
 	"github.com/NicksPatties/sweet/cmd/version"
 	"github.com/NicksPatties/sweet/util"
 	"github.com/spf13/cobra"
@@ -128,9 +129,10 @@ func init() {
 	Cmd.CompletionOptions.DisableDefaultCmd = true
 
 	commands := []*cobra.Command{
-		about.Command,
-		add.Command,
-		version.Command,
+		about.Cmd,
+		add.Cmd,
+		version.Cmd,
+		stats.Cmd,
 	}
 
 	for _, c := range commands {
