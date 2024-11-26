@@ -213,9 +213,7 @@ func InsertRep(db *sql.DB, rep Rep) (int64, error) {
 // This should accept an array of columns to show, a start and an end range,
 // and return an array of anything
 func GetReps(db *sql.DB) ([]Rep, error) {
-	query := `select
-	id, hash, start, end, name, lang, wpm, raw, dur, acc, miss, errs, events
-	from reps order by start desc;`
+	query := `select * from reps order by start desc;`
 
 	var reps []Rep
 
