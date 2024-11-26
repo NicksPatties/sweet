@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"strconv"
 	"time"
 
+	"github.com/NicksPatties/sweet/util"
 	. "github.com/NicksPatties/sweet/util"
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -45,6 +47,44 @@ func (r Rep) String() (s string) {
 	s += fmt.Sprintf("  errs:  %d\n", r.Errs)
 	s += fmt.Sprintf("  events: %d events\n", len(r.Events))
 	return
+}
+
+// Returns a string with a decorated version of the asked
+// column corresponding to the matching property of a Rep struct.
+//
+// If the column string doesn't match any Rep column, then
+// an empty string is returned.
+func (r Rep) ColumnString(col string) string {
+	switch col {
+	case "id":
+		return strconv.Itoa(r.Id)
+	case "hash":
+		return r.Hash
+	case "start":
+		return r.Start.Format(EventTsLayout)
+	case "end":
+		return r.End.Format(EventTsLayout)
+	case "name":
+		return r.Name
+	case "lang":
+		return r.Lang
+	case "wpm":
+		return fmt.Sprintf("%.f", r.Wpm)
+	case "raw":
+		return fmt.Sprintf("%.f", r.Wpm)
+	case "dur":
+		return r.Dur.String()
+	case "acc":
+		return fmt.Sprintf("%.2f%%", r.Acc)
+	case "miss":
+		return strconv.Itoa(r.Miss)
+	case "errs":
+		return strconv.Itoa(r.Errs)
+	case "events":
+		return EventsString(r.Events)
+	default:
+		return ""
+	}
 }
 
 // Gets a pointer to the stats database. If the database file
@@ -170,7 +210,13 @@ func InsertRep(db *sql.DB, rep Rep) (int64, error) {
 	return result.LastInsertId()
 }
 
-func GetReps(db *sql.DB, query string) ([]Rep, error) {
+// This should accept an array of columns to show, a start and an end range,
+// and return an array of anything
+func GetReps(db *sql.DB) ([]Rep, error) {
+	query := `select
+	id, hash, start, end, name, lang, wpm, raw, dur, acc, miss, errs, events
+	from reps order by start desc;`
+
 	var reps []Rep
 
 	// Query to retrieve data
@@ -184,24 +230,41 @@ func GetReps(db *sql.DB, query string) ([]Rep, error) {
 	for rows.Next() {
 		// looking for start, name, wpm, errs, dur, miss, acc
 		var (
-			start int64
-			name  string
-			wpm   float64
-			errs  int
-			dur   int64
-			miss  int
-			acc   float64
+			id     int64
+			hash   string
+			start  int64
+			end    int64
+			name   string
+			lang   string
+			wpm    float64
+			raw    float64
+			dur    int64
+			acc    float64
+			miss   int
+			errs   int
+			events string
 		)
+
+		// this should match the columns from the query input
+		queriedCols := []any{
+			&id,
+			&hash,
+			&start,
+			&end,
+			&name,
+			&lang,
+			&wpm,
+			&raw,
+			&dur,
+			&acc,
+			&miss,
+			&errs,
+			&events,
+		}
 
 		// The scan is dependent on the query that is performed
 		err := rows.Scan(
-			&start,
-			&name,
-			&wpm,
-			&errs,
-			&dur,
-			&miss,
-			&acc,
+			queriedCols...,
 		)
 
 		if err != nil {
@@ -209,13 +272,19 @@ func GetReps(db *sql.DB, query string) ([]Rep, error) {
 		}
 
 		r := Rep{
-			Start: time.UnixMilli(start),
-			Name:  name,
-			Wpm:   wpm,
-			Dur:   time.Duration(dur),
-			Acc:   acc,
-			Miss:  miss,
-			Errs:  errs,
+			Id:     int(id),
+			Hash:   hash,
+			Start:  time.UnixMilli(start),
+			End:    time.UnixMilli(end),
+			Name:   name,
+			Lang:   lang,
+			Wpm:    wpm,
+			Raw:    raw,
+			Dur:    time.Duration(dur),
+			Acc:    acc,
+			Miss:   miss,
+			Errs:   errs,
+			Events: util.ParseEvents(events),
 		}
 
 		reps = append(reps, r)

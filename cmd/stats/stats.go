@@ -26,22 +26,17 @@ var Cmd = &cobra.Command{
 	Use:   "stats",
 	Short: "Print statistics about typing exercises",
 	Run: func(cmd *cobra.Command, args []string) {
-		query := argsToQuery()
-		printStats(query)
+		printStats()
 	},
 }
 
-func argsToQuery() (q string) {
-	defaultCols := []string{"start", "name", "wpm", "errs", "dur", "miss", "acc"}
-	selectString := strings.Join(defaultCols, ", ")
-	fmt.Printf("selectString: %v\n", selectString)
-
-	q = fmt.Sprintf("select %s from reps;", selectString)
-	return
+func argsToColumnFilter() []string {
+	defaultCols := []string{"start", "name", "wpm", "errs", "miss", "acc"}
+	return defaultCols
 }
 
 // Prints the columns
-func printStats(query string) {
+func printStats() {
 	// connect to db
 	statsDb, err := SweetDb()
 	if err != nil {
@@ -49,15 +44,23 @@ func printStats(query string) {
 		return
 	}
 
-	reps, err := GetReps(statsDb, query)
+	reps, err := GetReps(statsDb)
 
 	if err != nil {
 		fmt.Printf("failed to get reps: %s\n", err)
 		return
 	}
 
+	cols := argsToColumnFilter()
+	// print the header
+	fmt.Printf("%s\n", strings.Join(cols, "\t"))
+
 	for _, rep := range reps {
-		fmt.Printf("%s | %s | %2fs\n", rep.Start.Format("1/02/2006 15:04:05"), rep.Name, rep.Wpm)
+		repCols := []string{}
+		for _, c := range cols {
+			repCols = append(repCols, rep.ColumnString(c))
+		}
+		fmt.Printf("%s\n", strings.Join(repCols, "\t"))
 	}
 
 }
