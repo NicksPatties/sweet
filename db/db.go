@@ -16,6 +16,7 @@ import (
 // This is the structure of a row in the sweet db module.
 // See `db/db.go` for more details.
 type Rep struct {
+	Id     int
 	Hash   string
 	Start  time.Time // use
 	End    time.Time
@@ -167,4 +168,63 @@ func InsertRep(db *sql.DB, rep Rep) (int64, error) {
 	}
 
 	return result.LastInsertId()
+}
+
+func GetReps(db *sql.DB, query string) ([]Rep, error) {
+	var reps []Rep
+
+	// Query to retrieve data
+	rows, err := db.Query(query)
+	if err != nil {
+		return reps, err
+	}
+	defer rows.Close()
+
+	// Iterate through results
+	for rows.Next() {
+		// looking for start, name, wpm, errs, dur, miss, acc
+		var (
+			start int64
+			name  string
+			wpm   float64
+			errs  int
+			dur   int64
+			miss  int
+			acc   float64
+		)
+
+		// The scan is dependent on the query that is performed
+		err := rows.Scan(
+			&start,
+			&name,
+			&wpm,
+			&errs,
+			&dur,
+			&miss,
+			&acc,
+		)
+
+		if err != nil {
+			return reps, err
+		}
+
+		r := Rep{
+			Start: time.UnixMilli(start),
+			Name:  name,
+			Wpm:   wpm,
+			Dur:   time.Duration(dur),
+			Acc:   acc,
+			Miss:  miss,
+			Errs:  errs,
+		}
+
+		reps = append(reps, r)
+	}
+
+	// Check for any errors encountered during iteration
+	if err = rows.Err(); err != nil {
+		return reps, err
+	}
+
+	return reps, nil
 }

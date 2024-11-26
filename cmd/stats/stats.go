@@ -45,18 +45,21 @@ func printStats(query string) {
 	// connect to db
 	statsDb, err := SweetDb()
 	if err != nil {
-		fmt.Println(err)
+		fmt.Printf("failed to connect to database: %s\n", err)
+		return
 	}
 
-	// query the data
-	rows, err := statsDb.Query(query)
+	reps, err := GetReps(statsDb, query)
 
 	if err != nil {
-		fmt.Println(err)
+		fmt.Printf("failed to get reps: %s\n", err)
+		return
 	}
 
-	// print the data
-	fmt.Printf("rows: %v\n", rows)
+	for _, rep := range reps {
+		fmt.Printf("%s | %s | %2fs\n", rep.Start.Format("1/02/2006 15:04:05"), rep.Name, rep.Wpm)
+	}
+
 }
 
 func init() {
