@@ -3,6 +3,8 @@ package stats
 import (
 	"errors"
 	"fmt"
+	"log"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -29,7 +31,15 @@ var Cmd = &cobra.Command{
 	Use:   "stats",
 	Short: "Print statistics about typing exercises",
 	Run: func(cmd *cobra.Command, args []string) {
-		q := queryFromArgs()
+		fmt.Println(args)
+		start := cmd.Flag("start")
+		fmt.Println(start)
+
+		q, err := queryFromArgs(cmd, args)
+		if err != nil {
+			log.Fatal()
+			os.Exit(-1)
+		}
 		printStats(q)
 	},
 }
@@ -94,8 +104,9 @@ func shorthandToDateRange(arg string, end time.Time) (dateRange, error) {
 	}, nil
 }
 
-func queryFromArgs() string {
-	return `select * from reps order by start desc;`
+func queryFromArgs(cmd *cobra.Command, args []string) (string, error) {
+	query := `select * from reps order by start desc;`
+	return query, nil
 }
 
 func argsToColumnFilter() []string {
@@ -133,6 +144,12 @@ func printStats(query string) {
 
 }
 
+func setStatsCommandFlags(cmd *cobra.Command) {
+	cmd.Flags().StringP("start", "s", "", "the start date")
+	cmd.Flags().String("since", "", "alias for \"start\" flag")
+	cmd.Flags().SortFlags = false
+}
+
 func init() {
-	// TODO: define query flags
+	setStatsCommandFlags(Cmd)
 }

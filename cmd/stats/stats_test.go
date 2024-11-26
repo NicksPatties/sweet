@@ -3,6 +3,8 @@ package stats
 import (
 	"testing"
 	"time"
+
+	"github.com/spf13/cobra"
 )
 
 func TestShorthandToDateRange(t *testing.T) {
@@ -109,6 +111,54 @@ func TestShorthandToDateRange(t *testing.T) {
 				out.start, out.end,
 				tc.want.start, tc.want.end,
 			)
+		}
+	}
+}
+
+func TestQueryFromArgs(t *testing.T) {
+	type testCase struct {
+		name    string
+		in      []string
+		want    string
+		wantErr bool
+	}
+
+	var mockCmd = func(tc testCase) *cobra.Command {
+		cmd := &cobra.Command{
+			Args: cobra.MaximumNArgs(1),
+			Run: func(cmd *cobra.Command, args []string) {
+				got, err := queryFromArgs(cmd, args)
+				if err == nil && tc.wantErr {
+					t.Errorf("%s wanted error, got nil", tc.name)
+				}
+
+				if got != tc.want {
+					t.Errorf("%s\n"+
+						"  got:  %s\n"+
+						"  want: %s\n",
+						tc.name, got, tc.want)
+				}
+			},
+		}
+		setStatsCommandFlags(cmd)
+		cmd.SetArgs(tc.in)
+		return cmd
+	}
+
+	testCases := []testCase{
+		{
+			name:    "default case",
+			in:      []string{},
+			want:    "select * from reps order by start desc;",
+			wantErr: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		cmd := mockCmd(tc)
+
+		if err := cmd.Execute(); err != nil {
+			t.Fatalf("mock command failed to run: %s", err)
 		}
 	}
 }
