@@ -1,8 +1,11 @@
 package stats
 
 import (
+	"errors"
 	"fmt"
+	"strconv"
 	"strings"
+	"time"
 
 	. "github.com/NicksPatties/sweet/db"
 	"github.com/spf13/cobra"
@@ -26,8 +29,73 @@ var Cmd = &cobra.Command{
 	Use:   "stats",
 	Short: "Print statistics about typing exercises",
 	Run: func(cmd *cobra.Command, args []string) {
-		printStats()
+		q := queryFromArgs()
+		printStats(q)
 	},
+}
+
+type dateRange struct {
+	start time.Time
+	end   time.Time
+}
+
+// Converts the N[H,D,W,M,Y] format string to a dateRange.
+// The end parameter represents the end time of the date range,
+// usually time.Now().
+//
+// If the function fails to parse the arg variable, then it
+// returns an error.
+//
+// H - hours, D - days, W - weeks, M - months, Y - years
+func shorthandToDateRange(arg string, end time.Time) (dateRange, error) {
+	failedToParse := errors.New("failed to parse argument " + arg)
+
+	hours := 0
+	days := 1
+	weeks := 0
+	months := 0
+	years := 0
+
+	// The number of a specific units
+	nString := string(arg[:len(arg)-1])
+	n, err := strconv.Atoi(nString)
+	if err != nil || n <= 0 {
+		return dateRange{}, failedToParse
+	}
+
+	// The unit of date range [H,D,W,M,Y]
+	unit := rune(arg[len(arg)-1])
+
+	switch unit {
+	case 'H', 'h':
+		hours = n
+		break
+	case 'D', 'd':
+		days = n
+		break
+	case 'W', 'w':
+		weeks = n
+		break
+	case 'M', 'm':
+		months = n
+		break
+	case 'Y', 'y':
+		years = n
+		break
+	default:
+		return dateRange{}, failedToParse
+	}
+
+	correctHrs := time.Duration(int64(-1) * int64(hours) * int64(time.Hour))
+
+	return dateRange{
+		start: end.AddDate(-1*years, -1*months, -1*(days+7*weeks)).Add(correctHrs),
+		end:   end,
+	}, nil
+}
+
+func queryFromArgs() string {
+	return `select * from reps order by start desc;`
 }
 
 func argsToColumnFilter() []string {
@@ -36,7 +104,7 @@ func argsToColumnFilter() []string {
 }
 
 // Prints the columns
-func printStats() {
+func printStats(query string) {
 	// connect to db
 	statsDb, err := SweetDb()
 	if err != nil {
@@ -44,7 +112,7 @@ func printStats() {
 		return
 	}
 
-	reps, err := GetReps(statsDb)
+	reps, err := GetReps(statsDb, query)
 
 	if err != nil {
 		fmt.Printf("failed to get reps: %s\n", err)

@@ -212,8 +212,10 @@ func InsertRep(db *sql.DB, rep Rep) (int64, error) {
 
 // This should accept an array of columns to show, a start and an end range,
 // and return an array of anything
-func GetReps(db *sql.DB) ([]Rep, error) {
-	query := `select * from reps order by start desc;`
+func GetReps(db *sql.DB, query string) ([]Rep, error) {
+	if query == "" {
+		query = `select * from reps order by start desc;`
+	}
 
 	var reps []Rep
 

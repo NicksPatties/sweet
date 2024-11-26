@@ -27,8 +27,6 @@ import (
 	lg "github.com/charmbracelet/lipgloss"
 )
 
-const eventTsFormat = "2006-01-02 15:04:05.000"
-
 func getProductTagline() string {
 	b := lg.NewStyle().Bold(true)
 	return fmt.Sprintf(
