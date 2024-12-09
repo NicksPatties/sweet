@@ -1,13 +1,13 @@
 package stats
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"os"
 	"strconv"
-	"strings"
 	"time"
+
+	"strings"
 
 	. "github.com/NicksPatties/sweet/db"
 	"github.com/spf13/cobra"
@@ -44,64 +44,66 @@ var Cmd = &cobra.Command{
 	},
 }
 
-type dateRange struct {
-	start time.Time
-	end   time.Time
-}
+// Returns the correct date depending on the start argument.
+// The time returned is at midnight of the date specified by `start`,
+// unless an hour query is used, in which case it will return the time
+// specified by
+func parseDateFromArg(isStart bool, arg string, now time.Time) (time.Time, error) {
+	var todayAtMidnight time.Time
+	todayAtMidnight = time.Date(now.Year(), now.Month(), now.Day(),
+		0, 0, 0, 0, now.Location())
 
-// Converts the N[H,D,W,M,Y] format string to a dateRange.
-// The end parameter represents the end time of the date range,
-// usually time.Now().
-//
-// If the function fails to parse the arg variable, then it
-// returns an error.
-//
-// H - hours, D - days, W - weeks, M - months, Y - years
-func shorthandToDateRange(arg string, end time.Time) (dateRange, error) {
-	failedToParse := errors.New("failed to parse argument " + arg)
-
-	hours := 0
-	days := 1
-	weeks := 0
-	months := 0
-	years := 0
-
-	// The number of a specific units
-	nString := string(arg[:len(arg)-1])
-	n, err := strconv.Atoi(nString)
-	if err != nil || n <= 0 {
-		return dateRange{}, failedToParse
+	if !isStart {
+		todayAtMidnight = todayAtMidnight.AddDate(0, 0, 1).Add(-1 * time.Nanosecond)
 	}
 
-	// The unit of date range [H,D,W,M,Y]
+	if arg == "" {
+		return todayAtMidnight, nil
+	}
+
 	unit := rune(arg[len(arg)-1])
+	amount, err := strconv.Atoi(arg[:len(arg)-1])
+
+	if err != nil {
+		// maybe it's in date format?
+		argTime, err := time.Parse(time.DateOnly, arg)
+
+		if err != nil {
+			return todayAtMidnight, fmt.Errorf("error parsing date: %s", err)
+		}
+
+		argTime = time.Date(
+			argTime.Year(), argTime.Month(), argTime.Day(),
+			0, 0, 0, 0, now.Location())
+
+		if !isStart {
+			argTime = argTime.AddDate(0, 0, 1).Add(-1 * time.Nanosecond)
+		}
+
+		if argTime.After(now) {
+			return todayAtMidnight, fmt.Errorf("invalid date: %s hasn't happend yet!", arg)
+		}
+
+		return argTime, nil
+	}
 
 	switch unit {
 	case 'H', 'h':
-		hours = n
-		break
+		return time.Date(
+			now.Year(), now.Month(), now.Day(),
+			now.Hour()-amount, now.Minute(), now.Second(), now.Nanosecond(),
+			now.Location()), nil
 	case 'D', 'd':
-		days = n
-		break
+		return todayAtMidnight.AddDate(0, 0, -1*amount), nil
 	case 'W', 'w':
-		weeks = n
-		break
+		return todayAtMidnight.AddDate(0, 0, amount*-7), nil
 	case 'M', 'm':
-		months = n
-		break
+		return todayAtMidnight.AddDate(0, -1*amount, 0), nil
 	case 'Y', 'y':
-		years = n
-		break
+		return todayAtMidnight.AddDate(-1*amount, 0, 0), nil
 	default:
-		return dateRange{}, failedToParse
+		return todayAtMidnight, fmt.Errorf("invalid date format %s\nsee \"sweet stats --help\" for more details", arg)
 	}
-
-	correctHrs := time.Duration(int64(-1) * int64(hours) * int64(time.Hour))
-
-	return dateRange{
-		start: end.AddDate(-1*years, -1*months, -1*(days+7*weeks)).Add(correctHrs),
-		end:   end,
-	}, nil
 }
 
 func queryFromArgs(cmd *cobra.Command, args []string) (string, error) {
@@ -145,8 +147,9 @@ func printStats(query string) {
 }
 
 func setStatsCommandFlags(cmd *cobra.Command) {
-	cmd.Flags().StringP("start", "s", "", "the start date")
+	cmd.Flags().String("start", "", "find stats starting from this date")
 	cmd.Flags().String("since", "", "alias for \"start\" flag")
+	cmd.Flags().String("end", "", "find stats ending at this date")
 	cmd.Flags().SortFlags = false
 }
 

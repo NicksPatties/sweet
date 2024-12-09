@@ -7,110 +7,168 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func TestShorthandToDateRange(t *testing.T) {
-	now := time.Now()
+func TestParseDateFromArg(t *testing.T) {
+	// 2024-12-06 17:36:20.000000 -0700
+	now := time.Date(2024, 12, 6, 17, 36, 20, 0, time.Now().Location())
 
 	testCases := []struct {
-		// input N[H,D,W,M,Y]
-		in      string
-		want    dateRange
+		name    string
+		isStart bool
+		arg     string
+		want    time.Time
 		wantErr bool
 	}{
 		{
-			// incorrect number
-			in:      "-1D",
-			want:    dateRange{},
+			name:    "blank string",
+			isStart: true,
+			arg:     "",
+			want:    time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()),
+			wantErr: false,
+		},
+		{
+			name:    "blank string, end date",
+			isStart: false,
+			arg:     "",
+			want:    time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()).AddDate(0, 0, 1).Add(-1 * time.Nanosecond),
+			wantErr: false,
+		},
+		{
+			name:    "--start=2H",
+			isStart: true,
+			arg:     "2H",
+			want:    time.Date(now.Year(), now.Month(), now.Day(), now.Hour()-2, now.Minute(), now.Second(), now.Nanosecond(), now.Location()),
+			wantErr: false,
+		},
+		{
+			name:    "--end=2H",
+			isStart: false,
+			arg:     "2H",
+			want:    time.Date(now.Year(), now.Month(), now.Day(), now.Hour()-2, now.Minute(), now.Second(), now.Nanosecond(), now.Location()),
+			wantErr: false,
+		},
+		{
+			name:    "--start=1D",
+			isStart: true,
+			arg:     "1D",
+			want:    time.Date(now.Year(), now.Month(), now.Day()-1, 0, 0, 0, 0, now.Location()),
+			wantErr: false,
+		},
+		{
+			name:    "--end=1D",
+			isStart: false,
+			arg:     "1D",
+			want:    time.Date(now.Year(), now.Month(), now.Day()-1, 0, 0, 0, 0, now.Location()).AddDate(0, 0, 1).Add(-1 * time.Nanosecond),
+			wantErr: false,
+		},
+		{
+			name:    "--start=2W",
+			isStart: true,
+			arg:     "2W",
+			want:    time.Date(now.Year(), now.Month(), now.Day()-14, 0, 0, 0, 0, now.Location()),
+			wantErr: false,
+		},
+		{
+			name:    "--end=2W",
+			isStart: false,
+			arg:     "2W",
+			want:    time.Date(now.Year(), now.Month(), now.Day()-14, 0, 0, 0, 0, now.Location()).AddDate(0, 0, 1).Add(-1 * time.Nanosecond),
+			wantErr: false,
+		},
+		{
+			name:    "--start=1M",
+			isStart: true,
+			arg:     "1M",
+			want:    time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()).AddDate(0, -1, 0),
+			wantErr: false,
+		},
+		{
+			name:    "--end=1M",
+			isStart: false,
+			arg:     "1M",
+			want:    time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()).AddDate(0, -1, 0).AddDate(0, 0, 1).Add(-1 * time.Nanosecond),
+			wantErr: false,
+		},
+		{
+			name:    "--start=1Y",
+			isStart: true,
+			arg:     "1Y",
+			want:    time.Date(now.Year()-1, now.Month(), now.Day(), 0, 0, 0, 0, now.Location()),
+			wantErr: false,
+		},
+		{
+			name:    "--end=1Y",
+			isStart: false,
+			arg:     "1Y",
+			want:    time.Date(now.Year()-1, now.Month(), now.Day(), 0, 0, 0, 0, now.Location()).AddDate(0, 0, 1).Add(-1 * time.Nanosecond),
+			wantErr: false,
+		},
+		{
+			name:    "--start=1X (invalid shorthand)",
+			isStart: true,
+			arg:     "1X",
+			want:    time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()),
 			wantErr: true,
 		},
 		{
-			// incorrect date range code
-			in:      "-1F",
-			want:    dateRange{},
+			name:    "--end=1X (invalid shorthand)",
+			isStart: false,
+			arg:     "1X",
+			want:    time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()).AddDate(0, 0, 1).Add(-1 * time.Nanosecond),
 			wantErr: true,
 		},
 		{
-			// one days (lowercase letters work)
-			in: "1d",
-			want: dateRange{
-				start: now.AddDate(0, 0, -1),
-				end:   now,
-			},
+			name:    "--start=barf (invalid input)",
+			isStart: true,
+			arg:     "barf",
+			want:    time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()),
+			wantErr: true,
+		},
+		{
+			name:    "--end=barf (invalid input)",
+			isStart: false,
+			arg:     "barf",
+			want:    time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()).AddDate(0, 0, 1).Add(-1 * time.Nanosecond),
+			wantErr: true,
+		},
+		{
+			name:    "--start=2011-10-01",
+			isStart: true,
+			arg:     "2011-10-01",
+			want:    time.Date(2011, time.October, 1, 0, 0, 0, 0, now.Location()),
 			wantErr: false,
 		},
 		{
-			// two days (n works)
-			in: "2D",
-			want: dateRange{
-				start: now.AddDate(0, 0, -2),
-				end:   now,
-			},
+			name:    "--end=2011-10-01",
+			isStart: false,
+			arg:     "2011-10-01",
+			want:    time.Date(2011, time.October, 1, 0, 0, 0, 0, now.Location()).AddDate(0, 0, 1).Add(-1 * time.Nanosecond),
 			wantErr: false,
 		},
 		{
-			// one week (W works)
-			in: "1H",
-			want: dateRange{
-				start: now.Add(-1 * time.Hour),
-				end:   now,
-			},
-			wantErr: false,
+			name:    "--start=2222-10-10 (invalid future date)",
+			isStart: true,
+			arg:     "2222-10-10",
+			want:    time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()),
+			wantErr: true,
 		},
 		{
-			// one week (W works)
-			in: "1W",
-			want: dateRange{
-				start: now.AddDate(0, 0, -7),
-				end:   now,
-			},
-			wantErr: false,
-		},
-		{
-			// one month (Y works)
-			in: "1M",
-			want: dateRange{
-				end:   now,
-				start: now.AddDate(0, -1, 0),
-			},
-			wantErr: false,
-		},
-		{
-			// one year (Y works)
-			in: "1Y",
-			want: dateRange{
-				end:   now,
-				start: now.AddDate(-1, 0, 0),
-			},
-			wantErr: false,
-		},
-		{
-			// 100 days (n > 9 works)
-			in: "100D",
-			want: dateRange{
-				end:   now,
-				start: now.AddDate(0, -100, 0),
-			},
-			wantErr: false,
+			name:    "--end=2222-10-10 (invalid future date)",
+			isStart: false,
+			arg:     "2222-10-10",
+			want:    time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()).AddDate(0, 0, 1).Add(-1 * time.Nanosecond),
+			wantErr: true,
 		},
 	}
 
 	for _, tc := range testCases {
-		out, err := shorthandToDateRange(tc.in, now)
+		got, gotErr := parseDateFromArg(tc.isStart, tc.arg, now)
 
-		if err == nil && tc.wantErr {
-			t.Errorf("%s wanted error, but it's nil", tc.in)
+		if tc.wantErr && gotErr == nil {
+			t.Errorf("%s: wanted error, but got nil", tc.name)
 		}
 
-		if !(out.start.Equal(tc.want.start) || out.end.Equal(tc.want.end)) {
-			t.Errorf(
-				"%s\n"+
-					"  got  start %s\n"+
-					"  got  end   %s\n"+
-					"  want start %s\n"+
-					"  want end   %s\n",
-				tc.in,
-				out.start, out.end,
-				tc.want.start, tc.want.end,
-			)
+		if !tc.want.Equal(got) {
+			t.Errorf("%s:\n got  %v\n want %v", tc.name, got, tc.want)
 		}
 	}
 }
