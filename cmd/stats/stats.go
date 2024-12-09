@@ -31,11 +31,7 @@ var Cmd = &cobra.Command{
 	Use:   "stats",
 	Short: "Print statistics about typing exercises",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println(args)
-		start := cmd.Flag("start")
-		fmt.Println(start)
-
-		q, err := queryFromArgs(cmd, args)
+		q, err := queryFromArgs(cmd, time.Now())
 		if err != nil {
 			log.Fatal()
 			os.Exit(-1)
@@ -106,8 +102,18 @@ func parseDateFromArg(isStart bool, arg string, now time.Time) (time.Time, error
 	}
 }
 
-func queryFromArgs(cmd *cobra.Command, args []string) (string, error) {
-	query := `select * from reps order by start desc;`
+// Writes a query that retrieves the entries specified by the start and end
+// date functions. Also handles the `since` variable, which is an alias for
+// start.
+func queryFromArgs(cmd *cobra.Command, now time.Time) (string, error) {
+	// since := cmd.Flag("since").Value.String()
+	start := cmd.Flag("start").Value.String()
+	end := cmd.Flag("end").Value.String()
+
+	startTime, _ := parseDateFromArg(true, start, now)
+	endTime, _ := parseDateFromArg(false, end, now)
+
+	query := fmt.Sprintf("select * from reps where start >= %d and end <= %d order by start desc;", startTime.UnixMilli(), endTime.UnixMilli())
 	return query, nil
 }
 

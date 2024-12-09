@@ -1,6 +1,7 @@
 package stats
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -174,6 +175,11 @@ func TestParseDateFromArg(t *testing.T) {
 }
 
 func TestQueryFromArgs(t *testing.T) {
+	// 2024-12-06 17:36:20.000000 -0700
+	now := time.Date(2024, 12, 6, 17, 36, 20, 0, time.Now().Location())
+	nowAtMidnight := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+	nowBeforeMidnight := nowAtMidnight.AddDate(0, 0, 1).Add(-1 * time.Nanosecond)
+
 	type testCase struct {
 		name    string
 		in      []string
@@ -185,7 +191,7 @@ func TestQueryFromArgs(t *testing.T) {
 		cmd := &cobra.Command{
 			Args: cobra.MaximumNArgs(1),
 			Run: func(cmd *cobra.Command, args []string) {
-				got, err := queryFromArgs(cmd, args)
+				got, err := queryFromArgs(cmd, now)
 				if err == nil && tc.wantErr {
 					t.Errorf("%s wanted error, got nil", tc.name)
 				}
@@ -199,15 +205,28 @@ func TestQueryFromArgs(t *testing.T) {
 			},
 		}
 		setStatsCommandFlags(cmd)
-		cmd.SetArgs(tc.in)
 		return cmd
 	}
 
 	testCases := []testCase{
 		{
-			name:    "default case",
-			in:      []string{},
-			want:    "select * from reps order by start desc;",
+			name: "default case (get stats from today only)",
+			in:   []string{},
+			want: fmt.Sprintf(
+				"select * from reps where start >= %d and end <= %d order by start desc;",
+				nowAtMidnight.UnixMilli(),
+				nowBeforeMidnight.UnixMilli(),
+			),
+			wantErr: false,
+		},
+		{
+			name: "default case (get stats from today only)",
+			in:   []string{},
+			want: fmt.Sprintf(
+				"select * from reps where start >= %d and end <= %d order by start desc;",
+				nowAtMidnight.UnixMilli(),
+				nowBeforeMidnight.UnixMilli(),
+			),
 			wantErr: false,
 		},
 	}
