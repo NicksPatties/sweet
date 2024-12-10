@@ -13,20 +13,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// var Cmd = &cobra.Command{
-// 	Use:     "sweet [file]",
-// 	Long:    fmt.Sprintf("%s.\nRuns an interactive touch typing game, and prints the results.", getProductTagline()),
-// 	Args:    cobra.MaximumNArgs(1),
-// 	Example: getExamples(),
-// 	Run: func(cmd *cobra.Command, args []string) {
-// 		ex, err := fromArgs(cmd, args)
-// 		if err != nil {
-// 			log.Fatal(err)
-// 		}
-// 		Run(ex)
-// 	},
-// }
-
 var Cmd = &cobra.Command{
 	Use:   "stats",
 	Short: "Print statistics about typing exercises",
@@ -106,12 +92,26 @@ func parseDateFromArg(isStart bool, arg string, now time.Time) (time.Time, error
 // date functions. Also handles the `since` variable, which is an alias for
 // start.
 func queryFromArgs(cmd *cobra.Command, now time.Time) (string, error) {
-	// since := cmd.Flag("since").Value.String()
-	start := cmd.Flag("start").Value.String()
 	end := cmd.Flag("end").Value.String()
+	since := cmd.Flag("since").Value.String()
+	start := cmd.Flag("start").Value.String()
+
+	if end != "" && since == "" && start == "" {
+		return "", fmt.Errorf("must define start if end is provided")
+	}
+
+	if since != "" && start != "" {
+		fmt.Printf("both `--since` and `--start` variables provided (you only need one of them!)")
+	} else if since != "" && start == "" {
+		start = since
+	}
 
 	startTime, _ := parseDateFromArg(true, start, now)
 	endTime, _ := parseDateFromArg(false, end, now)
+
+	if endTime.Before(startTime) {
+		return "", fmt.Errorf("end is before start")
+	}
 
 	query := fmt.Sprintf("select * from reps where start >= %d and end <= %d order by start desc;", startTime.UnixMilli(), endTime.UnixMilli())
 	return query, nil

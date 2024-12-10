@@ -189,7 +189,6 @@ func TestQueryFromArgs(t *testing.T) {
 
 	var mockCmd = func(tc testCase) *cobra.Command {
 		cmd := &cobra.Command{
-			Args: cobra.MaximumNArgs(1),
 			Run: func(cmd *cobra.Command, args []string) {
 				got, err := queryFromArgs(cmd, now)
 				if err == nil && tc.wantErr {
@@ -205,6 +204,7 @@ func TestQueryFromArgs(t *testing.T) {
 			},
 		}
 		setStatsCommandFlags(cmd)
+		cmd.SetArgs(tc.in)
 		return cmd
 	}
 
@@ -220,14 +220,55 @@ func TestQueryFromArgs(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "default case (get stats from today only)",
-			in:   []string{},
+			name: "since is an alias for start",
+			in:   []string{"--since=2D"},
 			want: fmt.Sprintf(
 				"select * from reps where start >= %d and end <= %d order by start desc;",
-				nowAtMidnight.UnixMilli(),
+				nowAtMidnight.AddDate(0, 0, -2).UnixMilli(),
 				nowBeforeMidnight.UnixMilli(),
 			),
 			wantErr: false,
+		},
+		{
+			name: "both since and start are given: warn, and prefer start",
+			in:   []string{"--since=2D", "--start=1D"},
+			want: fmt.Sprintf(
+				"select * from reps where start >= %d and end <= %d order by start desc;",
+				nowAtMidnight.AddDate(0, 0, -1).UnixMilli(),
+				nowBeforeMidnight.UnixMilli(),
+			),
+			wantErr: false,
+		},
+		{
+			name: "start provided",
+			in:   []string{"--start=1D"},
+			want: fmt.Sprintf(
+				"select * from reps where start >= %d and end <= %d order by start desc;",
+				nowAtMidnight.AddDate(0, 0, -1).UnixMilli(),
+				nowBeforeMidnight.UnixMilli(),
+			),
+			wantErr: false,
+		},
+		{
+			name:    "end provided, but no start",
+			in:      []string{"--end=1D"},
+			want:    "",
+			wantErr: true,
+		},
+		{
+			name: "start and end provided",
+			in:   []string{"--start=2024-10-01", "--end=2024-11-01"},
+			want: fmt.Sprintf(
+				"select * from reps where start >= %d and end <= %d order by start desc;",
+				time.Date(2024, time.October, 1, 0, 0, 0, 0, now.Location()).UnixMilli(),
+				time.Date(2024, time.November, 1, 0, 0, 0, 0, now.Location()).AddDate(0, 0, 1).Add(-1*time.Nanosecond).UnixMilli()),
+			wantErr: false,
+		},
+		{
+			name:    "start and end provided, but end is before start",
+			in:      []string{"--start=1D", "--end=3D"},
+			want:    "",
+			wantErr: true,
 		},
 	}
 
