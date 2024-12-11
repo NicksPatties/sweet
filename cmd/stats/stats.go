@@ -17,12 +17,18 @@ var Cmd = &cobra.Command{
 	Use:   "stats",
 	Short: "Print statistics about typing exercises",
 	Run: func(cmd *cobra.Command, args []string) {
-		q, err := queryFromArgs(cmd, time.Now())
+		q, err := argsToQuery(cmd, time.Now())
 		if err != nil {
 			log.Fatal()
 			os.Exit(-1)
 		}
-		printStats(q)
+		reps, err := queryToReps(q)
+		if err != nil {
+			log.Fatal()
+			os.Exit(-1)
+		}
+		cols := argsToColumnFilter(cmd)
+		printStats(reps, cols)
 	},
 }
 
@@ -91,7 +97,7 @@ func parseDateFromArg(isStart bool, arg string, now time.Time) (time.Time, error
 // Writes a query that retrieves the entries specified by the start and end
 // date functions. Also handles the `since` variable, which is an alias for
 // start.
-func queryFromArgs(cmd *cobra.Command, now time.Time) (string, error) {
+func argsToQuery(cmd *cobra.Command, now time.Time) (string, error) {
 	end := cmd.Flag("end").Value.String()
 	since := cmd.Flag("since").Value.String()
 	start := cmd.Flag("start").Value.String()
@@ -117,28 +123,47 @@ func queryFromArgs(cmd *cobra.Command, now time.Time) (string, error) {
 	return query, nil
 }
 
-func argsToColumnFilter() []string {
-	defaultCols := []string{"start", "name", "wpm", "errs", "miss", "acc"}
-	return defaultCols
+// Converts a query to an array of Reps, which are the individual
+// rows that appear in stats database
+func queryToReps(query string) (reps []Rep, err error) {
+	statsDb, err := SweetDb()
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to database: %s\n", err)
+	}
+
+	reps, err = GetReps(statsDb, query)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get reps: %s\n", err)
+	}
+
+	return
+}
+
+func argsToColumnFilter(cmd *cobra.Command) []string {
+	cols := []string{"start", "name"}
+	defaultCols := append(cols, "wpm", "raw", "acc", "errs", "miss")
+
+	possibleCols := []string{"wpm", "raw", "acc", "errs", "miss", "dur"}
+	selectedColCount := 0
+
+	for _, col := range possibleCols {
+		isThere := cmd.Flag(col).Value.String() == "true"
+		if isThere {
+			cols = append(cols, col)
+			selectedColCount++
+		}
+	}
+
+	if selectedColCount == 0 {
+		return defaultCols
+	} else {
+		return cols
+	}
 }
 
 // Prints the columns
-func printStats(query string) {
-	// connect to db
-	statsDb, err := SweetDb()
-	if err != nil {
-		fmt.Printf("failed to connect to database: %s\n", err)
-		return
-	}
-
-	reps, err := GetReps(statsDb, query)
-
-	if err != nil {
-		fmt.Printf("failed to get reps: %s\n", err)
-		return
-	}
-
-	cols := argsToColumnFilter()
+func printStats(reps []Rep, cols []string) {
 	// print the header
 	fmt.Printf("%s\n", strings.Join(cols, "\t"))
 
@@ -153,9 +178,21 @@ func printStats(query string) {
 }
 
 func setStatsCommandFlags(cmd *cobra.Command) {
+	// date selection flags
 	cmd.Flags().String("start", "", "find stats starting from this date")
 	cmd.Flags().String("since", "", "alias for \"start\" flag")
 	cmd.Flags().String("end", "", "find stats ending at this date")
+
+	// column filtering flags
+	cmd.Flags().String("name", "", "filter by exercise name")
+	cmd.Flags().String("lang", "", "filter by language")
+	cmd.Flags().Bool("wpm", false, "show words per minute (wpm)")
+	cmd.Flags().Bool("raw", false, "show raw words per minute")
+	cmd.Flags().Bool("acc", false, "show accuracy (acc)")
+	cmd.Flags().Bool("miss", false, "show mistakes")
+	cmd.Flags().Bool("errs", false, "show uncorrected errors")
+	cmd.Flags().Bool("dur", false, "show duration")
+
 	cmd.Flags().SortFlags = false
 }
 

@@ -174,7 +174,7 @@ func TestParseDateFromArg(t *testing.T) {
 	}
 }
 
-func TestQueryFromArgs(t *testing.T) {
+func TestArgsToQuery(t *testing.T) {
 	// 2024-12-06 17:36:20.000000 -0700
 	now := time.Date(2024, 12, 6, 17, 36, 20, 0, time.Now().Location())
 	nowAtMidnight := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
@@ -190,7 +190,7 @@ func TestQueryFromArgs(t *testing.T) {
 	var mockCmd = func(tc testCase) *cobra.Command {
 		cmd := &cobra.Command{
 			Run: func(cmd *cobra.Command, args []string) {
-				got, err := queryFromArgs(cmd, now)
+				got, err := argsToQuery(cmd, now)
 				if err == nil && tc.wantErr {
 					t.Errorf("%s wanted error, got nil", tc.name)
 				}
@@ -272,6 +272,68 @@ func TestQueryFromArgs(t *testing.T) {
 		},
 	}
 
+	for _, tc := range testCases {
+		cmd := mockCmd(tc)
+
+		if err := cmd.Execute(); err != nil {
+			t.Fatalf("mock command failed to run: %s", err)
+		}
+	}
+}
+
+func TestArgsToColumnFilter(t *testing.T) {
+
+	type testCase struct {
+		name string
+		in   []string
+		want []string
+	}
+
+	var mockCmd = func(tc testCase) *cobra.Command {
+		cmd := &cobra.Command{
+			Run: func(cmd *cobra.Command, args []string) {
+				got := argsToColumnFilter(cmd)
+				if len(got) != len(tc.want) {
+					t.Fatalf("%s\n"+
+						"  got:  %s\n"+
+						"  want: %s\n",
+						tc.name, got, tc.want)
+
+				}
+				for i, want := range tc.want {
+					if got[i] != want {
+						t.Errorf("%s\n"+
+							"  got:  %s\n"+
+							"  want: %s\n",
+							tc.name, got, tc.want)
+						break
+					}
+				}
+
+			},
+		}
+		setStatsCommandFlags(cmd)
+		cmd.SetArgs(tc.in)
+		return cmd
+	}
+
+	testCases := []testCase{
+		{
+			name: "default columns",
+			in:   []string{},
+			want: []string{"start", "name", "wpm", "raw", "acc", "errs", "miss"},
+		},
+		{
+			name: "only one column",
+			in:   []string{"--wpm"},
+			want: []string{"start", "name", "wpm"},
+		},
+		{
+			name: "some columns",
+			in:   []string{"--raw", "--dur", "--miss"},
+			want: []string{"start", "name", "raw", "miss", "dur"},
+		},
+	}
 	for _, tc := range testCases {
 		cmd := mockCmd(tc)
 
