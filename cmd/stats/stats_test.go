@@ -280,6 +280,32 @@ func TestArgsToQuery(t *testing.T) {
 			),
 			wantErr: false,
 		},
+		{
+			name: "name provided",
+			in:   []string{"--name=filename.go"},
+			want: fmt.Sprintf(
+				"select * from reps where name like 'filename.go' and start >= %d and end <= %d order by start desc;",
+				nowAtMidnight.UnixMilli(),
+				nowBeforeMidnight.UnixMilli(),
+			),
+			wantErr: false,
+		},
+		{
+			name: "name with wildcard",
+			in:   []string{"--name=file*"},
+			want: fmt.Sprintf(
+				"select * from reps where name like 'file%%' and start >= %d and end <= %d order by start desc;",
+				nowAtMidnight.UnixMilli(),
+				nowBeforeMidnight.UnixMilli(),
+			),
+			wantErr: false,
+		},
+		{
+			name:    "both name and language provided, error",
+			in:      []string{"--name=filename.go", "--lang=py"},
+			want:    "",
+			wantErr: true,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -347,6 +373,11 @@ func TestArgsToColumnFilter(t *testing.T) {
 			name: "name provided, hides name column",
 			in:   []string{"--name=hello.go"},
 			want: []string{"start", "wpm", "raw", "acc", "errs", "miss"},
+		},
+		{
+			name: "name wildcard provided, shows name column",
+			in:   []string{"--name=hello*"},
+			want: []string{"start", "name", "wpm", "raw", "acc", "errs", "miss"},
 		},
 		{
 			name: "name and other columns provided, hides name column and only shows provided columns",

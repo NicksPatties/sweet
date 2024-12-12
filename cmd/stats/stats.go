@@ -99,10 +99,17 @@ func parseDateFromArg(isStart bool, arg string, now time.Time) (time.Time, error
 // start.
 func argsToQuery(cmd *cobra.Command, now time.Time) (string, error) {
 	filters := []string{}
+	name := cmd.Flag("name").Value.String()
 	lang := cmd.Flag("lang").Value.String()
 
-	if lang != "" {
+	if name != "" && lang != "" {
+		return "", fmt.Errorf("both name and lang provided (please pick one of them!)")
+	} else if lang != "" {
 		filters = append(filters, fmt.Sprintf("lang='%s'", lang))
+	} else if name != "" {
+		nameFilter := fmt.Sprintf("name like '%s'", name)
+		nameFilter = strings.Replace(nameFilter, "*", "%", -1)
+		filters = append(filters, nameFilter)
 	}
 
 	end := cmd.Flag("end").Value.String()
@@ -154,7 +161,9 @@ func queryToReps(query string) (reps []Rep, err error) {
 
 func argsToColumnFilter(cmd *cobra.Command) []string {
 	cols := []string{"start"}
-	if cmd.Flag("name").Value.String() == "" {
+	name := cmd.Flag("name").Value.String()
+	showName := name == "" || strings.Contains(name, "*")
+	if showName {
 		cols = append(cols, "name")
 	}
 	defaultCols := append(cols, "wpm", "raw", "acc", "errs", "miss")
