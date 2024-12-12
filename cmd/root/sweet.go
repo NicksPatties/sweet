@@ -18,7 +18,6 @@ import (
 	"github.com/NicksPatties/sweet/cmd/stats"
 	"github.com/NicksPatties/sweet/cmd/version"
 	. "github.com/NicksPatties/sweet/db"
-	"github.com/NicksPatties/sweet/util"
 	. "github.com/NicksPatties/sweet/util"
 	"github.com/spf13/cobra"
 
@@ -178,17 +177,6 @@ func runeToEventExpected(r rune) string {
 		return "space"
 	default:
 		return string(r)
-	}
-}
-
-// Creates a new event. Should be used when recording a keystroke
-// to the model.
-func NewEvent(typed string, expected string, i int) util.Event {
-	return Event{
-		Ts:       time.Now(),
-		Typed:    typed,
-		Expected: expected,
-		I:        i,
 	}
 }
 
@@ -491,7 +479,7 @@ func fromArgs(cmd *cobra.Command, args []string) (exercise Exercise, err error) 
 
 		} else {
 			var sweetConfigDir string
-			sweetConfigDir, err = util.SweetConfigDir()
+			sweetConfigDir, err = SweetConfigDir()
 			if err != nil {
 				return
 			}
@@ -572,11 +560,11 @@ func fromArgs(cmd *cobra.Command, args []string) (exercise Exercise, err error) 
 // inserting it into the database.
 func exerciseModelToRep(m exerciseModel) Rep {
 	return Rep{
-		Hash:   util.MD5Hash(m.exercise.text),
+		Hash:   MD5Hash(m.exercise.text),
 		Start:  m.events[0].Ts,
 		End:    m.events[len(m.events)-1].Ts,
 		Name:   m.exercise.name,
-		Lang:   util.Lang(m.exercise.name),
+		Lang:   Lang(m.exercise.name),
 		Wpm:    wpm(m.events),
 		Raw:    wpmRaw(m.events),
 		Dur:    duration(m.events),

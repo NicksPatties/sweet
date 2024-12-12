@@ -139,3 +139,14 @@ func EventsString(events []Event) (s string) {
 	s += fmt.Sprintln("]")
 	return
 }
+
+// Creates a new event. Should be used when recording a keystroke
+// to the model.
+func NewEvent(typed string, expected string, i int) Event {
+	return Event{
+		Ts:       time.Now(),
+		Typed:    typed,
+		Expected: expected,
+		I:        i,
+	}
+}

@@ -3,7 +3,6 @@ package stats
 import (
 	"fmt"
 	"log"
-	"os"
 	"strconv"
 	"time"
 
@@ -19,29 +18,30 @@ var Cmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		q, err := argsToQuery(cmd, time.Now())
 		if err != nil {
-			log.Fatal()
-			os.Exit(-1)
+			log.Fatal(err)
 		}
 		reps, err := queryToReps(q)
 		if err != nil {
-			log.Fatal()
-			os.Exit(-1)
+			log.Fatal(err)
 		}
 		cols := argsToColumnFilter(cmd)
 		printStats(reps, cols)
 	},
 }
 
-// Returns the correct date depending on the start argument.
-// The time returned is at midnight of the date specified by `start`,
-// unless an hour query is used, in which case it will return the time
-// specified by
-func parseDateFromArg(isStart bool, arg string, now time.Time) (time.Time, error) {
-	var todayAtMidnight time.Time
-	todayAtMidnight = time.Date(now.Year(), now.Month(), now.Day(),
+// Returns the date depending on the provided argument.
+// If this is an argument for the `start` or `since` flag, then return the date
+// corresponding to midnight of the provided argument, otherwise return
+// the date at one nanosecond before midnight of the next day.
+// This function supports both `YYYY-MM-DD` arguments as well as `N[HDWMY]` arguments,
+// where `N` is the number of hours, days, weeks, months, or years before `now`.
+// The `now` argument is used primarily for testing, and is typically assigned to
+// `time.Now()` in normal usage.
+func parseDateFromArg(isEnd bool, arg string, now time.Time) (time.Time, error) {
+	todayAtMidnight := time.Date(now.Year(), now.Month(), now.Day(),
 		0, 0, 0, 0, now.Location())
 
-	if !isStart {
+	if isEnd {
 		todayAtMidnight = todayAtMidnight.AddDate(0, 0, 1).Add(-1 * time.Nanosecond)
 	}
 
@@ -53,7 +53,7 @@ func parseDateFromArg(isStart bool, arg string, now time.Time) (time.Time, error
 	amount, err := strconv.Atoi(arg[:len(arg)-1])
 
 	if err != nil {
-		// maybe it's in date format?
+		// maybe it's in YYYY-MM-DD format?
 		argTime, err := time.Parse(time.DateOnly, arg)
 
 		if err != nil {
@@ -64,12 +64,12 @@ func parseDateFromArg(isStart bool, arg string, now time.Time) (time.Time, error
 			argTime.Year(), argTime.Month(), argTime.Day(),
 			0, 0, 0, 0, now.Location())
 
-		if !isStart {
+		if isEnd {
 			argTime = argTime.AddDate(0, 0, 1).Add(-1 * time.Nanosecond)
 		}
 
 		if argTime.After(now) {
-			return todayAtMidnight, fmt.Errorf("invalid date: %s hasn't happend yet!", arg)
+			return todayAtMidnight, fmt.Errorf("invalid date: %s hasn't happened yet!", arg)
 		}
 
 		return argTime, nil
@@ -94,56 +94,51 @@ func parseDateFromArg(isStart bool, arg string, now time.Time) (time.Time, error
 	}
 }
 
-// Writes a query that retrieves the entries specified by the start and end
-// date functions. Also handles the `since` variable, which is an alias for
-// start.
+// Converts the flags assigned to the stats command into an SQLite query,
+// retrieving all entries from the database that match the query.
 func argsToQuery(cmd *cobra.Command, now time.Time) (string, error) {
 	filters := []string{}
-	name := cmd.Flag("name").Value.String()
-	lang := cmd.Flag("lang").Value.String()
+	name := cmd.Flag(NAME).Value.String()
+	lang := cmd.Flag(LANGUAGE).Value.String()
 
 	if name != "" && lang != "" {
 		return "", fmt.Errorf("both name and lang provided (please pick one of them!)")
 	} else if lang != "" {
-		filters = append(filters, fmt.Sprintf("lang='%s'", lang))
+		filters = append(filters, fmt.Sprintf("%s='%s'", LANGUAGE, lang))
 	} else if name != "" {
-		nameFilter := fmt.Sprintf("name like '%s'", name)
+		nameFilter := fmt.Sprintf("%s like '%s'", NAME, name)
 		nameFilter = strings.Replace(nameFilter, "*", "%", -1)
 		filters = append(filters, nameFilter)
 	}
 
-	end := cmd.Flag("end").Value.String()
+	end := cmd.Flag(END).Value.String()
 	since := cmd.Flag("since").Value.String()
-	start := cmd.Flag("start").Value.String()
+	start := cmd.Flag(START).Value.String()
 
 	if end != "" && since == "" && start == "" {
-		return "", fmt.Errorf("must define start if end is provided")
+		return "", fmt.Errorf("must define %s if %s is provided", START, END)
 	}
 
 	if since != "" && start != "" {
-		fmt.Printf("both `--since` and `--start` variables provided (you only need one of them!)")
+		fmt.Printf("both `--since` and `--%s` variables provided (you only need one of them!)", START)
 	} else if since != "" && start == "" {
 		start = since
 	}
 
-	startTime, _ := parseDateFromArg(true, start, now)
-	filters = append(filters, fmt.Sprintf("start >= %d", startTime.UnixMilli()))
-	endTime, _ := parseDateFromArg(false, end, now)
-	filters = append(filters, fmt.Sprintf("end <= %d", endTime.UnixMilli()))
-	// TODO finish creating filters for language and name properties
+	startTime, _ := parseDateFromArg(false, start, now)
+	filters = append(filters, fmt.Sprintf("%s >= %d", START, startTime.UnixMilli()))
+	endTime, _ := parseDateFromArg(true, end, now)
+	filters = append(filters, fmt.Sprintf("%s <= %d", END, endTime.UnixMilli()))
 
 	if endTime.Before(startTime) {
-		return "", fmt.Errorf("end is before start")
+		return "", fmt.Errorf("%s is before %s", END, START)
 	}
 
-	filterText := strings.Join(filters, " and ")
+	query := fmt.Sprintf("select * from reps where %s order by %s desc;", strings.Join(filters, " and "), START)
 
-	query := fmt.Sprintf("select * from reps where %s order by start desc;", filterText)
 	return query, nil
 }
 
-// Converts a query to an array of Reps, which are the individual
-// rows that appear in stats database
 func queryToReps(query string) (reps []Rep, err error) {
 	statsDb, err := SweetDb()
 	if err != nil {
@@ -160,32 +155,37 @@ func queryToReps(query string) (reps []Rep, err error) {
 }
 
 func argsToColumnFilter(cmd *cobra.Command) []string {
-	cols := []string{"start"}
-	name := cmd.Flag("name").Value.String()
+	cols := []string{START}
+	name := cmd.Flag(NAME).Value.String()
 	showName := name == "" || strings.Contains(name, "*")
 	if showName {
-		cols = append(cols, "name")
+		cols = append(cols, NAME)
 	}
-	defaultCols := append(cols, "wpm", "raw", "acc", "errs", "miss")
-	possibleCols := []string{"wpm", "raw", "acc", "errs", "miss", "dur"}
+	possibleCols := []string{
+		WPM, RAW_WPM, ACCURACY,
+		UNCORRECTED_ERRORS, MISTAKES, DURATION,
+	}
 	selectedColCount := 0
 
 	for _, col := range possibleCols {
-		isThere := cmd.Flag(col).Value.String() == "true"
-		if isThere {
+		showCol := cmd.Flag(col).Value.String() == "true"
+		if showCol {
 			cols = append(cols, col)
 			selectedColCount++
 		}
 	}
 
 	if selectedColCount == 0 {
+		defaultCols := append(cols,
+			WPM, RAW_WPM, ACCURACY, UNCORRECTED_ERRORS, MISTAKES,
+		)
 		return defaultCols
 	} else {
 		return cols
 	}
 }
 
-// Prints the columns
+// TODO will be implemented in #65
 func printStats(reps []Rep, cols []string) {
 	// print the header
 	fmt.Printf("%s\n", strings.Join(cols, "\t"))
@@ -202,19 +202,19 @@ func printStats(reps []Rep, cols []string) {
 
 func setStatsCommandFlags(cmd *cobra.Command) {
 	// date selection flags
-	cmd.Flags().String("start", "", "find stats starting from this date")
+	cmd.Flags().String(START, "", "find stats starting from this date")
 	cmd.Flags().String("since", "", "alias for \"start\" flag")
-	cmd.Flags().String("end", "", "find stats ending at this date")
+	cmd.Flags().String(END, "", "find stats ending at this date")
 
 	// column filtering flags
-	cmd.Flags().String("name", "", "filter by exercise name")
-	cmd.Flags().String("lang", "", "filter by language")
-	cmd.Flags().Bool("wpm", false, "show words per minute (wpm)")
-	cmd.Flags().Bool("raw", false, "show raw words per minute")
-	cmd.Flags().Bool("acc", false, "show accuracy (acc)")
-	cmd.Flags().Bool("miss", false, "show mistakes")
-	cmd.Flags().Bool("errs", false, "show uncorrected errors")
-	cmd.Flags().Bool("dur", false, "show duration")
+	cmd.Flags().String(NAME, "", "filter by exercise name")
+	cmd.Flags().String(LANGUAGE, "", "filter by language")
+	cmd.Flags().Bool(WPM, false, "show words per minute (wpm)")
+	cmd.Flags().Bool(RAW_WPM, false, "show raw words per minute")
+	cmd.Flags().Bool(ACCURACY, false, "show accuracy (acc)")
+	cmd.Flags().Bool(MISTAKES, false, "show mistakes")
+	cmd.Flags().Bool(UNCORRECTED_ERRORS, false, "show uncorrected errors")
+	cmd.Flags().Bool(DURATION, false, "show duration")
 
 	cmd.Flags().SortFlags = false
 }

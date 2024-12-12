@@ -13,6 +13,23 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+// Column names
+const (
+	ID                 string = "id"
+	HASH               string = "hash"
+	START              string = "start"
+	END                string = "end"
+	NAME               string = "name"
+	LANGUAGE           string = "lang"
+	WPM                string = "wpm"
+	RAW_WPM            string = "raw"
+	DURATION           string = "dur"
+	ACCURACY           string = "acc"
+	MISTAKES           string = "miss"
+	UNCORRECTED_ERRORS string = "errs"
+	EVENTS             string = "events"
+)
+
 // A single repetition of an exercise.
 //
 // This is the structure of a row in the sweet db module.
@@ -56,31 +73,31 @@ func (r Rep) String() (s string) {
 // an empty string is returned.
 func (r Rep) ColumnString(col string) string {
 	switch col {
-	case "id":
+	case ID:
 		return strconv.Itoa(r.Id)
-	case "hash":
+	case HASH:
 		return r.Hash
-	case "start":
+	case START:
 		return r.Start.Format(EventTsLayout)
-	case "end":
+	case END:
 		return r.End.Format(EventTsLayout)
-	case "name":
+	case NAME:
 		return r.Name
-	case "lang":
+	case LANGUAGE:
 		return r.Lang
-	case "wpm":
+	case WPM:
 		return fmt.Sprintf("%.f", r.Wpm)
-	case "raw":
+	case RAW_WPM:
 		return fmt.Sprintf("%.f", r.Wpm)
-	case "dur":
+	case DURATION:
 		return r.Dur.String()
-	case "acc":
+	case ACCURACY:
 		return fmt.Sprintf("%.2f%%", r.Acc)
-	case "miss":
+	case MISTAKES:
 		return strconv.Itoa(r.Miss)
-	case "errs":
+	case UNCORRECTED_ERRORS:
 		return strconv.Itoa(r.Errs)
-	case "events":
+	case EVENTS:
 		return EventsString(r.Events)
 	default:
 		return ""
@@ -127,34 +144,39 @@ func SweetDb() (*sql.DB, error) {
 	}
 
 	// create the reps table if it doesn't exist
-	_, err = db.Exec(`
+	createTableStr := fmt.Sprintf(`
 CREATE TABLE if not exists reps(
-  id integer primary key autoincrement not null,
+  %s integer primary key autoincrement not null,
   -- md5 hash of the exercise file's contents
-  hash string NOT NULL,
+  %s string NOT NULL,
   -- start time in unix milliseconds
-  start integer not null,
+  %s integer not null,
   -- end time in unix milliseconds
-  end integer not null,
+  %s integer not null,
   -- name of the exercise file, includes extension if present
-  name text not null,
+  %s text not null,
   -- language: extension of the exercise file, or "" if there is none.
-  lang text,
+  %s text,
   -- words per minute
-  wpm real not null check(wpm >= 0.0),
+  %s real not null check(wpm >= 0.0),
   -- raw words per minute
-  raw real not null check(raw >= 0.0),
+  %s real not null check(raw >= 0.0),
   -- duration: duration of rep in **nanoseconds**
-  dur integer not null check(dur >= 0),
+  %s integer not null check(dur >= 0),
   -- accuracy: float between [0, 100]
-  acc real not null check(acc >= 0.0),
+  %s real not null check(acc >= 0.0),
   -- mistakes: must be gte 0
-  miss integer not null check(miss >= 0),
+  %s integer not null check(miss >= 0),
   -- uncorrected errors: must be gte 0
-  errs integer not null check(errs >= 0),
+  %s integer not null check(errs >= 0),
   -- array of events, events are separated by '\n'
-  events text not null
-);`)
+  %s text not null
+);`,
+		ID, HASH, START, END, NAME, LANGUAGE, WPM, RAW_WPM,
+		DURATION, ACCURACY, MISTAKES, UNCORRECTED_ERRORS, EVENTS,
+	)
+
+	_, err = db.Exec(createTableStr)
 
 	if err != nil {
 		db.Close()
@@ -190,13 +212,16 @@ func InsertRep(db *sql.DB, rep Rep) (int64, error) {
 	miss := rep.Miss
 	errs := rep.Errs
 	events := eventsStringToColumn(rep.Events)
-	query := `insert into reps (
-	    hash, start, end, name, lang, wpm,
-	    raw, dur, acc, miss, errs, events
+	query := fmt.Sprintf(`insert into reps (
+	    %s, %s, %s, %s, %s, %s,
+	    %s, %s, %s, %s, %s, %s
 	   ) values (
 	   	?, ?, ?, ?, ?, ?,
 	   	?, ?, ?, ?, ?, ?
-	   );`
+	   );`,
+		HASH, START, END, NAME, LANGUAGE, WPM, RAW_WPM,
+		DURATION, ACCURACY, MISTAKES, UNCORRECTED_ERRORS, EVENTS,
+	)
 
 	result, err := db.Exec(query,
 		hash, start, end, name, lang, wpm,
@@ -214,7 +239,7 @@ func InsertRep(db *sql.DB, rep Rep) (int64, error) {
 // and return an array of anything
 func GetReps(db *sql.DB, query string) ([]Rep, error) {
 	if query == "" {
-		query = `select * from reps order by start desc;`
+		query = fmt.Sprintf(`select * from reps order by %s desc;`, START)
 	}
 
 	var reps []Rep

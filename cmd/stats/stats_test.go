@@ -11,158 +11,160 @@ import (
 func TestParseDateFromArg(t *testing.T) {
 	// 2024-12-06 17:36:20.000000 -0700
 	now := time.Date(2024, 12, 6, 17, 36, 20, 0, time.Now().Location())
+	nowAtMidnight := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+	nowBeforeMidnight := nowAtMidnight.AddDate(0, 0, 1).Add(-1 * time.Nanosecond)
 
 	testCases := []struct {
 		name    string
-		isStart bool
+		isEnd   bool
 		arg     string
 		want    time.Time
 		wantErr bool
 	}{
 		{
 			name:    "blank string",
-			isStart: true,
+			isEnd:   false,
 			arg:     "",
-			want:    time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()),
+			want:    nowAtMidnight,
 			wantErr: false,
 		},
 		{
 			name:    "blank string, end date",
-			isStart: false,
+			isEnd:   true,
 			arg:     "",
-			want:    time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()).AddDate(0, 0, 1).Add(-1 * time.Nanosecond),
+			want:    nowBeforeMidnight,
 			wantErr: false,
 		},
 		{
 			name:    "--start=2H",
-			isStart: true,
+			isEnd:   false,
 			arg:     "2H",
 			want:    time.Date(now.Year(), now.Month(), now.Day(), now.Hour()-2, now.Minute(), now.Second(), now.Nanosecond(), now.Location()),
 			wantErr: false,
 		},
 		{
 			name:    "--end=2H",
-			isStart: false,
+			isEnd:   true,
 			arg:     "2H",
 			want:    time.Date(now.Year(), now.Month(), now.Day(), now.Hour()-2, now.Minute(), now.Second(), now.Nanosecond(), now.Location()),
 			wantErr: false,
 		},
 		{
 			name:    "--start=1D",
-			isStart: true,
+			isEnd:   false,
 			arg:     "1D",
-			want:    time.Date(now.Year(), now.Month(), now.Day()-1, 0, 0, 0, 0, now.Location()),
+			want:    nowAtMidnight.AddDate(0, 0, -1),
 			wantErr: false,
 		},
 		{
 			name:    "--end=1D",
-			isStart: false,
+			isEnd:   true,
 			arg:     "1D",
-			want:    time.Date(now.Year(), now.Month(), now.Day()-1, 0, 0, 0, 0, now.Location()).AddDate(0, 0, 1).Add(-1 * time.Nanosecond),
+			want:    nowBeforeMidnight.AddDate(0, 0, -1),
 			wantErr: false,
 		},
 		{
 			name:    "--start=2W",
-			isStart: true,
+			isEnd:   false,
 			arg:     "2W",
-			want:    time.Date(now.Year(), now.Month(), now.Day()-14, 0, 0, 0, 0, now.Location()),
+			want:    nowAtMidnight.AddDate(0, 0, -14),
 			wantErr: false,
 		},
 		{
 			name:    "--end=2W",
-			isStart: false,
+			isEnd:   true,
 			arg:     "2W",
-			want:    time.Date(now.Year(), now.Month(), now.Day()-14, 0, 0, 0, 0, now.Location()).AddDate(0, 0, 1).Add(-1 * time.Nanosecond),
+			want:    nowBeforeMidnight.AddDate(0, 0, -14),
 			wantErr: false,
 		},
 		{
 			name:    "--start=1M",
-			isStart: true,
+			isEnd:   false,
 			arg:     "1M",
-			want:    time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()).AddDate(0, -1, 0),
+			want:    nowAtMidnight.AddDate(0, -1, 0),
 			wantErr: false,
 		},
 		{
 			name:    "--end=1M",
-			isStart: false,
+			isEnd:   true,
 			arg:     "1M",
-			want:    time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()).AddDate(0, -1, 0).AddDate(0, 0, 1).Add(-1 * time.Nanosecond),
+			want:    nowBeforeMidnight.AddDate(0, -1, 0),
 			wantErr: false,
 		},
 		{
 			name:    "--start=1Y",
-			isStart: true,
+			isEnd:   false,
 			arg:     "1Y",
-			want:    time.Date(now.Year()-1, now.Month(), now.Day(), 0, 0, 0, 0, now.Location()),
+			want:    nowAtMidnight.AddDate(-1, 0, 0),
 			wantErr: false,
 		},
 		{
 			name:    "--end=1Y",
-			isStart: false,
+			isEnd:   true,
 			arg:     "1Y",
-			want:    time.Date(now.Year()-1, now.Month(), now.Day(), 0, 0, 0, 0, now.Location()).AddDate(0, 0, 1).Add(-1 * time.Nanosecond),
+			want:    nowBeforeMidnight.AddDate(-1, 0, 0),
 			wantErr: false,
 		},
 		{
 			name:    "--start=1X (invalid shorthand)",
-			isStart: true,
+			isEnd:   false,
 			arg:     "1X",
-			want:    time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()),
+			want:    nowAtMidnight,
 			wantErr: true,
 		},
 		{
 			name:    "--end=1X (invalid shorthand)",
-			isStart: false,
+			isEnd:   true,
 			arg:     "1X",
-			want:    time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()).AddDate(0, 0, 1).Add(-1 * time.Nanosecond),
+			want:    nowBeforeMidnight,
 			wantErr: true,
 		},
 		{
 			name:    "--start=barf (invalid input)",
-			isStart: true,
+			isEnd:   false,
 			arg:     "barf",
-			want:    time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()),
+			want:    nowAtMidnight,
 			wantErr: true,
 		},
 		{
 			name:    "--end=barf (invalid input)",
-			isStart: false,
+			isEnd:   true,
 			arg:     "barf",
-			want:    time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()).AddDate(0, 0, 1).Add(-1 * time.Nanosecond),
+			want:    nowBeforeMidnight,
 			wantErr: true,
 		},
 		{
 			name:    "--start=2011-10-01",
-			isStart: true,
+			isEnd:   false,
 			arg:     "2011-10-01",
 			want:    time.Date(2011, time.October, 1, 0, 0, 0, 0, now.Location()),
 			wantErr: false,
 		},
 		{
 			name:    "--end=2011-10-01",
-			isStart: false,
+			isEnd:   true,
 			arg:     "2011-10-01",
 			want:    time.Date(2011, time.October, 1, 0, 0, 0, 0, now.Location()).AddDate(0, 0, 1).Add(-1 * time.Nanosecond),
 			wantErr: false,
 		},
 		{
 			name:    "--start=2222-10-10 (invalid future date)",
-			isStart: true,
+			isEnd:   false,
 			arg:     "2222-10-10",
-			want:    time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()),
+			want:    nowAtMidnight,
 			wantErr: true,
 		},
 		{
 			name:    "--end=2222-10-10 (invalid future date)",
-			isStart: false,
+			isEnd:   true,
 			arg:     "2222-10-10",
-			want:    time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()).AddDate(0, 0, 1).Add(-1 * time.Nanosecond),
+			want:    nowBeforeMidnight,
 			wantErr: true,
 		},
 	}
 
 	for _, tc := range testCases {
-		got, gotErr := parseDateFromArg(tc.isStart, tc.arg, now)
+		got, gotErr := parseDateFromArg(tc.isEnd, tc.arg, now)
 
 		if tc.wantErr && gotErr == nil {
 			t.Errorf("%s: wanted error, but got nil", tc.name)
