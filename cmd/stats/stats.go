@@ -98,6 +98,13 @@ func parseDateFromArg(isStart bool, arg string, now time.Time) (time.Time, error
 // date functions. Also handles the `since` variable, which is an alias for
 // start.
 func argsToQuery(cmd *cobra.Command, now time.Time) (string, error) {
+	filters := []string{}
+	lang := cmd.Flag("lang").Value.String()
+
+	if lang != "" {
+		filters = append(filters, fmt.Sprintf("lang='%s'", lang))
+	}
+
 	end := cmd.Flag("end").Value.String()
 	since := cmd.Flag("since").Value.String()
 	start := cmd.Flag("start").Value.String()
@@ -113,13 +120,18 @@ func argsToQuery(cmd *cobra.Command, now time.Time) (string, error) {
 	}
 
 	startTime, _ := parseDateFromArg(true, start, now)
+	filters = append(filters, fmt.Sprintf("start >= %d", startTime.UnixMilli()))
 	endTime, _ := parseDateFromArg(false, end, now)
+	filters = append(filters, fmt.Sprintf("end <= %d", endTime.UnixMilli()))
+	// TODO finish creating filters for language and name properties
 
 	if endTime.Before(startTime) {
 		return "", fmt.Errorf("end is before start")
 	}
 
-	query := fmt.Sprintf("select * from reps where start >= %d and end <= %d order by start desc;", startTime.UnixMilli(), endTime.UnixMilli())
+	filterText := strings.Join(filters, " and ")
+
+	query := fmt.Sprintf("select * from reps where %s order by start desc;", filterText)
 	return query, nil
 }
 
@@ -141,9 +153,11 @@ func queryToReps(query string) (reps []Rep, err error) {
 }
 
 func argsToColumnFilter(cmd *cobra.Command) []string {
-	cols := []string{"start", "name"}
+	cols := []string{"start"}
+	if cmd.Flag("name").Value.String() == "" {
+		cols = append(cols, "name")
+	}
 	defaultCols := append(cols, "wpm", "raw", "acc", "errs", "miss")
-
 	possibleCols := []string{"wpm", "raw", "acc", "errs", "miss", "dur"}
 	selectedColCount := 0
 

@@ -270,6 +270,16 @@ func TestArgsToQuery(t *testing.T) {
 			want:    "",
 			wantErr: true,
 		},
+		{
+			name: "language provided",
+			in:   []string{"--lang=py"},
+			want: fmt.Sprintf(
+				"select * from reps where lang='py' and start >= %d and end <= %d order by start desc;",
+				nowAtMidnight.UnixMilli(),
+				nowBeforeMidnight.UnixMilli(),
+			),
+			wantErr: false,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -332,6 +342,16 @@ func TestArgsToColumnFilter(t *testing.T) {
 			name: "some columns",
 			in:   []string{"--raw", "--dur", "--miss"},
 			want: []string{"start", "name", "raw", "miss", "dur"},
+		},
+		{
+			name: "name provided, hides name column",
+			in:   []string{"--name=hello.go"},
+			want: []string{"start", "wpm", "raw", "acc", "errs", "miss"},
+		},
+		{
+			name: "name and other columns provided, hides name column and only shows provided columns",
+			in:   []string{"--raw", "--name=hello.go"},
+			want: []string{"start", "raw"},
 		},
 	}
 	for _, tc := range testCases {
