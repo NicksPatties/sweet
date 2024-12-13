@@ -2,10 +2,13 @@ package root
 
 import (
 	"fmt"
-	g "github.com/guptarohit/asciigraph"
 	"sort"
 	"strings"
 	"time"
+
+	db "github.com/NicksPatties/sweet/db"
+	. "github.com/NicksPatties/sweet/util"
+	g "github.com/guptarohit/asciigraph"
 )
 
 func min(a int, b int) int {
@@ -31,10 +34,10 @@ func requiredRunes(s string) []rune {
 // Remove backspaces from a list of events.
 //
 // Removing backspace events simplifies wpm calculations.
-func removeBackspaces(events []event) []event {
-	enb := []event{}
+func removeBackspaces(events []Event) []Event {
+	enb := []Event{}
 	for _, e := range events {
-		if e.typed != "backspace" {
+		if e.Typed != "backspace" {
 			enb = append(enb, e)
 		}
 	}
@@ -50,14 +53,14 @@ func removeBackspaces(events []event) []event {
 //
 // You should avoid using this function in favor of specific wpm
 // functions, including `wpm`, `wpmRaw`, `wpmRawPerSecond`, and so on.
-func wpmBase(e []event, raw bool, d time.Duration) float64 {
+func wpmBase(e []Event, raw bool, d time.Duration) float64 {
 	events := removeBackspaces(e)
 	// cannot calculate wpm with less than 2 events
 	if len(events) < 2 {
 		return 0.0
 	}
-	start := events[0].ts
-	end := events[len(events)-1].ts
+	start := events[0].Ts
+	end := events[len(events)-1].Ts
 	if d == 0 {
 		d = end.Sub(start)
 	}
@@ -81,45 +84,45 @@ func wpmBase(e []event, raw bool, d time.Duration) float64 {
 
 // Calculates the words per minute (wpm) based on the
 // events that occurred during the exercise.
-func wpm(events []event) float64 {
+func wpm(events []Event) float64 {
 	return wpmBase(events, false, 0)
 }
 
 // Calculates the raw words per minute.
 // Raw wpm does not subtract mistakes from the final
 // wpm calculation
-func wpmRaw(events []event) float64 {
+func wpmRaw(events []Event) float64 {
 	return wpmBase(events, true, 0)
 }
 
 // Calculates the wpm of a series of events that
 // lasted for `n` seconds. This is used to calculate the
 // rolling average wpm during the course of the exercise.
-func wpmForNSeconds(events []event, n int) float64 {
+func wpmForNSeconds(events []Event, n int) float64 {
 	seconds := time.Duration(n) * time.Second
 	return wpmBase(events, false, seconds)
 }
 
 // Calculates the raw wpm for a series of events.
 // Assumes the events occurred in the same second.
-func wpmRawPerSecond(events []event) float64 {
+func wpmRawPerSecond(events []Event) float64 {
 	return wpmBase(events, true, time.Second)
 }
 
-func wpmGraph(events []event) string {
-	d := events[len(events)-1].ts.Sub(events[0].ts)
+func wpmGraph(events []Event) string {
+	d := events[len(events)-1].Ts.Sub(events[0].Ts)
 	seconds := int(d.Seconds()) + 1
 	wpmData := make([]float64, seconds)
 	wpmRawData := make([]float64, seconds)
-	eventBuckets := make([][]event, seconds)
+	eventBuckets := make([][]Event, seconds)
 
 	for _, event := range events {
-		tsDiff := event.ts.Sub(events[0].ts)
+		tsDiff := event.Ts.Sub(events[0].Ts)
 		bucketId := int(tsDiff.Seconds())
 		eventBuckets[bucketId] = append(eventBuckets[bucketId], event)
 	}
 
-	var currEvents []event
+	var currEvents []Event
 	for i, eventBucket := range eventBuckets {
 		currEvents = append(currEvents, eventBucket...)
 		currSeconds := i + 1
@@ -145,17 +148,17 @@ func wpmGraph(events []event) string {
 // Note, even if all characters at the end of an exercise
 // are correct, you can have an accuracy of less than 100%
 // if you made any mistakes.
-func accuracy(events []event) float64 {
+func accuracy(events []Event) float64 {
 	if len(events) == 0 {
 		return 0.0
 	}
 	mistakes := float64(0)
 	total := float64(0)
 	for _, e := range events {
-		if e.typed == "backspace" {
+		if e.Typed == "backspace" {
 			continue
 		}
-		if e.typed != e.expected {
+		if e.Typed != e.Expected {
 			mistakes++
 		}
 		total++
@@ -171,16 +174,16 @@ func accuracy(events []event) float64 {
 // backspaces, then it's assumed no uncorrected
 // errors have been made, because the user is in
 // the process of correcting the error.
-func numUncorrectedErrors(events []event) int {
+func numUncorrectedErrors(events []Event) int {
 	if len(events) == 0 {
 		return 0
 	}
 	correct := map[int]bool{}
 	for _, e := range events {
-		if e.typed == "backspace" {
-			correct[e.i] = true
+		if e.Typed == "backspace" {
+			correct[e.I] = true
 		} else {
-			correct[e.i] = e.typed == e.expected
+			correct[e.I] = e.Typed == e.Expected
 		}
 	}
 	count := 0
@@ -197,12 +200,12 @@ func numUncorrectedErrors(events []event) int {
 // uncorrected errors.
 //
 // Backspaces do not count as mistakes.
-func numMistakes(events []event) (mistakes int) {
+func numMistakes(events []Event) (mistakes int) {
 	for _, e := range events {
-		if e.typed == "backspace" {
+		if e.Typed == "backspace" {
 			continue
 		}
-		if e.typed != e.expected {
+		if e.Typed != e.Expected {
 			mistakes++
 		}
 	}
@@ -212,22 +215,22 @@ func numMistakes(events []event) (mistakes int) {
 // Returns the duration between the first event and
 // the last event of the array. If there are less than
 // two events in the list, it returns zero duration.
-func duration(events []event) time.Duration {
+func duration(events []Event) time.Duration {
 	if len(events) < 2 {
 		return 0.0
 	}
-	return events[len(events)-1].ts.Sub(events[0].ts)
+	return events[len(events)-1].Ts.Sub(events[0].Ts)
 }
 
 // Finds the most missed key presses when completing
 // an exercise. Missed keys are sorted alphabetically,
 // and by the number of misses. Also, sets a limit
 // of number of keys missed to avoid overflowing the line.
-func mostMissedKeys(events []event) string {
+func mostMissedKeys(events []Event) string {
 	misses := map[string]int{}
 	for _, e := range events {
-		if e.typed != "backspace" && e.typed != e.expected {
-			misses[e.expected]++
+		if e.Typed != "backspace" && e.Typed != e.Expected {
+			misses[e.Expected]++
 		}
 	}
 
@@ -260,16 +263,16 @@ func mostMissedKeys(events []event) string {
 }
 
 // Prints the results of a repetition.
-func printExerciseResults(rep Rep) {
-	fmt.Printf("results of %s:\n", rep.name)
-	fmt.Printf("wpm:                 %.f\n", rep.wpm)
-	fmt.Printf("uncorrected errors:  %d\n", rep.errs)
-	fmt.Printf("duration:            %s\n", rep.dur)
-	fmt.Printf("mistakes:            %d\n", rep.miss)
-	fmt.Printf("accuracy:            %.2f%%\n", rep.acc)
-	if rep.miss > 0 {
-		fmt.Printf("most missed keys:    %s\n", mostMissedKeys(rep.events))
+func printExerciseResults(rep db.Rep) {
+	fmt.Printf("results of %s:\n", rep.Name)
+	fmt.Printf("wpm:                 %.f\n", rep.Wpm)
+	fmt.Printf("uncorrected errors:  %d\n", rep.Errs)
+	fmt.Printf("duration:            %s\n", rep.Dur)
+	fmt.Printf("mistakes:            %d\n", rep.Miss)
+	fmt.Printf("accuracy:            %.2f%%\n", rep.Acc)
+	if rep.Miss > 0 {
+		fmt.Printf("most missed keys:    %s\n", mostMissedKeys(rep.Events))
 	}
-	fmt.Printf("graph:\n%s", wpmGraph(rep.events))
+	fmt.Printf("graph:\n%s", wpmGraph(rep.Events))
 	fmt.Println()
 }

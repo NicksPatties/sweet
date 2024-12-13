@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	. "github.com/NicksPatties/sweet/util"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -128,8 +129,8 @@ func TestEventsToColumn(t *testing.T) {
 		"2024-10-07 16:29:27.667\t5\tl\tl\n" +
 		"2024-10-07 16:29:27.784\t6\te\te\n" +
 		"2024-10-07 16:29:31.538\t7\tenter\tenter"
-	events := parseEvents(want)
-	got := eventsToColumn(events)
+	events := ParseEvents(want)
+	got := eventsStringToColumn(events)
 
 	if got != want {
 		t.Error("got != want")
@@ -154,18 +155,18 @@ func TestInsertRep(t *testing.T) {
 		end := time.Date(start.Year(), start.Month(), start.Day(), start.Hour(), start.Minute()+int(time.Minute), start.Second(), start.Nanosecond(), time.UTC)
 
 		rep := Rep{
-			hash:  "abcef123456",
-			start: start,
-			end:   end,
-			name:  "exercise.go",
-			lang:  "go",
-			wpm:   60.333,
-			raw:   65.5,
-			dur:   end.Sub(start),
-			acc:   98.98,
-			miss:  2,
-			errs:  1,
-			events: parseEvents(
+			Hash:  "abcef123456",
+			Start: start,
+			End:   end,
+			Name:  "exercise.go",
+			Lang:  "go",
+			Wpm:   60.333,
+			Raw:   65.5,
+			Dur:   end.Sub(start),
+			Acc:   98.98,
+			Miss:  2,
+			Errs:  1,
+			Events: ParseEvents(
 				"2024-10-07 13:46:47.679\t0\th\th\n" +
 					"2024-10-07 13:46:56.521\t3\tenter\tenter",
 			),
@@ -199,18 +200,18 @@ func TestInsertRep(t *testing.T) {
 		end := time.Date(start.Year(), start.Month(), start.Day(), start.Hour(), start.Minute()+int(time.Minute), start.Second(), start.Nanosecond(), time.UTC)
 
 		rep := Rep{
-			hash:  "abcef123456",
-			start: start,
-			end:   end,
-			name:  "exercise.go",
-			lang:  "go",
-			wpm:   -60.333, // should fail
-			raw:   65.5,
-			dur:   end.Sub(start),
-			acc:   98.98,
-			miss:  2,
-			errs:  1,
-			events: parseEvents(
+			Hash:  "abcef123456",
+			Start: start,
+			End:   end,
+			Name:  "exercise.go",
+			Lang:  "go",
+			Wpm:   -60.333, // should fail
+			Raw:   65.5,
+			Dur:   end.Sub(start),
+			Acc:   98.98,
+			Miss:  2,
+			Errs:  1,
+			Events: ParseEvents(
 				"2024-10-07 13:46:47.679\t0\th\th\n" +
 					"2024-10-07 13:46:56.521\t3\tenter\tenter",
 			),

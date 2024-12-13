@@ -9,22 +9,22 @@ import (
 	"math/rand"
 	"os"
 	"path"
-	"strconv"
+
 	"strings"
 	"time"
 
 	"github.com/NicksPatties/sweet/cmd/about"
 	"github.com/NicksPatties/sweet/cmd/add"
+	"github.com/NicksPatties/sweet/cmd/stats"
 	"github.com/NicksPatties/sweet/cmd/version"
-	"github.com/NicksPatties/sweet/util"
+	. "github.com/NicksPatties/sweet/db"
+	. "github.com/NicksPatties/sweet/util"
 	"github.com/spf13/cobra"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	lg "github.com/charmbracelet/lipgloss"
 )
-
-const eventTsFormat = "2006-01-02 15:04:05.000"
 
 func getProductTagline() string {
 	b := lg.NewStyle().Bold(true)
@@ -128,9 +128,10 @@ func init() {
 	Cmd.CompletionOptions.DisableDefaultCmd = true
 
 	commands := []*cobra.Command{
-		about.Command,
-		add.Command,
-		version.Command,
+		about.Cmd,
+		add.Cmd,
+		version.Cmd,
+		stats.Cmd,
 	}
 
 	for _, c := range commands {
@@ -139,41 +140,6 @@ func init() {
 }
 
 // STRUCTS
-
-// A single repetition of an exercise.
-//
-// This is the structure of a row in the sweet db module.
-// See `db/db.go` for more details.
-type Rep struct {
-	hash   string
-	start  time.Time // use
-	end    time.Time
-	name   string
-	lang   string
-	wpm    float64
-	raw    float64
-	dur    time.Duration
-	acc    float64
-	miss   int
-	errs   int
-	events []event
-}
-
-func (r Rep) String() (s string) {
-	s += fmt.Sprintf("rep:\n")
-	s += fmt.Sprintf("  hash:  %s\n", r.hash)
-	s += fmt.Sprintf("  start: %s\n", r.start)
-	s += fmt.Sprintf("  end:   %s\n", r.end)
-	s += fmt.Sprintf("  name:  %s\n", r.name)
-	s += fmt.Sprintf("  lang:  %s\n", r.lang)
-	s += fmt.Sprintf("  wpm:   %.f\n", r.wpm)
-	s += fmt.Sprintf("  dur:   %s\n", r.dur)
-	s += fmt.Sprintf("  acc:   %2.f%%\n", r.acc)
-	s += fmt.Sprintf("  miss:  %d\n", r.miss)
-	s += fmt.Sprintf("  errs:  %d\n", r.errs)
-	s += fmt.Sprintf("  events: %d events\n", len(r.events))
-	return
-}
 
 // A single Exercise.
 //
@@ -186,65 +152,6 @@ type Exercise struct {
 	text string
 	// A short description that shows when the user complete the exercise.
 	completionDescription string
-}
-
-// A recording of a keypress during the exercise.
-//
-// These are used to perform analysis on the user's performance,
-// display stats, and keys that were causing the most trouble.
-type event struct {
-	// The moment the event took place.
-	ts time.Time
-
-	// The key that was typed.
-	typed string
-
-	// The rune that was expected. Optional, since the user
-	// may have pressed backspace.
-	expected string
-
-	// The index of the exercise when the rune was typed.
-	i int
-}
-
-const eventTsLayout = "2006-01-02 15:04:05.000"
-
-// Converts an event to a string.
-func (e event) String() string {
-	time := e.ts.Format(eventTsLayout)
-	return fmt.Sprintf("%s\t%d\t%s\t%s", time, e.i, e.typed, e.expected)
-}
-
-// Converts an event string to an event struct.
-func parseEvent(line string) (e event) {
-	s := strings.Split(line, "\t")
-	e.ts, _ = time.Parse(eventTsLayout, s[0])
-	e.i, _ = strconv.Atoi(s[1])
-	e.typed = s[2]
-	if len(s) > 3 {
-		e.expected = s[3]
-	}
-	return
-}
-
-// Same as above, but for a multi-line list of events.
-func parseEvents(list string) (events []event) {
-	for _, line := range strings.Split(list, "\n") {
-		if line != "" {
-			events = append(events, parseEvent(line))
-		}
-	}
-	return
-}
-
-// Returns a string of an array of events.
-func eventsString(events []event) (s string) {
-	s += fmt.Sprintln("[")
-	for _, e := range events {
-		s += fmt.Sprintf("  %s\n", e)
-	}
-	s += fmt.Sprintln("]")
-	return
 }
 
 // Converts a bubbletea key message to a string.
@@ -273,17 +180,6 @@ func runeToEventExpected(r rune) string {
 	}
 }
 
-// Creates a new event. Should be used when recording a keystroke
-// to the model.
-func NewEvent(typed string, expected string, i int) event {
-	return event{
-		ts:       time.Now(),
-		typed:    typed,
-		expected: expected,
-		i:        i,
-	}
-}
-
 // The exercise model used by bubbletea.
 //
 // Implements tea.Model. Stores the state of the currently running exercise.
@@ -301,7 +197,7 @@ type exerciseModel struct {
 
 	quitEarly bool
 
-	events []event
+	events []Event
 }
 
 // INITIALIZATION
@@ -312,7 +208,7 @@ func NewExerciseModel(ex Exercise) exerciseModel {
 		quitEarly: false,
 		startTime: time.Time{},
 		endTime:   time.Time{},
-		events:    []event{},
+		events:    []Event{},
 	}
 }
 
@@ -583,7 +479,7 @@ func fromArgs(cmd *cobra.Command, args []string) (exercise Exercise, err error) 
 
 		} else {
 			var sweetConfigDir string
-			sweetConfigDir, err = util.SweetConfigDir()
+			sweetConfigDir, err = SweetConfigDir()
 			if err != nil {
 				return
 			}
@@ -664,18 +560,18 @@ func fromArgs(cmd *cobra.Command, args []string) (exercise Exercise, err error) 
 // inserting it into the database.
 func exerciseModelToRep(m exerciseModel) Rep {
 	return Rep{
-		hash:   util.MD5Hash(m.exercise.text),
-		start:  m.events[0].ts,
-		end:    m.events[len(m.events)-1].ts,
-		name:   m.exercise.name,
-		lang:   util.Lang(m.exercise.name),
-		wpm:    wpm(m.events),
-		raw:    wpmRaw(m.events),
-		dur:    duration(m.events),
-		acc:    accuracy(m.events),
-		miss:   numMistakes(m.events),
-		errs:   numUncorrectedErrors(m.events),
-		events: m.events,
+		Hash:   MD5Hash(m.exercise.text),
+		Start:  m.events[0].Ts,
+		End:    m.events[len(m.events)-1].Ts,
+		Name:   m.exercise.name,
+		Lang:   Lang(m.exercise.name),
+		Wpm:    wpm(m.events),
+		Raw:    wpmRaw(m.events),
+		Dur:    duration(m.events),
+		Acc:    accuracy(m.events),
+		Miss:   numMistakes(m.events),
+		Errs:   numUncorrectedErrors(m.events),
+		Events: m.events,
 	}
 }
 
