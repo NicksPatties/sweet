@@ -1,11 +1,12 @@
 package stats
 
 import (
+	"bytes"
 	"fmt"
 	"strconv"
-	"time"
-
 	"strings"
+	"text/template"
+	"time"
 
 	. "github.com/NicksPatties/sweet/db"
 	"github.com/spf13/cobra"
@@ -23,8 +24,7 @@ var Cmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		cols := argsToColumnFilter(cmd)
-		printStats(reps, cols)
+		printStats(cmd, reps)
 		return nil
 	},
 }
@@ -125,9 +125,16 @@ func argsToQuery(cmd *cobra.Command, now time.Time) (string, error) {
 		start = since
 	}
 
-	startTime, _ := parseDateFromArg(false, start, now)
+	startTime, err := parseDateFromArg(false, start, now)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse start flag: %s", err)
+	}
 	filters = append(filters, fmt.Sprintf("%s >= %d", START, startTime.UnixMilli()))
-	endTime, _ := parseDateFromArg(true, end, now)
+
+	endTime, err := parseDateFromArg(true, end, now)
+	if err != nil {
+		return "", err
+	}
 	filters = append(filters, fmt.Sprintf("%s <= %d", END, endTime.UnixMilli()))
 
 	if endTime.Before(startTime) {
@@ -185,9 +192,59 @@ func argsToColumnFilter(cmd *cobra.Command) []string {
 	}
 }
 
-// TODO will be implemented in #65
-func printStats(reps []Rep, cols []string) {
+func getStatsHeader(name string, lang string, start string, end string) (header string) {
+	nameSection := ""
+	if name != "" {
+		nameSection = name
+	} else if lang != "" {
+		// TODO make a map of languages to human readable names
+		nameSection = lang
+	}
+
+	dateSection := "from today"
+	if start != "" {
+		if end != "" {
+			dateSection = fmt.Sprintf("from %s to %s", start, end)
+		} else {
+			dateSection = fmt.Sprintf("since %s", start)
+		}
+	}
+
+	tmplData := struct {
+		// name of the file or language of the file
+		Name string
+		// "since X days", or "from YYYY-MM-DD to YYYY-MM-DD", etc
+		Date string
+	}{
+		Name: nameSection,
+		Date: dateSection,
+	}
+
+	tmplString := "" +
+		`stats {{if .Name}}for {{.Name}} {{end}}{{.Date}}:`
+
+	tmpl := template.Must(template.New("header").Parse(tmplString))
+	var buf bytes.Buffer
+	err := tmpl.Execute(&buf, tmplData)
+	if err != nil {
+		panic(err)
+	}
+	return buf.String()
+}
+
+func printStats(cmd *cobra.Command, reps []Rep) {
+	start := cmd.Flag(START).Value.String()
+	if since := cmd.Flag("since").Value.String(); since != "" {
+		start = since
+	}
+	end := cmd.Flag(END).Value.String()
+	name := cmd.Flag(NAME).Value.String()
+	lang := cmd.Flag(LANGUAGE).Value.String()
+
+	cols := argsToColumnFilter(cmd)
+
 	// print the header
+	fmt.Println(getStatsHeader(name, lang, start, end))
 	fmt.Printf("%s\n", strings.Join(cols, "\t"))
 
 	for _, rep := range reps {
