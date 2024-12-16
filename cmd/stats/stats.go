@@ -2,7 +2,6 @@ package stats
 
 import (
 	"fmt"
-	"log"
 	"strconv"
 	"time"
 
@@ -15,17 +14,18 @@ import (
 var Cmd = &cobra.Command{
 	Use:   "stats",
 	Short: "Print statistics about typing exercises",
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		q, err := argsToQuery(cmd, time.Now())
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 		reps, err := queryToReps(q)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 		cols := argsToColumnFilter(cmd)
 		printStats(reps, cols)
+		return nil
 	},
 }
 
@@ -120,7 +120,7 @@ func argsToQuery(cmd *cobra.Command, now time.Time) (string, error) {
 	}
 
 	if since != "" && start != "" {
-		fmt.Printf("both `--since` and `--%s` variables provided (you only need one of them!)", START)
+		return "", fmt.Errorf("both since and start flags are provided. please only one of them.")
 	} else if since != "" && start == "" {
 		start = since
 	}

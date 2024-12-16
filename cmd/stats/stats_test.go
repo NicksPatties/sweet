@@ -232,14 +232,10 @@ func TestArgsToQuery(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "both since and start are given: warn, and prefer start",
-			in:   []string{"--since=2D", "--start=1D"},
-			want: fmt.Sprintf(
-				"select * from reps where start >= %d and end <= %d order by start desc;",
-				nowAtMidnight.AddDate(0, 0, -1).UnixMilli(),
-				nowBeforeMidnight.UnixMilli(),
-			),
-			wantErr: false,
+			name:    "both since and start are given. error",
+			in:      []string{"--since=2D", "--start=1D"},
+			want:    "",
+			wantErr: true,
 		},
 		{
 			name: "start provided",
