@@ -3,6 +3,7 @@ package stats
 import (
 	"bytes"
 	"fmt"
+	"math"
 	"os"
 	"strconv"
 	"strings"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	. "github.com/NicksPatties/sweet/db"
+	g "github.com/guptarohit/asciigraph"
 	tw "github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 )
@@ -234,36 +236,147 @@ func getStatsHeader(name string, lang string, start string, end string) (header 
 	return buf.String()
 }
 
+// Calculates the average, min, max, first, last, and delta of a stat.
+// Returns that information in an array of strings.
+// Formats the data based on the column name selected.
+func getColumnStats(reps []Rep, colName string) []string {
+	// TODO if there is only one rep, return just those stats.
+
+	getCol := func(r Rep, colName string) float64 {
+		switch colName {
+		case WPM:
+			return r.Wpm
+		case RAW_WPM:
+			return r.Raw
+		case DURATION:
+			return float64(r.Dur)
+		case ACCURACY:
+			return r.Acc
+		case MISTAKES:
+			return float64(r.Miss)
+		case UNCORRECTED_ERRORS:
+			return float64(r.Errs)
+		}
+		return -math.MaxFloat64
+	}
+
+	avg := 0.0
+	min := math.MaxFloat64
+	max := -math.MaxFloat64
+	first := getCol(reps[len(reps)-1], colName)
+	last := getCol(reps[0], colName)
+	delta := last - first
+
+	sum := 0.0
+	for _, rep := range reps {
+		curr := getCol(rep, colName)
+		sum += curr
+		if curr < min {
+			min = curr
+		}
+		if curr > max {
+			max = curr
+		}
+	}
+	avg = sum / float64(len(reps))
+
+	colData := []float64{avg, min, max, first, last, delta}
+
+	row := []string{}
+
+	for _, d := range colData {
+		row = append(row, fmt.Sprintf("%f", d))
+	}
+	return row
+}
+
 func printStats(cmd *cobra.Command, reps []Rep) {
+	name := cmd.Flag(NAME).Value.String()
+	lang := cmd.Flag(LANGUAGE).Value.String()
 	start := cmd.Flag(START).Value.String()
 	if since := cmd.Flag("since").Value.String(); since != "" {
 		start = since
 	}
 	end := cmd.Flag(END).Value.String()
-	name := cmd.Flag(NAME).Value.String()
-	lang := cmd.Flag(LANGUAGE).Value.String()
-
-	cols := argsToColumnFilter(cmd)
 
 	// print the header
 	fmt.Println(getStatsHeader(name, lang, start, end))
+
+	cols := argsToColumnFilter(cmd)
+
 	if len(reps) == 0 {
 		fmt.Println("no stats")
-	} else {
+	} else if len(reps) > 1 {
 
-		// print the stats table
+		// print the reps table
 		table := tw.NewWriter(os.Stdout)
-		table.SetHeader(cols)
-		for _, rep := range reps {
-			repCols := []string{}
-			for _, c := range cols {
-				repCols = append(repCols, rep.ColumnString(c))
+		table.SetHeader([]string{"", "avg", "min", "max", "first", "last", "delta"})
+		table.SetAutoWrapText(false)
+		table.SetAutoFormatHeaders(true)
+		table.SetHeaderAlignment(tw.ALIGN_LEFT)
+		table.SetAlignment(tw.ALIGN_LEFT)
+		table.SetCenterSeparator("")
+		table.SetColumnSeparator("")
+		table.SetRowSeparator("")
+		table.SetHeaderLine(false)
+		table.SetTablePadding("  ") // pad with tabs
+		table.SetNoWhiteSpace(true)
+		for _, col := range cols {
+			if col == START || col == NAME {
+				continue
 			}
-			table.Append(repCols)
+			row := []string{col}
+			row = append(row, getColumnStats(reps, col)...)
+			table.Append(row)
 		}
 		table.Render()
+
+		wpmGraphData := []float64{}
+		rawWpmGraphData := []float64{}
+		mistakesGraphData := []float64{}
+		accuracyGraphData := []float64{}
+		errorsGraphData := []float64{}
+		for i := range reps {
+			// reverse the order of the reps
+			// so the date increases as X increases
+			currRep := reps[len(reps)-1-i]
+			wpmGraphData = append(wpmGraphData, currRep.Wpm)
+			mistakesGraphData = append(mistakesGraphData, float64(currRep.Miss))
+			rawWpmGraphData = append(rawWpmGraphData, currRep.Raw)
+			accuracyGraphData = append(accuracyGraphData, currRep.Acc)
+			errorsGraphData = append(errorsGraphData, float64(currRep.Errs))
+		}
+
+		// the data for each column's graph
+		graphDatum := [][]float64{accuracyGraphData, errorsGraphData, mistakesGraphData, rawWpmGraphData, wpmGraphData}
+		graphColors := []g.AnsiColor{g.Green, g.Red, g.Yellow, g.Gray, g.Default}
+		graphLegends := []string{ACCURACY, UNCORRECTED_ERRORS, MISTAKES, RAW_WPM, WPM}
+
+		graph := g.PlotMany(
+			graphDatum,
+			g.SeriesColors(graphColors...),
+			g.SeriesLegends(graphLegends...),
+			g.Height(10),
+			g.Width(0), // auto scaling
+			g.LowerBound(0),
+			g.Precision(0),
+		)
+
+		fmt.Println(graph)
+
 	}
 
+	// print the reps table
+	table := tw.NewWriter(os.Stdout)
+	table.SetHeader(cols)
+	for _, rep := range reps {
+		repCols := []string{}
+		for _, c := range cols {
+			repCols = append(repCols, rep.ColumnString(c))
+		}
+		table.Append(repCols)
+	}
+	table.Render()
 }
 
 func setStatsCommandFlags(cmd *cobra.Command) {

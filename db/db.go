@@ -88,7 +88,7 @@ func (r Rep) ColumnString(col string) string {
 	case WPM:
 		return fmt.Sprintf("%.f", r.Wpm)
 	case RAW_WPM:
-		return fmt.Sprintf("%.f", r.Wpm)
+		return fmt.Sprintf("%.f", r.Raw)
 	case DURATION:
 		return r.Dur.String()
 	case ACCURACY:
