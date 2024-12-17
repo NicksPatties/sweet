@@ -241,8 +241,6 @@ func getStatsHeader(name string, lang string, start string, end string) (header 
 // Returns that information in an array of strings.
 // Formats the data based on the column name selected.
 func getColumnStats(reps []Rep, colName string) []string {
-	// TODO if there is only one rep, return just those stats.
-
 	getCol := func(r Rep, colName string) float64 {
 		switch colName {
 		case WPM:
