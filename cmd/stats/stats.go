@@ -260,6 +260,24 @@ func getColumnStats(reps []Rep, colName string) []string {
 		return -math.MaxFloat64
 	}
 
+	getFormatted := func(colName string, value float64) string {
+		switch colName {
+		case WPM:
+			return fmt.Sprintf("%.f", value)
+		case RAW_WPM:
+			return fmt.Sprintf("%.f", value)
+		case DURATION:
+			return time.Duration(int64(value)).Round(time.Millisecond).String()
+		case ACCURACY:
+			return fmt.Sprintf("%.2f%%", value)
+		case MISTAKES:
+			return strconv.Itoa(int(value))
+		case UNCORRECTED_ERRORS:
+			return strconv.Itoa(int(value))
+		}
+		return "%f"
+	}
+
 	avg := 0.0
 	min := math.MaxFloat64
 	max := -math.MaxFloat64
@@ -285,7 +303,7 @@ func getColumnStats(reps []Rep, colName string) []string {
 	row := []string{}
 
 	for _, d := range colData {
-		row = append(row, fmt.Sprintf("%f", d))
+		row = append(row, getFormatted(colName, d))
 	}
 	return row
 }
@@ -308,7 +326,7 @@ func printStats(cmd *cobra.Command, reps []Rep) {
 		fmt.Println("no stats")
 	} else if len(reps) > 1 {
 
-		// print the reps table
+		// print the stats table
 		table := tw.NewWriter(os.Stdout)
 		table.SetHeader([]string{"", "avg", "min", "max", "first", "last", "delta"})
 		table.SetAutoWrapText(false)
