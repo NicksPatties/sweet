@@ -3,12 +3,14 @@ package stats
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"text/template"
 	"time"
 
 	. "github.com/NicksPatties/sweet/db"
+	tw "github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 )
 
@@ -245,14 +247,21 @@ func printStats(cmd *cobra.Command, reps []Rep) {
 
 	// print the header
 	fmt.Println(getStatsHeader(name, lang, start, end))
-	fmt.Printf("%s\n", strings.Join(cols, "\t"))
+	if len(reps) == 0 {
+		fmt.Println("no stats")
+	} else {
 
-	for _, rep := range reps {
-		repCols := []string{}
-		for _, c := range cols {
-			repCols = append(repCols, rep.ColumnString(c))
+		// print the stats table
+		table := tw.NewWriter(os.Stdout)
+		table.SetHeader(cols)
+		for _, rep := range reps {
+			repCols := []string{}
+			for _, c := range cols {
+				repCols = append(repCols, rep.ColumnString(c))
+			}
+			table.Append(repCols)
 		}
-		fmt.Printf("%s\n", strings.Join(repCols, "\t"))
+		table.Render()
 	}
 
 }
