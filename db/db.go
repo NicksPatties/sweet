@@ -90,7 +90,7 @@ func (r Rep) ColumnString(col string) string {
 	case RAW_WPM:
 		return fmt.Sprintf("%.f", r.Raw)
 	case DURATION:
-		return r.Dur.String()
+		return r.Dur.Round(time.Millisecond).String()
 	case ACCURACY:
 		return fmt.Sprintf("%.2f%%", r.Acc)
 	case MISTAKES:

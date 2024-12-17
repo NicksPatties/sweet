@@ -11,6 +11,7 @@ import (
 	"time"
 
 	. "github.com/NicksPatties/sweet/db"
+	"github.com/NicksPatties/sweet/util"
 	g "github.com/guptarohit/asciigraph"
 	tw "github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
@@ -260,24 +261,6 @@ func getColumnStats(reps []Rep, colName string) []string {
 		return -math.MaxFloat64
 	}
 
-	getFormatted := func(colName string, value float64) string {
-		switch colName {
-		case WPM:
-			return fmt.Sprintf("%.f", value)
-		case RAW_WPM:
-			return fmt.Sprintf("%.f", value)
-		case DURATION:
-			return time.Duration(int64(value)).Round(time.Millisecond).String()
-		case ACCURACY:
-			return fmt.Sprintf("%.2f%%", value)
-		case MISTAKES:
-			return strconv.Itoa(int(value))
-		case UNCORRECTED_ERRORS:
-			return strconv.Itoa(int(value))
-		}
-		return "%f"
-	}
-
 	avg := 0.0
 	min := math.MaxFloat64
 	max := -math.MaxFloat64
@@ -303,7 +286,7 @@ func getColumnStats(reps []Rep, colName string) []string {
 	row := []string{}
 
 	for _, d := range colData {
-		row = append(row, getFormatted(colName, d))
+		row = append(row, util.ColumnString(colName, d))
 	}
 	return row
 }

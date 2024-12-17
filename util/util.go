@@ -4,7 +4,6 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
-	"net/url"
 	"os"
 	"path"
 	"strconv"
@@ -60,16 +59,6 @@ func FilterFileNames(fileNames []string, language string) (found []string) {
 		}
 	}
 	return found
-}
-
-func IsValidURL(str string) bool {
-	u, err := url.Parse(str)
-	if err != nil {
-		return false
-	}
-
-	// Check if scheme and host are present
-	return u.Scheme != "" && u.Host != ""
 }
 
 // A recording of a keypress during the exercise.
@@ -148,5 +137,42 @@ func NewEvent(typed string, expected string, i int) Event {
 		Typed:    typed,
 		Expected: expected,
 		I:        i,
+	}
+}
+
+// Formatting helpers
+func ColumnString(col string, value any) string {
+	switch col {
+	case "id":
+		return strconv.Itoa(value.(int))
+	case "hash":
+		return value.(string)
+	case "start":
+		t := value.(time.Time)
+		return t.Format(EventTsLayout)
+	case "end":
+		t := value.(time.Time)
+		return t.Format(EventTsLayout)
+	case "name":
+		return value.(string)
+	case "lang":
+		return value.(string)
+	case "wpm":
+		return fmt.Sprintf("%.f", value.(float64))
+	case "raw":
+		return fmt.Sprintf("%.f", value.(float64))
+	case "dur":
+		d := value.(time.Duration)
+		return d.Round(time.Millisecond).String()
+	case "acc":
+		return fmt.Sprintf("%.2f%%", value.(float64))
+	case "miss":
+		return fmt.Sprintf("%.f", value.(float64))
+	case "errs":
+		return fmt.Sprintf("%.f", value.(float64))
+	case "events":
+		return EventsString(value.([]Event))
+	default:
+		return ""
 	}
 }
