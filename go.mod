@@ -9,7 +9,7 @@ require (
 	github.com/spf13/cobra v1.8.1
 )
 
-require github.com/olekukonko/tablewriter v0.0.5 // indirect
+require github.com/olekukonko/tablewriter v0.0.5
 
 require (
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect

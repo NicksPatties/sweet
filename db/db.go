@@ -8,27 +8,13 @@ import (
 	"strconv"
 	"time"
 
+	. "github.com/NicksPatties/sweet/constants"
 	"github.com/NicksPatties/sweet/util"
 	. "github.com/NicksPatties/sweet/util"
 	_ "github.com/mattn/go-sqlite3"
 )
 
 // Column names
-const (
-	ID                 string = "id"
-	HASH               string = "hash"
-	START              string = "start"
-	END                string = "end"
-	NAME               string = "name"
-	LANGUAGE           string = "lang"
-	WPM                string = "wpm"
-	RAW_WPM            string = "raw"
-	DURATION           string = "dur"
-	ACCURACY           string = "acc"
-	MISTAKES           string = "miss"
-	UNCORRECTED_ERRORS string = "errs"
-	EVENTS             string = "events"
-)
 
 // A single repetition of an exercise.
 //

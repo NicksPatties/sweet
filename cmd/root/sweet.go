@@ -17,6 +17,7 @@ import (
 	"github.com/NicksPatties/sweet/cmd/add"
 	"github.com/NicksPatties/sweet/cmd/stats"
 	"github.com/NicksPatties/sweet/cmd/version"
+	. "github.com/NicksPatties/sweet/constants"
 	. "github.com/NicksPatties/sweet/db"
 	. "github.com/NicksPatties/sweet/util"
 	"github.com/spf13/cobra"

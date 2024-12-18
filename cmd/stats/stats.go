@@ -10,6 +10,7 @@ import (
 	"text/template"
 	"time"
 
+	. "github.com/NicksPatties/sweet/constants"
 	. "github.com/NicksPatties/sweet/db"
 	"github.com/NicksPatties/sweet/util"
 	g "github.com/guptarohit/asciigraph"
@@ -419,7 +420,7 @@ func renderStatsTable(cols []string, reps []Rep) {
 	table.Render()
 }
 
-func renderGraph(reps []Rep) {
+func renderGraph(cols []string, reps []Rep) {
 	wpmGraphData := []float64{}
 	rawWpmGraphData := []float64{}
 	mistakesGraphData := []float64{}
@@ -436,9 +437,61 @@ func renderGraph(reps []Rep) {
 	}
 
 	// the data for each column's graph
-	graphDatum := [][]float64{accuracyGraphData, errorsGraphData, mistakesGraphData, rawWpmGraphData, wpmGraphData}
-	graphColors := []g.AnsiColor{g.Green, g.Red, g.Yellow, g.Gray, g.Default}
-	graphLegends := []string{ACCURACY, UNCORRECTED_ERRORS, MISTAKES, RAW_WPM, WPM}
+
+	type plot struct {
+		data   []float64
+		color  g.AnsiColor
+		legend string
+	}
+
+	plots := map[string]*plot{
+		ACCURACY: {
+			data:   accuracyGraphData,
+			color:  g.Green,
+			legend: "accuracy",
+		},
+		UNCORRECTED_ERRORS: {
+			data:   errorsGraphData,
+			color:  g.Red,
+			legend: "errors",
+		},
+		MISTAKES: {
+			data:   mistakesGraphData,
+			color:  g.Yellow,
+			legend: "mistakes",
+		},
+		RAW_WPM: {
+			data:   rawWpmGraphData,
+			color:  g.Gray,
+			legend: "raw wpm",
+		},
+		WPM: {
+			data:   wpmGraphData,
+			color:  g.Default,
+			legend: "wpm",
+		},
+	}
+
+	colsRenderOrder := []string{ACCURACY, UNCORRECTED_ERRORS, MISTAKES, RAW_WPM, WPM}
+
+	var graphDatum [][]float64
+	var graphColors []g.AnsiColor
+	var graphLegends []string
+	for _, renderCol := range colsRenderOrder {
+		argColFound := false
+		for _, col := range cols {
+			if col == renderCol {
+				argColFound = true
+				break
+			}
+		}
+
+		if argColFound && plots[renderCol] != nil {
+			graphDatum = append(graphDatum, plots[renderCol].data)
+			graphColors = append(graphColors, plots[renderCol].color)
+			graphLegends = append(graphLegends, plots[renderCol].legend)
+		}
+	}
 
 	graph := g.PlotMany(
 		graphDatum,
@@ -483,7 +536,7 @@ func render(cmd *cobra.Command, reps []Rep) {
 		fmt.Println("no stats")
 	} else {
 		renderStatsTable(cols, reps)
-		renderGraph(reps)
+		renderGraph(cols, reps)
 		renderReps(cols, reps)
 	}
 }
