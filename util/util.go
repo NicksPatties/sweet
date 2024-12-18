@@ -9,8 +9,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	. "github.com/NicksPatties/sweet/constants"
 )
 
 // Converts a string to an md5 hash. Used to
@@ -139,44 +137,5 @@ func NewEvent(typed string, expected string, i int) Event {
 		Typed:    typed,
 		Expected: expected,
 		I:        i,
-	}
-}
-
-// Gives a formatted string based on the type of data
-// provided, indicated by the column name from the Reps
-// database table.
-func ColumnString(col string, value any) string {
-	switch col {
-	case ID:
-		return strconv.Itoa(value.(int))
-	case HASH:
-		return value.(string)
-	case START:
-		t := value.(time.Time)
-		return t.Format(EventTsLayout)
-	case END:
-		t := value.(time.Time)
-		return t.Format(EventTsLayout)
-	case NAME:
-		return value.(string)
-	case LANGUAGE:
-		return value.(string)
-	case WPM:
-		return fmt.Sprintf("%.f", value.(float64))
-	case RAW_WPM:
-		return fmt.Sprintf("%.f", value.(float64))
-	case DURATION:
-		d := time.Duration(value.(float64))
-		return d.Round(time.Millisecond).String()
-	case ACCURACY:
-		return fmt.Sprintf("%.2f%%", value.(float64))
-	case MISTAKES:
-		return fmt.Sprintf("%.f", value.(float64))
-	case UNCORRECTED_ERRORS:
-		return fmt.Sprintf("%.f", value.(float64))
-	case EVENTS:
-		return EventsString(value.([]Event))
-	default:
-		return ""
 	}
 }

@@ -12,7 +12,6 @@ import (
 
 	. "github.com/NicksPatties/sweet/constants"
 	. "github.com/NicksPatties/sweet/db"
-	"github.com/NicksPatties/sweet/util"
 	g "github.com/guptarohit/asciigraph"
 	tw "github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
@@ -363,6 +362,26 @@ func getColumnStats(reps []Rep, colName string) []string {
 		return -math.MaxFloat64
 	}
 
+	columnString := func(col string, value float64) string {
+		switch col {
+		case WPM:
+			return fmt.Sprintf("%.f", value)
+		case RAW_WPM:
+			return fmt.Sprintf("%.f", value)
+		case DURATION:
+			d := time.Duration(value)
+			return d.Round(time.Millisecond).String()
+		case ACCURACY:
+			return fmt.Sprintf("%.2f%%", value)
+		case MISTAKES:
+			return fmt.Sprintf("%.f", value)
+		case UNCORRECTED_ERRORS:
+			return fmt.Sprintf("%.f", value)
+		default:
+			return ""
+		}
+	}
+
 	avg := 0.0
 	min := math.MaxFloat64
 	max := -math.MaxFloat64
@@ -388,7 +407,7 @@ func getColumnStats(reps []Rep, colName string) []string {
 	row := []string{}
 
 	for _, d := range colData {
-		row = append(row, util.ColumnString(colName, d))
+		row = append(row, columnString(colName, d))
 	}
 	return row
 }
