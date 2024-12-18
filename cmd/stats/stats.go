@@ -20,6 +20,21 @@ import (
 var Cmd = &cobra.Command{
 	Use:   "stats",
 	Short: "Print statistics about typing exercises",
+	Args:  cobra.MaximumNArgs(0),
+	Example: "  get the stats from today\n" +
+		"  sweet stats\n\n" +
+		"  get stats from the past two weeks\n" +
+		"  sweet stats --since=2w\n\n" +
+		"  get stats for November 2024\n" +
+		"  sweet stats --start=2024-11-01 --end=2024-11-30\n\n" +
+		"  get stats for Go exercises only\n" +
+		"  sweet stats --lang=go\n\n" +
+		"  get stats for a specific exercise name\n" +
+		"  sweet stats --name=hello.go\n\n" +
+		"  get stats for exercises that contain the name \"hello\"\n" +
+		"  sweet stats --name=hello*\n\n" +
+		"  get stats for words per minute and mistakes only\n" +
+		"  sweet stats --wpm --miss",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		q, err := argsToQuery(cmd, time.Now())
 		if err != nil {
