@@ -166,7 +166,7 @@ func ColumnString(col string, value any) string {
 	case RAW_WPM:
 		return fmt.Sprintf("%.f", value.(float64))
 	case DURATION:
-		d := value.(time.Duration)
+		d := time.Duration(value.(float64))
 		return d.Round(time.Millisecond).String()
 	case ACCURACY:
 		return fmt.Sprintf("%.2f%%", value.(float64))

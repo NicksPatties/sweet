@@ -543,17 +543,17 @@ func setStatsCommandFlags(cmd *cobra.Command) {
 	// date selection flags
 	cmd.Flags().StringP(START, "s", "", "find stats starting from this date")
 	cmd.Flags().String("since", "", "alias for \"start\" flag")
-	cmd.Flags().String(END, "", "find stats ending at this date")
+	cmd.Flags().StringP(END, "n", "", "find stats ending at this date")
 
 	// column filtering flags
 	cmd.Flags().String(NAME, "", "filter by exercise name")
 	cmd.Flags().String(LANGUAGE, "", "filter by language")
-	cmd.Flags().Bool(WPM, false, "show words per minute (wpm)")
-	cmd.Flags().Bool(RAW_WPM, false, "show raw words per minute")
-	cmd.Flags().Bool(ACCURACY, false, "show accuracy (acc)")
-	cmd.Flags().Bool(MISTAKES, false, "show mistakes")
-	cmd.Flags().Bool(UNCORRECTED_ERRORS, false, "show uncorrected errors")
-	cmd.Flags().Bool(DURATION, false, "show duration")
+	cmd.Flags().BoolP(WPM, "w", false, "show words per minute (wpm)")
+	cmd.Flags().BoolP(RAW_WPM, "r", false, "show raw words per minute")
+	cmd.Flags().BoolP(ACCURACY, "a", false, "show accuracy (acc)")
+	cmd.Flags().BoolP(MISTAKES, "m", false, "show mistakes")
+	cmd.Flags().BoolP(UNCORRECTED_ERRORS, "e", false, "show uncorrected errors")
+	cmd.Flags().BoolP(DURATION, "d", false, "show duration")
 
 	cmd.Flags().SortFlags = false
 }
