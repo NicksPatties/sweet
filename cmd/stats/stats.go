@@ -206,8 +206,6 @@ func argsToColumnFilter(cmd *cobra.Command) []string {
 // This also assumes the arg _will_ be in either the
 // N[HDWMY] format or YYYY-MM-DD format
 func dateArgToHumandReadable(arg string) string {
-	fmt.Println(arg)
-	fmt.Println(len(arg))
 	unit := rune(arg[len(arg)-1])
 	amount, err := strconv.Atoi(arg[:len(arg)-1])
 	if err != nil {
@@ -543,7 +541,7 @@ func render(cmd *cobra.Command, reps []Rep) {
 
 func setStatsCommandFlags(cmd *cobra.Command) {
 	// date selection flags
-	cmd.Flags().String(START, "", "find stats starting from this date")
+	cmd.Flags().StringP(START, "s", "", "find stats starting from this date")
 	cmd.Flags().String("since", "", "alias for \"start\" flag")
 	cmd.Flags().String(END, "", "find stats ending at this date")
 
