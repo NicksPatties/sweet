@@ -4,7 +4,6 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
-	"net/url"
 	"os"
 	"path"
 	"strconv"
@@ -60,16 +59,6 @@ func FilterFileNames(fileNames []string, language string) (found []string) {
 		}
 	}
 	return found
-}
-
-func IsValidURL(str string) bool {
-	u, err := url.Parse(str)
-	if err != nil {
-		return false
-	}
-
-	// Check if scheme and host are present
-	return u.Scheme != "" && u.Host != ""
 }
 
 // A recording of a keypress during the exercise.

@@ -215,7 +215,7 @@ func TestArgsToQuery(t *testing.T) {
 			name: "default case (get stats from today only)",
 			in:   []string{},
 			want: fmt.Sprintf(
-				"select * from reps where start >= %d and end <= %d order by start desc;",
+				"select * from reps where start >= %d and end <= %d order by start;",
 				nowAtMidnight.UnixMilli(),
 				nowBeforeMidnight.UnixMilli(),
 			),
@@ -225,27 +225,23 @@ func TestArgsToQuery(t *testing.T) {
 			name: "since is an alias for start",
 			in:   []string{"--since=2D"},
 			want: fmt.Sprintf(
-				"select * from reps where start >= %d and end <= %d order by start desc;",
+				"select * from reps where start >= %d and end <= %d order by start;",
 				nowAtMidnight.AddDate(0, 0, -2).UnixMilli(),
 				nowBeforeMidnight.UnixMilli(),
 			),
 			wantErr: false,
 		},
 		{
-			name: "both since and start are given: warn, and prefer start",
-			in:   []string{"--since=2D", "--start=1D"},
-			want: fmt.Sprintf(
-				"select * from reps where start >= %d and end <= %d order by start desc;",
-				nowAtMidnight.AddDate(0, 0, -1).UnixMilli(),
-				nowBeforeMidnight.UnixMilli(),
-			),
-			wantErr: false,
+			name:    "both since and start are given. error",
+			in:      []string{"--since=2D", "--start=1D"},
+			want:    "",
+			wantErr: true,
 		},
 		{
 			name: "start provided",
 			in:   []string{"--start=1D"},
 			want: fmt.Sprintf(
-				"select * from reps where start >= %d and end <= %d order by start desc;",
+				"select * from reps where start >= %d and end <= %d order by start;",
 				nowAtMidnight.AddDate(0, 0, -1).UnixMilli(),
 				nowBeforeMidnight.UnixMilli(),
 			),
@@ -261,7 +257,7 @@ func TestArgsToQuery(t *testing.T) {
 			name: "start and end provided",
 			in:   []string{"--start=2024-10-01", "--end=2024-11-01"},
 			want: fmt.Sprintf(
-				"select * from reps where start >= %d and end <= %d order by start desc;",
+				"select * from reps where start >= %d and end <= %d order by start;",
 				time.Date(2024, time.October, 1, 0, 0, 0, 0, now.Location()).UnixMilli(),
 				time.Date(2024, time.November, 1, 0, 0, 0, 0, now.Location()).AddDate(0, 0, 1).Add(-1*time.Nanosecond).UnixMilli()),
 			wantErr: false,
@@ -276,7 +272,7 @@ func TestArgsToQuery(t *testing.T) {
 			name: "language provided",
 			in:   []string{"--lang=py"},
 			want: fmt.Sprintf(
-				"select * from reps where lang='py' and start >= %d and end <= %d order by start desc;",
+				"select * from reps where lang='py' and start >= %d and end <= %d order by start;",
 				nowAtMidnight.UnixMilli(),
 				nowBeforeMidnight.UnixMilli(),
 			),
@@ -286,7 +282,7 @@ func TestArgsToQuery(t *testing.T) {
 			name: "name provided",
 			in:   []string{"--name=filename.go"},
 			want: fmt.Sprintf(
-				"select * from reps where name like 'filename.go' and start >= %d and end <= %d order by start desc;",
+				"select * from reps where name like 'filename.go' and start >= %d and end <= %d order by start;",
 				nowAtMidnight.UnixMilli(),
 				nowBeforeMidnight.UnixMilli(),
 			),
@@ -296,7 +292,7 @@ func TestArgsToQuery(t *testing.T) {
 			name: "name with wildcard",
 			in:   []string{"--name=file*"},
 			want: fmt.Sprintf(
-				"select * from reps where name like 'file%%' and start >= %d and end <= %d order by start desc;",
+				"select * from reps where name like 'file%%' and start >= %d and end <= %d order by start;",
 				nowAtMidnight.UnixMilli(),
 				nowBeforeMidnight.UnixMilli(),
 			),

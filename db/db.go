@@ -8,27 +8,13 @@ import (
 	"strconv"
 	"time"
 
+	. "github.com/NicksPatties/sweet/constants"
 	"github.com/NicksPatties/sweet/util"
 	. "github.com/NicksPatties/sweet/util"
 	_ "github.com/mattn/go-sqlite3"
 )
 
 // Column names
-const (
-	ID                 string = "id"
-	HASH               string = "hash"
-	START              string = "start"
-	END                string = "end"
-	NAME               string = "name"
-	LANGUAGE           string = "lang"
-	WPM                string = "wpm"
-	RAW_WPM            string = "raw"
-	DURATION           string = "dur"
-	ACCURACY           string = "acc"
-	MISTAKES           string = "miss"
-	UNCORRECTED_ERRORS string = "errs"
-	EVENTS             string = "events"
-)
 
 // A single repetition of an exercise.
 //
@@ -88,9 +74,9 @@ func (r Rep) ColumnString(col string) string {
 	case WPM:
 		return fmt.Sprintf("%.f", r.Wpm)
 	case RAW_WPM:
-		return fmt.Sprintf("%.f", r.Wpm)
+		return fmt.Sprintf("%.f", r.Raw)
 	case DURATION:
-		return r.Dur.String()
+		return r.Dur.Round(time.Millisecond).String()
 	case ACCURACY:
 		return fmt.Sprintf("%.2f%%", r.Acc)
 	case MISTAKES:
@@ -239,7 +225,7 @@ func InsertRep(db *sql.DB, rep Rep) (int64, error) {
 // and return an array of anything
 func GetReps(db *sql.DB, query string) ([]Rep, error) {
 	if query == "" {
-		query = fmt.Sprintf(`select * from reps order by %s desc;`, START)
+		query = fmt.Sprintf(`select * from reps order by %s;`, START)
 	}
 
 	var reps []Rep
