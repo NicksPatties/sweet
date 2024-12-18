@@ -29,7 +29,7 @@ var Cmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		printStats(cmd, reps)
+		render(cmd, reps)
 		return nil
 	},
 }
@@ -146,7 +146,7 @@ func argsToQuery(cmd *cobra.Command, now time.Time) (string, error) {
 		return "", fmt.Errorf("%s is before %s", END, START)
 	}
 
-	query := fmt.Sprintf("select * from reps where %s order by %s desc;", strings.Join(filters, " and "), START)
+	query := fmt.Sprintf("select * from reps where %s order by %s;", strings.Join(filters, " and "), START)
 
 	return query, nil
 }
@@ -300,7 +300,7 @@ func dateArgToHumandReadable(arg string) string {
 // Creates the header of the stats command. This is a summary
 // of the flags that were used to execute the command in human
 // readable format.
-func getStatsHeader(name string, lang string, start string, end string) (header string) {
+func renderHeader(name string, lang string, start string, end string) {
 	nameSection := ""
 	if name != "" {
 		nameSection = name
@@ -339,7 +339,7 @@ func getStatsHeader(name string, lang string, start string, end string) (header 
 	if err != nil {
 		panic(err)
 	}
-	return buf.String()
+	fmt.Println(buf.String())
 }
 
 // Calculates the average, min, max, first, last, and delta of a stat.
@@ -367,8 +367,8 @@ func getColumnStats(reps []Rep, colName string) []string {
 	avg := 0.0
 	min := math.MaxFloat64
 	max := -math.MaxFloat64
-	first := getCol(reps[len(reps)-1], colName)
-	last := getCol(reps[0], colName)
+	first := getCol(reps[0], colName)
+	last := getCol(reps[len(reps)-1], colName)
 	delta := last - first
 
 	sum := 0.0
@@ -394,83 +394,66 @@ func getColumnStats(reps []Rep, colName string) []string {
 	return row
 }
 
-func printStats(cmd *cobra.Command, reps []Rep) {
-	name := cmd.Flag(NAME).Value.String()
-	lang := cmd.Flag(LANGUAGE).Value.String()
-	start := cmd.Flag(START).Value.String()
-	if since := cmd.Flag("since").Value.String(); since != "" {
-		start = since
+func renderStatsTable(cols []string, reps []Rep) {
+	// print the stats table
+	table := tw.NewWriter(os.Stdout)
+	table.SetHeader([]string{"", "avg", "min", "max", "first", "last", "delta"})
+	table.SetAutoWrapText(false)
+	table.SetAutoFormatHeaders(true)
+	table.SetHeaderAlignment(tw.ALIGN_LEFT)
+	table.SetAlignment(tw.ALIGN_LEFT)
+	table.SetCenterSeparator("")
+	table.SetColumnSeparator("")
+	table.SetRowSeparator("")
+	table.SetHeaderLine(false)
+	table.SetTablePadding("  ") // pad with tabs
+	table.SetNoWhiteSpace(true)
+	for _, col := range cols {
+		if col == START || col == NAME {
+			continue
+		}
+		row := []string{col}
+		row = append(row, getColumnStats(reps, col)...)
+		table.Append(row)
 	}
-	end := cmd.Flag(END).Value.String()
+	table.Render()
+}
 
-	// print the header
-	fmt.Println(getStatsHeader(name, lang, start, end))
-
-	cols := argsToColumnFilter(cmd)
-
-	if len(reps) == 0 {
-		fmt.Println("no stats")
-	} else if len(reps) > 1 {
-
-		// print the stats table
-		table := tw.NewWriter(os.Stdout)
-		table.SetHeader([]string{"", "avg", "min", "max", "first", "last", "delta"})
-		table.SetAutoWrapText(false)
-		table.SetAutoFormatHeaders(true)
-		table.SetHeaderAlignment(tw.ALIGN_LEFT)
-		table.SetAlignment(tw.ALIGN_LEFT)
-		table.SetCenterSeparator("")
-		table.SetColumnSeparator("")
-		table.SetRowSeparator("")
-		table.SetHeaderLine(false)
-		table.SetTablePadding("  ") // pad with tabs
-		table.SetNoWhiteSpace(true)
-		for _, col := range cols {
-			if col == START || col == NAME {
-				continue
-			}
-			row := []string{col}
-			row = append(row, getColumnStats(reps, col)...)
-			table.Append(row)
-		}
-		table.Render()
-
-		wpmGraphData := []float64{}
-		rawWpmGraphData := []float64{}
-		mistakesGraphData := []float64{}
-		accuracyGraphData := []float64{}
-		errorsGraphData := []float64{}
-		for i := range reps {
-			// reverse the order of the reps
-			// so the date increases as X increases
-			currRep := reps[len(reps)-1-i]
-			wpmGraphData = append(wpmGraphData, currRep.Wpm)
-			mistakesGraphData = append(mistakesGraphData, float64(currRep.Miss))
-			rawWpmGraphData = append(rawWpmGraphData, currRep.Raw)
-			accuracyGraphData = append(accuracyGraphData, currRep.Acc)
-			errorsGraphData = append(errorsGraphData, float64(currRep.Errs))
-		}
-
-		// the data for each column's graph
-		graphDatum := [][]float64{accuracyGraphData, errorsGraphData, mistakesGraphData, rawWpmGraphData, wpmGraphData}
-		graphColors := []g.AnsiColor{g.Green, g.Red, g.Yellow, g.Gray, g.Default}
-		graphLegends := []string{ACCURACY, UNCORRECTED_ERRORS, MISTAKES, RAW_WPM, WPM}
-
-		graph := g.PlotMany(
-			graphDatum,
-			g.SeriesColors(graphColors...),
-			g.SeriesLegends(graphLegends...),
-			g.Height(10),
-			g.Width(0), // auto scaling
-			g.LowerBound(0),
-			g.Precision(0),
-		)
-
-		fmt.Println(graph)
-
+func renderGraph(reps []Rep) {
+	wpmGraphData := []float64{}
+	rawWpmGraphData := []float64{}
+	mistakesGraphData := []float64{}
+	accuracyGraphData := []float64{}
+	errorsGraphData := []float64{}
+	for _, currRep := range reps {
+		// reverse the order of the reps
+		// so the date increases as X increases
+		wpmGraphData = append(wpmGraphData, currRep.Wpm)
+		mistakesGraphData = append(mistakesGraphData, float64(currRep.Miss))
+		rawWpmGraphData = append(rawWpmGraphData, currRep.Raw)
+		accuracyGraphData = append(accuracyGraphData, currRep.Acc)
+		errorsGraphData = append(errorsGraphData, float64(currRep.Errs))
 	}
 
-	// print the reps table
+	// the data for each column's graph
+	graphDatum := [][]float64{accuracyGraphData, errorsGraphData, mistakesGraphData, rawWpmGraphData, wpmGraphData}
+	graphColors := []g.AnsiColor{g.Green, g.Red, g.Yellow, g.Gray, g.Default}
+	graphLegends := []string{ACCURACY, UNCORRECTED_ERRORS, MISTAKES, RAW_WPM, WPM}
+
+	graph := g.PlotMany(
+		graphDatum,
+		g.SeriesColors(graphColors...),
+		g.SeriesLegends(graphLegends...),
+		g.Height(10),
+		g.Width(0), // auto scaling
+		g.LowerBound(0),
+		g.Precision(0),
+	)
+
+	fmt.Println(graph)
+}
+
+func renderReps(cols []string, reps []Rep) {
 	table := tw.NewWriter(os.Stdout)
 	table.SetHeader(cols)
 	for _, rep := range reps {
@@ -481,6 +464,28 @@ func printStats(cmd *cobra.Command, reps []Rep) {
 		table.Append(repCols)
 	}
 	table.Render()
+}
+
+func render(cmd *cobra.Command, reps []Rep) {
+	name := cmd.Flag(NAME).Value.String()
+	lang := cmd.Flag(LANGUAGE).Value.String()
+	start := cmd.Flag(START).Value.String()
+	if since := cmd.Flag("since").Value.String(); since != "" {
+		start = since
+	}
+	end := cmd.Flag(END).Value.String()
+
+	renderHeader(name, lang, start, end)
+
+	cols := argsToColumnFilter(cmd)
+
+	if len(reps) == 0 {
+		fmt.Println("no stats")
+	} else {
+		renderStatsTable(cols, reps)
+		renderGraph(reps)
+		renderReps(cols, reps)
+	}
 }
 
 func setStatsCommandFlags(cmd *cobra.Command) {

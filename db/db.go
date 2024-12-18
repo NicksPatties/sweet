@@ -239,7 +239,7 @@ func InsertRep(db *sql.DB, rep Rep) (int64, error) {
 // and return an array of anything
 func GetReps(db *sql.DB, query string) ([]Rep, error) {
 	if query == "" {
-		query = fmt.Sprintf(`select * from reps order by %s desc;`, START)
+		query = fmt.Sprintf(`select * from reps order by %s;`, START)
 	}
 
 	var reps []Rep
