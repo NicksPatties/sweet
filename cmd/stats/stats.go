@@ -125,7 +125,7 @@ func argsToQuery(cmd *cobra.Command, now time.Time) (string, error) {
 	}
 
 	if since != "" && start != "" {
-		return "", fmt.Errorf("both since and start flags are provided. please only one of them.")
+		return "", fmt.Errorf("both since and start flags are provided. please use one or the other.")
 	} else if since != "" && start == "" {
 		start = since
 	}
@@ -138,7 +138,7 @@ func argsToQuery(cmd *cobra.Command, now time.Time) (string, error) {
 
 	endTime, err := parseDateFromArg(true, end, now)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to parse end flag: %s", err)
 	}
 	filters = append(filters, fmt.Sprintf("%s <= %d", END, endTime.UnixMilli()))
 
@@ -197,14 +197,14 @@ func argsToColumnFilter(cmd *cobra.Command) []string {
 	}
 }
 
-// converts a date argument to human readable format.
+// Converts a date argument to human readable format.
 // Assumes the dates that are passed into the function
 // happened in the past, so words like "ago" are
 // expected in the output.
 //
 // This also assumes the arg _will_ be in either the
 // N[HDWMY] format or YYYY-MM-DD format
-func dateArgToHumandReadable(arg string) string {
+func dateArgToHumanReadable(arg string) string {
 	unit := rune(arg[len(arg)-1])
 	amount, err := strconv.Atoi(arg[:len(arg)-1])
 	if err != nil {
@@ -309,9 +309,9 @@ func renderHeader(name string, lang string, start string, end string) {
 
 	dateSection := "from today"
 	if start != "" {
-		startStr := dateArgToHumandReadable(start)
+		startStr := dateArgToHumanReadable(start)
 		if end != "" {
-			endStr := dateArgToHumandReadable(end)
+			endStr := dateArgToHumanReadable(end)
 			dateSection = fmt.Sprintf("from %s to %s", startStr, endStr)
 		} else {
 			dateSection = fmt.Sprintf("from %s", startStr)
@@ -413,7 +413,6 @@ func getColumnStats(reps []Rep, colName string) []string {
 }
 
 func renderStatsTable(cols []string, reps []Rep) {
-	// print the stats table
 	table := tw.NewWriter(os.Stdout)
 	table.SetHeader([]string{"", "avg", "min", "max", "first", "last", "delta"})
 	table.SetAutoWrapText(false)
@@ -424,7 +423,7 @@ func renderStatsTable(cols []string, reps []Rep) {
 	table.SetColumnSeparator("")
 	table.SetRowSeparator("")
 	table.SetHeaderLine(false)
-	table.SetTablePadding("  ") // pad with tabs
+	table.SetTablePadding("  ")
 	table.SetNoWhiteSpace(true)
 	for _, col := range cols {
 		if col == START || col == NAME {
@@ -444,8 +443,6 @@ func renderGraph(cols []string, reps []Rep) {
 	accuracyGraphData := []float64{}
 	errorsGraphData := []float64{}
 	for _, currRep := range reps {
-		// reverse the order of the reps
-		// so the date increases as X increases
 		wpmGraphData = append(wpmGraphData, currRep.Wpm)
 		mistakesGraphData = append(mistakesGraphData, float64(currRep.Miss))
 		rawWpmGraphData = append(rawWpmGraphData, currRep.Raw)
@@ -453,14 +450,11 @@ func renderGraph(cols []string, reps []Rep) {
 		errorsGraphData = append(errorsGraphData, float64(currRep.Errs))
 	}
 
-	// the data for each column's graph
-
 	type plot struct {
 		data   []float64
 		color  g.AnsiColor
 		legend string
 	}
-
 	plots := map[string]*plot{
 		ACCURACY: {
 			data:   accuracyGraphData,
@@ -566,7 +560,7 @@ func setStatsCommandFlags(cmd *cobra.Command) {
 
 	// column filtering flags
 	cmd.Flags().String(NAME, "", "filter by exercise name")
-	cmd.Flags().String(LANGUAGE, "", "filter by language")
+	cmd.Flags().StringP(LANGUAGE, "l", "", "filter by language")
 	cmd.Flags().BoolP(WPM, "w", false, "show words per minute (wpm)")
 	cmd.Flags().BoolP(RAW_WPM, "r", false, "show raw words per minute")
 	cmd.Flags().BoolP(ACCURACY, "a", false, "show accuracy (acc)")

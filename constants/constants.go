@@ -9,10 +9,8 @@ const (
 	Arrow   = `↲`
 )
 
-const (
-	// Used for words per minute (WPM) calculations.
-	WORD_SIZE = 5
-)
+// Used for words per minute (WPM) calculations.
+const WORD_SIZE = 5
 
 // Reps database table column names.
 // They're also used as flag names the commands.
