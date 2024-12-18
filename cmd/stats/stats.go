@@ -197,6 +197,109 @@ func argsToColumnFilter(cmd *cobra.Command) []string {
 	}
 }
 
+// converts a date argument to human readable format.
+// Assumes the dates that are passed into the function
+// happened in the past, so words like "ago" are
+// expected in the output.
+//
+// This also assumes the arg _will_ be in either the
+// N[HDWMY] format or YYYY-MM-DD format
+func dateArgToHumandReadable(arg string) string {
+	fmt.Println(arg)
+	fmt.Println(len(arg))
+	unit := rune(arg[len(arg)-1])
+	amount, err := strconv.Atoi(arg[:len(arg)-1])
+	if err != nil {
+		return arg
+	}
+
+	// pluralized strings
+	type pString struct {
+		singular string
+		plural   string
+	}
+
+	var amountStr string
+	switch amount {
+	case 1:
+		amountStr = "one"
+	case 2:
+		amountStr = "two"
+	case 3:
+		amountStr = "three"
+	case 4:
+		amountStr = "four"
+	case 5:
+		amountStr = "five"
+	case 6:
+		amountStr = "six"
+	case 7:
+		amountStr = "seven"
+	case 8:
+		amountStr = "eight"
+	case 9:
+		amountStr = "nine"
+	default:
+		amountStr = strconv.Itoa(amount)
+	}
+
+	var unitStr string
+	unitStrs := map[rune]pString{
+		'h': {
+			singular: "hour",
+			plural:   "hours",
+		},
+		'd': {
+			singular: "day",
+			plural:   "days",
+		},
+		'w': {
+			singular: "week",
+			plural:   "weeks",
+		},
+		'm': {
+			singular: "month",
+			plural:   "months",
+		},
+		'y': {
+			singular: "year",
+			plural:   "years",
+		},
+	}
+
+	switch unit {
+	case 'H', 'h':
+		if amount == 1 {
+			unitStr = unitStrs['h'].singular
+		} else {
+			unitStr = unitStrs['h'].plural
+		}
+	case 'D', 'd':
+		if amount == 1 {
+			unitStr = unitStrs['d'].singular
+		} else {
+			unitStr = unitStrs['d'].plural
+		}
+	case 'W', 'w':
+		if amount == 1 {
+			unitStr = unitStrs['w'].singular
+		} else {
+			unitStr = unitStrs['w'].plural
+		}
+	case 'M', 'm':
+		if amount == 1 {
+			unitStr = unitStrs['w'].singular
+		} else {
+			unitStr = unitStrs['w'].plural
+		}
+	}
+
+	return fmt.Sprintf("%s %s ago", amountStr, unitStr)
+}
+
+// Creates the header of the stats command. This is a summary
+// of the flags that were used to execute the command in human
+// readable format.
 func getStatsHeader(name string, lang string, start string, end string) (header string) {
 	nameSection := ""
 	if name != "" {
@@ -208,10 +311,12 @@ func getStatsHeader(name string, lang string, start string, end string) (header 
 
 	dateSection := "from today"
 	if start != "" {
+		startStr := dateArgToHumandReadable(start)
 		if end != "" {
-			dateSection = fmt.Sprintf("from %s to %s", start, end)
+			endStr := dateArgToHumandReadable(end)
+			dateSection = fmt.Sprintf("from %s to %s", startStr, endStr)
 		} else {
-			dateSection = fmt.Sprintf("since %s", start)
+			dateSection = fmt.Sprintf("from %s", startStr)
 		}
 	}
 
