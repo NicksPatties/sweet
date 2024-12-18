@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	. "github.com/NicksPatties/sweet/constants"
 )
 
 // Converts a string to an md5 hash. Used to
@@ -140,37 +142,39 @@ func NewEvent(typed string, expected string, i int) Event {
 	}
 }
 
-// Formatting helpers
+// Gives a formatted string based on the type of data
+// provided, indicated by the column name from the Reps
+// database table.
 func ColumnString(col string, value any) string {
 	switch col {
-	case "id":
+	case ID:
 		return strconv.Itoa(value.(int))
-	case "hash":
+	case HASH:
 		return value.(string)
-	case "start":
+	case START:
 		t := value.(time.Time)
 		return t.Format(EventTsLayout)
-	case "end":
+	case END:
 		t := value.(time.Time)
 		return t.Format(EventTsLayout)
-	case "name":
+	case NAME:
 		return value.(string)
-	case "lang":
+	case LANGUAGE:
 		return value.(string)
-	case "wpm":
+	case WPM:
 		return fmt.Sprintf("%.f", value.(float64))
-	case "raw":
+	case RAW_WPM:
 		return fmt.Sprintf("%.f", value.(float64))
-	case "dur":
+	case DURATION:
 		d := value.(time.Duration)
 		return d.Round(time.Millisecond).String()
-	case "acc":
+	case ACCURACY:
 		return fmt.Sprintf("%.2f%%", value.(float64))
-	case "miss":
+	case MISTAKES:
 		return fmt.Sprintf("%.f", value.(float64))
-	case "errs":
+	case UNCORRECTED_ERRORS:
 		return fmt.Sprintf("%.f", value.(float64))
-	case "events":
+	case EVENTS:
 		return EventsString(value.([]Event))
 	default:
 		return ""
