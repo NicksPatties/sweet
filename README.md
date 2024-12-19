@@ -106,6 +106,8 @@ You're now ready to use `sweet`!
 sweet
 ```
 
+![Running the basic sweet command](assets/sweet-command-preview.gif)
+
 This runs a random exercise from sweet's exercises directory. Once complete, you'll see the results of your exercise. Here's an example:
 
 ```txt 
