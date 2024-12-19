@@ -19,7 +19,7 @@ import (
 
 var Cmd = &cobra.Command{
 	Use:   "stats",
-	Short: "Print statistics about typing exercises",
+	Short: "Print typing exercise statistics",
 	Args:  cobra.MaximumNArgs(0),
 	Example: "  get the stats from today\n" +
 		"  sweet stats\n\n" +

@@ -1,3 +1,36 @@
+<!--toc:start-->
+- [Sweet](#sweet)
+  - [What is Sweet?](#what-is-sweet)
+  - [Installation](#installation)
+    - [Using `go`](#using-go)
+    - [Downloading an executable](#downloading-an-executable)
+    - [Via your system's package manager](#via-your-systems-package-manager)
+  - [Usage](#usage)
+    - [`sweet` - Run a typing exercise](#sweet-run-a-typing-exercise)
+      - [Adding new exercises](#adding-new-exercises)
+      - [Using a specific language](#using-a-specific-language)
+      - [With a different exercises directory](#with-a-different-exercises-directory)
+      - [With a specific file](#with-a-specific-file)
+      - [Using piped input](#using-piped-input)
+    - [`sweet stats` - Print typing exercise statistics](#sweet-stats-print-typing-exercise-statistics)
+      - [For the past two weeks](#for-the-past-two-weeks)
+      - [Using a date range](#using-a-date-range)
+      - [For specific programming languages](#for-specific-programming-languages)
+      - [For specific exercises](#for-specific-exercises)
+      - [View specific metrics](#view-specific-metrics)
+  - [Contributions](#contributions)
+  - [License](#license)
+- [Contributor instructions](#contributor-instructions)
+  - [Running the application](#running-the-application)
+  - [Testing](#testing)
+    - [Running unit tests for a module](#running-unit-tests-for-a-module)
+    - [Running unit tests for all modules](#running-unit-tests-for-all-modules)
+    - [Building and reviewing test coverage](#building-and-reviewing-test-coverage)
+  - [Building a release version](#building-a-release-version)
+  - [Creating a new command](#creating-a-new-command)
+  - [Writing e2e tests](#writing-e2e-tests)
+<!--toc:end-->
+
 # Sweet
 
 ```
@@ -66,7 +99,7 @@ You're now ready to use `sweet`!
 
 ## Usage
 
-### Run a typing exercise
+### `sweet` - Run a typing exercise
 
 ```sh
 sweet
@@ -97,6 +130,10 @@ graph:
 
             ■ raw wpm   ■ wpm
 ```
+
+Once complete, the stats for the repetition will be saved in an SQLite database. By default, the database is located in `$HOME/.config/sweet/sweet.db`.
+
+#### Adding new exercises
 
 By default, exercises are located in `$HOME/.config/sweet/exercises`. If this directory doesn't exist, [it will be created](https://github.com/NicksPatties/sweet/blob/main/cmd/root/sweet.go#L516-L531), and [some default exercises will be added](https://github.com/NicksPatties/sweet/blob/main/cmd/root/sweet.go#L44-L89).
 
@@ -142,6 +179,64 @@ You can still use the `-s` and `-e` flags if you want to filter your exercise in
 
 ```sh
 curl https://raw.githubusercontent.com/NicksPatties/sweet/refs/heads/main/cmd/root/sweet.go | sweet - -s 381 -e 385
+```
+
+### `sweet stats` - Print typing exercise statistics
+
+```sh
+sweet stats
+```
+
+#### For the past two weeks
+
+```sh
+sweet stats --since=1w
+```
+- You can also query by hours (`h`), days (`d`), months (`m`), and years (`y`)
+
+#### Using a date range
+
+```sh
+sweet stats --start=YYYY-MM-DD --end=YYYY-MM-DD
+```
+
+#### For specific programming languages
+
+For Go:
+
+```sh
+sweet stats --lang=go
+```
+
+For Python:
+
+```sh
+sweet stats --lang=py
+```
+
+#### For specific exercises
+
+To see all the stats for the past day for the exercise `hello.go`:
+
+```sh
+sweet stats --name=hello.go
+```
+
+You can also use the `*` wildcard to perform a partial match. For instance:
+
+```sh
+sweet stats --name=hello*
+```
+- This will match all exercises that have the name "hello" at the beginning 
+
+#### View specific metrics
+
+By default, you'll see the wpm, raw wpm, accuracy, errors, and mistakes when you query your stats.
+
+If you'd only like to see specific metrics, pass the flags of the stats. For example, this will show the wpm and mistakes columns.
+
+```sh
+sweet stats --wpm --miss
 ```
 
 ## Contributions
