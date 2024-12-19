@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"log"
 	"math"
 	"math/rand"
 	"os"
@@ -55,12 +54,13 @@ var Cmd = &cobra.Command{
 	Long:    fmt.Sprintf("%s.\nRuns an interactive touch typing game, and prints the results.", getProductTagline()),
 	Args:    cobra.MaximumNArgs(1),
 	Example: getExamples(),
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		ex, err := fromArgs(cmd, args)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 		Run(ex)
+		return nil
 	},
 }
 
