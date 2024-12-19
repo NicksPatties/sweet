@@ -50,7 +50,6 @@ Hey! That's
   - [Writing e2e tests](#writing-e2e-tests)
 <!--toc:end-->
 
-
 ## What is Sweet?
 
 **Sweet** is a **S**oft**w**are **E**ngineering **E**xercise for **T**yping. In other words, it's a touch typing exercise command line interface specifically designed for programmers.
@@ -106,33 +105,11 @@ You're now ready to use `sweet`!
 sweet
 ```
 
-![Running the basic sweet command](assets/sweet-command-preview.gif)
+![A running typing exercise](assets/sweet-command.jpg)
 
 This runs a random exercise from sweet's exercises directory. Once complete, you'll see the results of your exercise. Here's an example:
 
-```txt 
-results of portfolio-site-burger.css:
-wpm:                 50
-uncorrected errors:  1
-duration:            31.418805317s
-mistakes:            13
-accuracy:            90.51%
-most missed keys:    g (2 times), o (2 times), : (1 time)
-graph:
- 96 ┤       ╭╮  ╭╮         ╭╮
- 86 ┤  ╭╮   ││  ││         ││
- 77 ┤╭─╯│  ╭╯│╭╮││╭╮       ││╭─╮
- 67 ┤│╭╮│  │╭──╮╭──╮       │││ │
- 58 ┤╭╯││╭╭─╯││╰╯││╰──╮ ╭──╮│╭──╮
- 48 ┼╯ ││╭╯  ╰╯╰╯│││  ╰─╯╯│╰─╯ │╰───
- 38 ┤  ╰─╯       ╰╯│╭──╮│ ╰╯││ │││╭╮
- 29 ┤   ││         ││  ╰╯   ╰╯ ╰╯││╰
- 19 ┤   ││         ││            ││
- 10 ┤   ││         ││            ││
-  0 ┤   ╰╯         ╰╯            ╰╯
-
-            ■ raw wpm   ■ wpm
-```
+![A completed typing exercise](assets/sweet-command-complete.jpg)
 
 Once complete, the stats for the repetition will be saved in an SQLite database. By default, the database is located in `$HOME/.config/sweet/sweet.db`.
 
@@ -190,10 +167,12 @@ curl https://raw.githubusercontent.com/NicksPatties/sweet/refs/heads/main/cmd/ro
 sweet stats
 ```
 
+![Sample sweet stats screen](assets/sweet-stats-command.png)
+
 #### For the past two weeks
 
 ```sh
-sweet stats --since=1w
+sweet stats --since=2w
 ```
 - You can also query by hours (`h`), days (`d`), months (`m`), and years (`y`)
 
