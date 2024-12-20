@@ -23,8 +23,9 @@ __debug__bin
 # Go workspace file
 go.work
 
-# folder for personal notes
+# folder for personal notes/prototypes
 /notes
+thing.go
 
 # build directory
 /builds

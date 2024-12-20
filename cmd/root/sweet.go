@@ -4,26 +4,27 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"log"
 	"math"
 	"math/rand"
 	"os"
 	"path"
-	"strconv"
+
 	"strings"
 	"time"
 
 	"github.com/NicksPatties/sweet/cmd/about"
 	"github.com/NicksPatties/sweet/cmd/add"
+	"github.com/NicksPatties/sweet/cmd/stats"
 	"github.com/NicksPatties/sweet/cmd/version"
+	. "github.com/NicksPatties/sweet/constants"
+	. "github.com/NicksPatties/sweet/db"
+	. "github.com/NicksPatties/sweet/util"
 	"github.com/spf13/cobra"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	lg "github.com/charmbracelet/lipgloss"
 )
-
-const eventTsFormat = "2006-01-02 15:04:05.000"
 
 func getProductTagline() string {
 	b := lg.NewStyle().Bold(true)
@@ -53,12 +54,13 @@ var Cmd = &cobra.Command{
 	Long:    fmt.Sprintf("%s.\nRuns an interactive touch typing game, and prints the results.", getProductTagline()),
 	Args:    cobra.MaximumNArgs(1),
 	Example: getExamples(),
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		ex, err := fromArgs(cmd, args)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 		Run(ex)
+		return nil
 	},
 }
 
@@ -127,9 +129,10 @@ func init() {
 	Cmd.CompletionOptions.DisableDefaultCmd = true
 
 	commands := []*cobra.Command{
-		about.Command,
-		add.Command,
-		version.Command,
+		about.Cmd,
+		add.Cmd,
+		version.Cmd,
+		stats.Cmd,
 	}
 
 	for _, c := range commands {
@@ -150,65 +153,6 @@ type Exercise struct {
 	text string
 	// A short description that shows when the user complete the exercise.
 	completionDescription string
-}
-
-// A recording of a keypress during the exercise.
-//
-// These are used to perform analysis on the user's performance,
-// display stats, and keys that were causing the most trouble.
-type event struct {
-	// The moment the event took place.
-	ts time.Time
-
-	// The key that was typed.
-	typed string
-
-	// The rune that was expected. Optional, since the user
-	// may have pressed backspace.
-	expected string
-
-	// The index of the exercise when the rune was typed.
-	i int
-}
-
-const eventTsLayout = "2006-01-02 15:04:05.000"
-
-// Converts an event to a string.
-func (e event) String() string {
-	time := e.ts.Format(eventTsLayout)
-	return fmt.Sprintf("%s\t%d\t%s\t%s", time, e.i, e.typed, e.expected)
-}
-
-// Converts an event string to an event struct.
-func parseEvent(line string) (e event) {
-	s := strings.Split(line, "\t")
-	e.ts, _ = time.Parse(eventTsLayout, s[0])
-	e.i, _ = strconv.Atoi(s[1])
-	e.typed = s[2]
-	if len(s) > 3 {
-		e.expected = s[3]
-	}
-	return
-}
-
-// Same as above, but for a multi-line list of events.
-func parseEvents(list string) (events []event) {
-	for _, line := range strings.Split(list, "\n") {
-		if line != "" {
-			events = append(events, parseEvent(line))
-		}
-	}
-	return
-}
-
-// Returns a string of an array of events.
-func eventsString(events []event) (s string) {
-	s += fmt.Sprintln("[")
-	for _, e := range events {
-		s += fmt.Sprintf("  %s\n", e)
-	}
-	s += fmt.Sprintln("]")
-	return
 }
 
 // Converts a bubbletea key message to a string.
@@ -237,17 +181,6 @@ func runeToEventExpected(r rune) string {
 	}
 }
 
-// Creates a new event. Should be used when recording a keystroke
-// to the model.
-func NewEvent(typed string, expected string, i int) event {
-	return event{
-		ts:       time.Now(),
-		typed:    typed,
-		expected: expected,
-		i:        i,
-	}
-}
-
 // The exercise model used by bubbletea.
 //
 // Implements tea.Model. Stores the state of the currently running exercise.
@@ -265,7 +198,7 @@ type exerciseModel struct {
 
 	quitEarly bool
 
-	events []event
+	events []Event
 }
 
 // INITIALIZATION
@@ -276,7 +209,7 @@ func NewExerciseModel(ex Exercise) exerciseModel {
 		quitEarly: false,
 		startTime: time.Time{},
 		endTime:   time.Time{},
-		events:    []event{},
+		events:    []Event{},
 	}
 }
 
@@ -546,12 +479,12 @@ func fromArgs(cmd *cobra.Command, args []string) (exercise Exercise, err error) 
 			exercisesDir = envDir
 
 		} else {
-			var configDir string
-			configDir, err = os.UserConfigDir()
+			var sweetConfigDir string
+			sweetConfigDir, err = SweetConfigDir()
 			if err != nil {
 				return
 			}
-			exercisesDir = path.Join(configDir, "sweet", "exercises")
+			exercisesDir = path.Join(sweetConfigDir, "exercises")
 		}
 
 		if err = os.MkdirAll(exercisesDir, 0775); err != nil {
@@ -624,6 +557,25 @@ func fromArgs(cmd *cobra.Command, args []string) (exercise Exercise, err error) 
 	return
 }
 
+// Converts the exercise model to a Rep, in preparation for
+// inserting it into the database.
+func exerciseModelToRep(m exerciseModel) Rep {
+	return Rep{
+		Hash:   MD5Hash(m.exercise.text),
+		Start:  m.events[0].Ts,
+		End:    m.events[len(m.events)-1].Ts,
+		Name:   m.exercise.name,
+		Lang:   Lang(m.exercise.name),
+		Wpm:    wpm(m.events),
+		Raw:    wpmRaw(m.events),
+		Dur:    duration(m.events),
+		Acc:    accuracy(m.events),
+		Miss:   numMistakes(m.events),
+		Errs:   numUncorrectedErrors(m.events),
+		Events: m.events,
+	}
+}
+
 func Run(exercise Exercise) {
 	exModel := NewExerciseModel(exercise)
 	teaModel, err := tea.NewProgram(exModel).Run()
@@ -642,6 +594,21 @@ func Run(exercise Exercise) {
 		os.Exit(0)
 	}
 
-	showResults(exModel)
+	rep := exerciseModelToRep(exModel)
 
+	printExerciseResults(rep)
+
+	// open connection to db once exercise is complete
+	statsDb, err := SweetDb()
+	if err != nil {
+		fmt.Println(err)
+	}
+	// insert the row into the database
+	var repId int64
+	repId, err = InsertRep(statsDb, rep)
+	if err != nil {
+		fmt.Printf("Error saving rep to the database: %v\n", err)
+	} else {
+		fmt.Printf("Rep %d saved to the database! Keep it up!\n", repId)
+	}
 }

@@ -17,7 +17,7 @@ import (
 // i.e. go build -ldflags "-X github.com/NicksPatties/sweet/cmd/version.version=v0.1.0" .
 var version string
 
-var Command = &cobra.Command{
+var Cmd = &cobra.Command{
 	Use:   "version",
 	Short: "prints the version",
 	Run: func(cmd *cobra.Command, args []string) {
