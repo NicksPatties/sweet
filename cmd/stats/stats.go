@@ -10,12 +10,15 @@ import (
 	"text/template"
 	"time"
 
-	. "github.com/NicksPatties/sweet/constants"
-	. "github.com/NicksPatties/sweet/db"
 	g "github.com/guptarohit/asciigraph"
 	tw "github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
+
+	c "github.com/NicksPatties/sweet/constants"
+	db "github.com/NicksPatties/sweet/db"
 )
+
+type tmplData map[string]any
 
 var Cmd = &cobra.Command{
 	Use:   "stats",
@@ -118,25 +121,25 @@ func parseDateFromArg(isEnd bool, arg string, now time.Time) (time.Time, error) 
 // retrieving all entries from the database that match the query.
 func argsToQuery(cmd *cobra.Command, now time.Time) (string, error) {
 	filters := []string{}
-	name := cmd.Flag(NAME).Value.String()
-	lang := cmd.Flag(LANGUAGE).Value.String()
+	name := cmd.Flag(c.NAME).Value.String()
+	lang := cmd.Flag(c.LANGUAGE).Value.String()
 
 	if name != "" && lang != "" {
 		return "", fmt.Errorf("both name and lang provided (please pick one of them!)")
 	} else if lang != "" {
-		filters = append(filters, fmt.Sprintf("%s='%s'", LANGUAGE, lang))
+		filters = append(filters, fmt.Sprintf("%s='%s'", c.LANGUAGE, lang))
 	} else if name != "" {
-		nameFilter := fmt.Sprintf("%s like '%s'", NAME, name)
+		nameFilter := fmt.Sprintf("%s like '%s'", c.NAME, name)
 		nameFilter = strings.Replace(nameFilter, "*", "%", -1)
 		filters = append(filters, nameFilter)
 	}
 
-	end := cmd.Flag(END).Value.String()
+	end := cmd.Flag(c.END).Value.String()
 	since := cmd.Flag("since").Value.String()
-	start := cmd.Flag(START).Value.String()
+	start := cmd.Flag(c.START).Value.String()
 
 	if end != "" && since == "" && start == "" {
-		return "", fmt.Errorf("must define %s if %s is provided", START, END)
+		return "", fmt.Errorf("must define %s if %s is provided", c.START, c.END)
 	}
 
 	if since != "" && start != "" {
@@ -149,30 +152,30 @@ func argsToQuery(cmd *cobra.Command, now time.Time) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to parse start flag: %s", err)
 	}
-	filters = append(filters, fmt.Sprintf("%s >= %d", START, startTime.UnixMilli()))
+	filters = append(filters, fmt.Sprintf("%s >= %d", c.START, startTime.UnixMilli()))
 
 	endTime, err := parseDateFromArg(true, end, now)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse end flag: %s", err)
 	}
-	filters = append(filters, fmt.Sprintf("%s <= %d", END, endTime.UnixMilli()))
+	filters = append(filters, fmt.Sprintf("%s <= %d", c.END, endTime.UnixMilli()))
 
 	if endTime.Before(startTime) {
-		return "", fmt.Errorf("%s is before %s", END, START)
+		return "", fmt.Errorf("%s is before %s", c.END, c.START)
 	}
 
-	query := fmt.Sprintf("select * from reps where %s order by %s;", strings.Join(filters, " and "), START)
+	query := fmt.Sprintf("select * from reps where %s order by %s;", strings.Join(filters, " and "), c.START)
 
 	return query, nil
 }
 
-func queryToReps(query string) (reps []Rep, err error) {
-	statsDb, err := SweetDb()
+func queryToReps(query string) (reps []db.Rep, err error) {
+	statsDb, err := db.SweetDb()
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %s\n", err)
 	}
 
-	reps, err = GetReps(statsDb, query)
+	reps, err = db.GetReps(statsDb, query)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to get reps: %s\n", err)
@@ -182,15 +185,15 @@ func queryToReps(query string) (reps []Rep, err error) {
 }
 
 func argsToColumnFilter(cmd *cobra.Command) []string {
-	cols := []string{START}
-	name := cmd.Flag(NAME).Value.String()
+	cols := []string{c.START}
+	name := cmd.Flag(c.NAME).Value.String()
 	showName := name == "" || strings.Contains(name, "*")
 	if showName {
-		cols = append(cols, NAME)
+		cols = append(cols, c.NAME)
 	}
 	possibleCols := []string{
-		WPM, RAW_WPM, ACCURACY,
-		UNCORRECTED_ERRORS, MISTAKES, DURATION,
+		c.WPM, c.RAW_WPM, c.ACCURACY,
+		c.UNCORRECTED_ERRORS, c.MISTAKES, c.DURATION,
 	}
 	selectedColCount := 0
 
@@ -204,7 +207,7 @@ func argsToColumnFilter(cmd *cobra.Command) []string {
 
 	if selectedColCount == 0 {
 		defaultCols := append(cols,
-			WPM, RAW_WPM, ACCURACY, UNCORRECTED_ERRORS, MISTAKES,
+			c.WPM, c.RAW_WPM, c.ACCURACY, c.UNCORRECTED_ERRORS, c.MISTAKES,
 		)
 		return defaultCols
 	} else {
@@ -333,23 +336,14 @@ func renderHeader(name string, lang string, start string, end string) {
 		}
 	}
 
-	tmplData := struct {
-		// name of the file or language of the file
-		Name string
-		// "since X days", or "from YYYY-MM-DD to YYYY-MM-DD", etc
-		Date string
-	}{
-		Name: nameSection,
-		Date: dateSection,
-	}
-
-	tmplString := "" +
-		`stats {{if .Name}}for {{.Name}} {{end}}{{.Date}}:`
+	tmplString := `stats {{if .Name}}for {{.Name}} {{end}}{{.Date}}:`
 
 	tmpl := template.Must(template.New("header").Parse(tmplString))
 	var buf bytes.Buffer
-	err := tmpl.Execute(&buf, tmplData)
-	if err != nil {
+	if err := tmpl.Execute(&buf, tmplData{
+		"Name": nameSection,
+		"Date": dateSection,
+	}); err != nil {
 		panic(err)
 	}
 	fmt.Println(buf.String())
@@ -358,20 +352,20 @@ func renderHeader(name string, lang string, start string, end string) {
 // Calculates the average, min, max, first, last, and delta of a stat.
 // Returns that information in an array of strings.
 // Formats the data based on the column name selected.
-func getColumnStats(reps []Rep, colName string) []string {
-	getCol := func(r Rep, colName string) float64 {
+func getColumnStats(reps []db.Rep, colName string) []string {
+	getCol := func(r db.Rep, colName string) float64 {
 		switch colName {
-		case WPM:
+		case c.WPM:
 			return r.Wpm
-		case RAW_WPM:
+		case c.RAW_WPM:
 			return r.Raw
-		case DURATION:
+		case c.DURATION:
 			return float64(r.Dur)
-		case ACCURACY:
+		case c.ACCURACY:
 			return r.Acc
-		case MISTAKES:
+		case c.MISTAKES:
 			return float64(r.Miss)
-		case UNCORRECTED_ERRORS:
+		case c.UNCORRECTED_ERRORS:
 			return float64(r.Errs)
 		}
 		return -math.MaxFloat64
@@ -379,18 +373,18 @@ func getColumnStats(reps []Rep, colName string) []string {
 
 	columnString := func(col string, value float64) string {
 		switch col {
-		case WPM:
+		case c.WPM:
 			return fmt.Sprintf("%.f", value)
-		case RAW_WPM:
+		case c.RAW_WPM:
 			return fmt.Sprintf("%.f", value)
-		case DURATION:
+		case c.DURATION:
 			d := time.Duration(value)
 			return d.Round(time.Millisecond).String()
-		case ACCURACY:
+		case c.ACCURACY:
 			return fmt.Sprintf("%.2f%%", value)
-		case MISTAKES:
+		case c.MISTAKES:
 			return fmt.Sprintf("%.f", value)
-		case UNCORRECTED_ERRORS:
+		case c.UNCORRECTED_ERRORS:
 			return fmt.Sprintf("%.f", value)
 		default:
 			return ""
@@ -427,7 +421,7 @@ func getColumnStats(reps []Rep, colName string) []string {
 	return row
 }
 
-func renderStatsTable(cols []string, reps []Rep) {
+func renderStatsTable(cols []string, reps []db.Rep) {
 	table := tw.NewWriter(os.Stdout)
 	table.SetHeader([]string{"", "avg", "min", "max", "first", "last", "delta"})
 	table.SetAutoWrapText(false)
@@ -441,7 +435,7 @@ func renderStatsTable(cols []string, reps []Rep) {
 	table.SetTablePadding("  ")
 	table.SetNoWhiteSpace(true)
 	for _, col := range cols {
-		if col == START || col == NAME {
+		if col == c.START || col == c.NAME {
 			continue
 		}
 		row := []string{col}
@@ -451,7 +445,7 @@ func renderStatsTable(cols []string, reps []Rep) {
 	table.Render()
 }
 
-func renderGraph(cols []string, reps []Rep) {
+func renderGraph(cols []string, reps []db.Rep) {
 	wpmGraphData := []float64{}
 	rawWpmGraphData := []float64{}
 	mistakesGraphData := []float64{}
@@ -471,34 +465,34 @@ func renderGraph(cols []string, reps []Rep) {
 		legend string
 	}
 	plots := map[string]*plot{
-		ACCURACY: {
+		c.ACCURACY: {
 			data:   accuracyGraphData,
 			color:  g.Green,
 			legend: "accuracy",
 		},
-		UNCORRECTED_ERRORS: {
+		c.UNCORRECTED_ERRORS: {
 			data:   errorsGraphData,
 			color:  g.Red,
 			legend: "errors",
 		},
-		MISTAKES: {
+		c.MISTAKES: {
 			data:   mistakesGraphData,
 			color:  g.Yellow,
 			legend: "mistakes",
 		},
-		RAW_WPM: {
+		c.RAW_WPM: {
 			data:   rawWpmGraphData,
 			color:  g.Gray,
 			legend: "raw wpm",
 		},
-		WPM: {
+		c.WPM: {
 			data:   wpmGraphData,
 			color:  g.Default,
 			legend: "wpm",
 		},
 	}
 
-	colsRenderOrder := []string{ACCURACY, UNCORRECTED_ERRORS, MISTAKES, RAW_WPM, WPM}
+	colsRenderOrder := []string{c.ACCURACY, c.UNCORRECTED_ERRORS, c.MISTAKES, c.RAW_WPM, c.WPM}
 
 	var graphDatum [][]float64
 	var graphColors []g.AnsiColor
@@ -532,7 +526,7 @@ func renderGraph(cols []string, reps []Rep) {
 	fmt.Println(graph)
 }
 
-func renderReps(cols []string, reps []Rep) {
+func renderReps(cols []string, reps []db.Rep) {
 	table := tw.NewWriter(os.Stdout)
 	table.SetHeader(cols)
 	for _, rep := range reps {
@@ -545,14 +539,14 @@ func renderReps(cols []string, reps []Rep) {
 	table.Render()
 }
 
-func render(cmd *cobra.Command, reps []Rep) {
-	name := cmd.Flag(NAME).Value.String()
-	lang := cmd.Flag(LANGUAGE).Value.String()
-	start := cmd.Flag(START).Value.String()
+func render(cmd *cobra.Command, reps []db.Rep) {
+	name := cmd.Flag(c.NAME).Value.String()
+	lang := cmd.Flag(c.LANGUAGE).Value.String()
+	start := cmd.Flag(c.START).Value.String()
 	if since := cmd.Flag("since").Value.String(); since != "" {
 		start = since
 	}
-	end := cmd.Flag(END).Value.String()
+	end := cmd.Flag(c.END).Value.String()
 
 	renderHeader(name, lang, start, end)
 
@@ -569,19 +563,19 @@ func render(cmd *cobra.Command, reps []Rep) {
 
 func setStatsCommandFlags(cmd *cobra.Command) {
 	// date selection flags
-	cmd.Flags().StringP(START, "s", "", "find stats starting from this date")
+	cmd.Flags().StringP(c.START, "s", "", "find stats starting from this date")
 	cmd.Flags().String("since", "", "alias for \"start\" flag")
-	cmd.Flags().StringP(END, "n", "", "find stats ending at this date")
+	cmd.Flags().StringP(c.END, "n", "", "find stats ending at this date")
 
 	// column filtering flags
-	cmd.Flags().String(NAME, "", "filter by exercise name")
-	cmd.Flags().StringP(LANGUAGE, "l", "", "filter by language")
-	cmd.Flags().BoolP(WPM, "w", false, "show words per minute (wpm)")
-	cmd.Flags().BoolP(RAW_WPM, "r", false, "show raw words per minute")
-	cmd.Flags().BoolP(ACCURACY, "a", false, "show accuracy (acc)")
-	cmd.Flags().BoolP(MISTAKES, "m", false, "show mistakes")
-	cmd.Flags().BoolP(UNCORRECTED_ERRORS, "e", false, "show uncorrected errors")
-	cmd.Flags().BoolP(DURATION, "d", false, "show duration")
+	cmd.Flags().String(c.NAME, "", "filter by exercise name")
+	cmd.Flags().StringP(c.LANGUAGE, "l", "", "filter by language")
+	cmd.Flags().BoolP(c.WPM, "w", false, "show words per minute (wpm)")
+	cmd.Flags().BoolP(c.RAW_WPM, "r", false, "show raw words per minute")
+	cmd.Flags().BoolP(c.ACCURACY, "a", false, "show accuracy (acc)")
+	cmd.Flags().BoolP(c.MISTAKES, "m", false, "show mistakes")
+	cmd.Flags().BoolP(c.UNCORRECTED_ERRORS, "e", false, "show uncorrected errors")
+	cmd.Flags().BoolP(c.DURATION, "d", false, "show duration")
 
 	cmd.Flags().SortFlags = false
 }
