@@ -342,52 +342,82 @@ func (m exerciseModel) exerciseNameView() string {
 
 func (m exerciseModel) exerciseTextView() (s string) {
 	// typed style
-	ts := lg.NewStyle()
+	typedStyle := lg.NewStyle().Foreground(lg.Color("15"))
 	// untyped style
-	us := lg.NewStyle().Foreground(lg.Color("7"))
+	untypedStyle := lg.NewStyle().Foreground(lg.Color("7"))
+	// line barrier style
+	lineStyle := lg.NewStyle().Foreground(lg.Color("8"))
 	// cursor style
-	cs := lg.NewStyle().Background(lg.Color("15")).Foreground(lg.Color("0"))
-	// incorrest style
-	is := lg.NewStyle().Background(lg.Color("1")).Foreground(lg.Color("15"))
+	cursorStyle := lg.NewStyle().Background(lg.Color("15")).Foreground(lg.Color("0"))
+	// incorrect style
+	mistakeStyle := lg.NewStyle().Background(lg.Color("1")).Foreground(lg.Color("15"))
 
-	typed := m.typedText
+	lines := strings.SplitAfter(m.exercise.text, "\n")
 
-	for i, exRune := range m.exercise.text {
-		// Has this character been typed yet?
-		if i > len(typed) {
-			s += us.Render(string(exRune))
+	exerciseWindowSize := 5
+	startLine := 2
+	endLine := startLine + exerciseWindowSize
+	cursorPosition := []int{len(lines[3]) / 2, 4}
+	mistakePosition := []int{len(lines[2]) / 3, 3}
+	for l, line := range lines {
+		if l < startLine || l > endLine {
 			continue
 		}
-
-		// Is this the cursor?
-		if i == len(typed) {
-
-			// Is the cursor on a newline?
-			if exRune == Enter {
-				s += fmt.Sprintf("%s\n", cs.Render(Arrow))
-				continue
+		for x, rn := range line {
+			char := string(rn)
+			rendered := untypedStyle.Render(char)
+			if l < cursorPosition[1] || l == cursorPosition[1] && x < cursorPosition[0] {
+				rendered = typedStyle.Render(char)
 			}
-
-			s += cs.Render(string(exRune))
-			continue
-		}
-
-		// There's at least a typed character at this point...
-		typedRune := rune(typed[i])
-
-		// Is it incorrect?
-		if typedRune != exRune {
-			if exRune == Enter {
-				s += fmt.Sprintf("%s\n", is.Render(Arrow))
-			} else {
-				s += is.Render(string(exRune))
+			if x == mistakePosition[0] && l == mistakePosition[1] {
+				rendered = mistakeStyle.Render(char)
 			}
-
-			continue
+			if x == cursorPosition[0] && l == cursorPosition[1] {
+				rendered = cursorStyle.Render(char)
+			}
+			if l == startLine || l == endLine {
+				rendered = lineStyle.Render(char)
+			}
+			s += rendered
 		}
-
-		s += ts.Render(string(exRune))
 	}
+
+	// for i, exRune := range m.exercise.text {
+	// 	// Has this character been typed yet?
+	// 	if i > len(typed) {
+	// 		s += us.Render(string(exRune))
+	// 		continue
+	// 	}
+
+	// 	// Is this the cursor?
+	// 	if i == len(typed) {
+
+	// 		// Is the cursor on a newline?
+	// 		if exRune == Enter {
+	// 			s += fmt.Sprintf("%s\n", cs.Render(Arrow))
+	// 			continue
+	// 		}
+
+	// 		s += cs.Render(string(exRune))
+	// 		continue
+	// 	}
+
+	// 	// There's at least a typed character at this point...
+	// 	typedRune := rune(typed[i])
+
+	// 	// Is it incorrect?
+	// 	if typedRune != exRune {
+	// 		if exRune == Enter {
+	// 			s += fmt.Sprintf("%s\n", is.Render(Arrow))
+	// 		} else {
+	// 			s += is.Render(string(exRune))
+	// 		}
+
+	// 		continue
+	// 	}
+
+	// 	s += ts.Render(string(exRune))
+	// }
 
 	return
 }
@@ -399,16 +429,16 @@ func (m exerciseModel) exerciseTextView() (s string) {
 // a description of the exercise once it's done.
 func (m exerciseModel) View() (s string) {
 	if !m.finished() {
-		currKeyI := len(m.typedText)
-		currKey := m.exercise.text[currKeyI]
+		// currKeyI := len(m.typedText)
+		// currKey := m.exercise.text[currKeyI]
 		s += "\n"
 		s += m.exerciseNameView()
 		s += "\n\n"
 		s += m.exerciseTextView()
 		s += "\n"
-		s += qwerty.render(string(currKey))
-		s += "\n"
-		s += fingerView(qwerty.fingersMargin, '*', rune(currKey))
+		// s += qwerty.render(string(currKey))
+		// s += "\n"
+		// s += fingerView(qwerty.fingersMargin, '*', rune(currKey))
 	}
 	return
 }
