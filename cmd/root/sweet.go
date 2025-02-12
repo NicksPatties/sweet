@@ -352,27 +352,38 @@ func (m exerciseModel) exerciseTextView() (s string) {
 	// incorrect style
 	mistakeStyle := lg.NewStyle().Background(lg.Color("1")).Foreground(lg.Color("15"))
 
-	lines := strings.SplitAfter(m.exercise.text, "\n")
 	cursorIndex := len(m.typedText)
-	currViewChar := 0
-	for _, line := range lines {
+	s += fmt.Sprintf("typedExerciseText: %s\n", m.exercise.text[0:cursorIndex])
+	currLineI := strings.Count(m.exercise.text[0:cursorIndex], "\n")
+	s += fmt.Sprintf("currLineI: %d\n", currLineI)
+	viewPortI := currLineI
+	viewPortSize := 1
+	viewPortEnd := viewPortI + viewPortSize
+	lines := strings.SplitAfter(m.exercise.text, "\n")
+	viewCharI := 0
+	for beforeLines := 0; beforeLines < viewPortI; beforeLines++ {
+		line := lines[beforeLines]
+		viewCharI += len(line)
+	}
+	for ; viewPortI < viewPortEnd; viewPortI++ {
+		line := lines[viewPortI]
 		for _, rn := range line {
 			exerciseChar := string(rn)
 			rendered := untypedStyle.Render(exerciseChar)
-			if currViewChar < cursorIndex {
+			if viewCharI < cursorIndex {
 				rendered = typedStyle.Render(exerciseChar)
-				if string(m.typedText[currViewChar]) != exerciseChar {
+				if string(m.typedText[viewCharI]) != exerciseChar {
 					rendered = mistakeStyle.Render(exerciseChar)
 				}
 			}
-			if currViewChar == cursorIndex {
+			if viewCharI == cursorIndex {
 				rendered = cursorStyle.Render(exerciseChar)
 				if exerciseChar == string(Enter) {
 					rendered = fmt.Sprintf("%s\n", cursorStyle.Render(Arrow))
 				}
 			}
 			s += rendered
-			currViewChar++
+			viewCharI++
 		}
 	}
 	return
