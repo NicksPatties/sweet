@@ -346,79 +346,35 @@ func (m exerciseModel) exerciseTextView() (s string) {
 	// untyped style
 	untypedStyle := lg.NewStyle().Foreground(lg.Color("7"))
 	// line barrier style
-	lineStyle := lg.NewStyle().Foreground(lg.Color("8"))
+	// lineStyle := lg.NewStyle().Foreground(lg.Color("8"))
 	// cursor style
 	cursorStyle := lg.NewStyle().Background(lg.Color("15")).Foreground(lg.Color("0"))
 	// incorrect style
 	mistakeStyle := lg.NewStyle().Background(lg.Color("1")).Foreground(lg.Color("15"))
 
 	lines := strings.SplitAfter(m.exercise.text, "\n")
-
-	exerciseWindowSize := 5
-	startLine := 2
-	endLine := startLine + exerciseWindowSize
-	cursorPosition := []int{len(lines[3]) / 2, 4}
-	mistakePosition := []int{len(lines[2]) / 3, 3}
-	for l, line := range lines {
-		if l < startLine || l > endLine {
-			continue
-		}
-		for x, rn := range line {
-			char := string(rn)
-			rendered := untypedStyle.Render(char)
-			if l < cursorPosition[1] || l == cursorPosition[1] && x < cursorPosition[0] {
-				rendered = typedStyle.Render(char)
+	cursorIndex := len(m.typedText)
+	currViewChar := 0
+	for _, line := range lines {
+		for _, rn := range line {
+			exerciseChar := string(rn)
+			rendered := untypedStyle.Render(exerciseChar)
+			if currViewChar < cursorIndex {
+				rendered = typedStyle.Render(exerciseChar)
+				if string(m.typedText[currViewChar]) != exerciseChar {
+					rendered = mistakeStyle.Render(exerciseChar)
+				}
 			}
-			if x == mistakePosition[0] && l == mistakePosition[1] {
-				rendered = mistakeStyle.Render(char)
-			}
-			if x == cursorPosition[0] && l == cursorPosition[1] {
-				rendered = cursorStyle.Render(char)
-			}
-			if l == startLine || l == endLine {
-				rendered = lineStyle.Render(char)
+			if currViewChar == cursorIndex {
+				rendered = cursorStyle.Render(exerciseChar)
+				if exerciseChar == string(Enter) {
+					rendered = fmt.Sprintf("%s\n", cursorStyle.Render(Arrow))
+				}
 			}
 			s += rendered
+			currViewChar++
 		}
 	}
-
-	// for i, exRune := range m.exercise.text {
-	// 	// Has this character been typed yet?
-	// 	if i > len(typed) {
-	// 		s += us.Render(string(exRune))
-	// 		continue
-	// 	}
-
-	// 	// Is this the cursor?
-	// 	if i == len(typed) {
-
-	// 		// Is the cursor on a newline?
-	// 		if exRune == Enter {
-	// 			s += fmt.Sprintf("%s\n", cs.Render(Arrow))
-	// 			continue
-	// 		}
-
-	// 		s += cs.Render(string(exRune))
-	// 		continue
-	// 	}
-
-	// 	// There's at least a typed character at this point...
-	// 	typedRune := rune(typed[i])
-
-	// 	// Is it incorrect?
-	// 	if typedRune != exRune {
-	// 		if exRune == Enter {
-	// 			s += fmt.Sprintf("%s\n", is.Render(Arrow))
-	// 		} else {
-	// 			s += is.Render(string(exRune))
-	// 		}
-
-	// 		continue
-	// 	}
-
-	// 	s += ts.Render(string(exRune))
-	// }
-
 	return
 }
 
