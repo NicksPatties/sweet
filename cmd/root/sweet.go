@@ -341,25 +341,21 @@ func (m exerciseModel) exerciseNameView() string {
 }
 
 func (m exerciseModel) exerciseTextView() (s string) {
-	// typed style
 	typedStyle := lg.NewStyle().Foreground(lg.Color("15"))
-	// untyped style
 	untypedStyle := lg.NewStyle().Foreground(lg.Color("7"))
-	// line barrier style
-	// lineStyle := lg.NewStyle().Foreground(lg.Color("8"))
-	// cursor style
+	borderStyle := lg.NewStyle().Foreground(lg.Color("8"))
 	cursorStyle := lg.NewStyle().Background(lg.Color("15")).Foreground(lg.Color("0"))
-	// incorrect style
 	mistakeStyle := lg.NewStyle().Background(lg.Color("1")).Foreground(lg.Color("15"))
 
 	cursorIndex := len(m.typedText)
-	s += fmt.Sprintf("typedExerciseText: %s\n", m.exercise.text[0:cursorIndex])
 	currLineI := strings.Count(m.exercise.text[0:cursorIndex], "\n")
-	s += fmt.Sprintf("currLineI: %d\n", currLineI)
 	viewPortI := currLineI
-	viewPortSize := 1
-	viewPortEnd := viewPortI + viewPortSize
+	viewPortSize := 3
 	lines := strings.SplitAfter(m.exercise.text, "\n")
+	viewPortEnd := viewPortI + viewPortSize
+	if viewPortEnd > len(lines) {
+		viewPortEnd = len(lines) - 1
+	}
 	viewCharI := 0
 	for beforeLines := 0; beforeLines < viewPortI; beforeLines++ {
 		line := lines[beforeLines]
@@ -370,6 +366,9 @@ func (m exerciseModel) exerciseTextView() (s string) {
 		for _, rn := range line {
 			exerciseChar := string(rn)
 			rendered := untypedStyle.Render(exerciseChar)
+			if viewPortI == viewPortEnd-1 {
+				rendered = borderStyle.Render(exerciseChar)
+			}
 			if viewCharI < cursorIndex {
 				rendered = typedStyle.Render(exerciseChar)
 				if string(m.typedText[viewCharI]) != exerciseChar {
