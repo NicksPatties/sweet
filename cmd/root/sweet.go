@@ -357,7 +357,7 @@ func (m exerciseModel) exerciseTextView() (s string) {
 	vignetteLastLine := true
 
 	maxLinesBeforeCursor := viewPortSize / 3
-	if currLineI > maxLinesBeforeCursor {
+	if viewPortSize < len(lines) && currLineI > maxLinesBeforeCursor {
 		viewPortStart = currLineI - maxLinesBeforeCursor
 		vignetteFirstLine = true
 	}
@@ -391,10 +391,8 @@ func (m exerciseModel) exerciseTextView() (s string) {
 					rendered = fmt.Sprintf("%s\n", cursorStyle.Render(Arrow))
 				}
 			}
-			if lineI == 0 && vignetteFirstLine {
-				rendered = vignetteStyle.Render(exerciseChar)
-			}
-			if lineI == len(lines[viewPortStart:viewPortEnd])-1 && vignetteLastLine {
+			if lineI == 0 && vignetteFirstLine ||
+				lineI == viewPortEnd-viewPortStart-1 && vignetteLastLine {
 				rendered = vignetteStyle.Render(exerciseChar)
 			}
 			s += rendered
