@@ -343,7 +343,7 @@ func (m exerciseModel) exerciseNameView() string {
 func (m exerciseModel) exerciseTextView() (s string) {
 	typedStyle := lg.NewStyle().Foreground(lg.Color("15"))
 	untypedStyle := lg.NewStyle().Foreground(lg.Color("7"))
-	// vignetteStyle := lg.NewStyle().Foreground(lg.Color("8"))
+	vignetteStyle := lg.NewStyle().Foreground(lg.Color("8"))
 	cursorStyle := lg.NewStyle().Background(lg.Color("15")).Foreground(lg.Color("0"))
 	mistakeStyle := lg.NewStyle().Background(lg.Color("1")).Foreground(lg.Color("15"))
 
@@ -351,20 +351,22 @@ func (m exerciseModel) exerciseTextView() (s string) {
 	currLineI := strings.Count(m.exercise.text[0:cursorIndex], "\n")
 	lines := strings.SplitAfter(m.exercise.text, "\n")
 
-	viewPortSize := len(lines)
+	viewPortSize := 6
 	viewPortStart := 0
-	// not inclusive
-	viewPortEnd := len(lines)
+	vignetteFirstLine := false
+	vignetteLastLine := true
 
 	maxLinesBeforeCursor := viewPortSize / 3
 	if currLineI > maxLinesBeforeCursor {
 		viewPortStart = currLineI - maxLinesBeforeCursor
+		vignetteFirstLine = true
 	}
 
-	viewPortEnd = viewPortStart + viewPortSize
+	viewPortEnd := viewPortStart + viewPortSize // not inclusive
 	maxLinesAfterCursor := viewPortSize * 2 / 3
 	if currLineI >= len(lines)-1-maxLinesAfterCursor {
 		viewPortEnd = len(lines)
+		vignetteLastLine = false
 		viewPortStart = viewPortEnd - viewPortSize
 	}
 
@@ -373,7 +375,7 @@ func (m exerciseModel) exerciseTextView() (s string) {
 		line := lines[beforeLines]
 		viewCharI += len(line)
 	}
-	for _, line := range lines[viewPortStart:viewPortEnd] {
+	for lineI, line := range lines[viewPortStart:viewPortEnd] {
 		for _, rn := range line {
 			exerciseChar := string(rn)
 			rendered := untypedStyle.Render(exerciseChar)
@@ -388,6 +390,12 @@ func (m exerciseModel) exerciseTextView() (s string) {
 				if exerciseChar == string(Enter) {
 					rendered = fmt.Sprintf("%s\n", cursorStyle.Render(Arrow))
 				}
+			}
+			if lineI == 0 && vignetteFirstLine {
+				rendered = vignetteStyle.Render(exerciseChar)
+			}
+			if lineI == len(lines[viewPortStart:viewPortEnd])-1 && vignetteLastLine {
+				rendered = vignetteStyle.Render(exerciseChar)
 			}
 			s += rendered
 			viewCharI++
