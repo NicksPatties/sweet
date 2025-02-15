@@ -26,6 +26,7 @@ go.work
 # folder for personal notes/prototypes
 /notes
 thing.go
+*.xcf
 
 # build directory
 /builds
