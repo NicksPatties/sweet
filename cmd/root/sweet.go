@@ -351,19 +351,24 @@ func (m exerciseModel) exerciseTextView() (s string) {
 	currLineI := strings.Count(m.exercise.text[0:cursorIndex], "\n")
 	lines := strings.SplitAfter(m.exercise.text, "\n")
 
+	// from a parameter, 0 by default
 	viewPortSize := 6
-	// viewPortStart should be at
 	viewPortStart := 0
-	maxLinesBeforeCursor := viewPortSize / 3 // should be 2
-	if currLineI > maxLinesBeforeCursor {
-		viewPortStart = currLineI - maxLinesBeforeCursor
-	}
-
 	// not inclusive
-	viewPortEnd := viewPortStart + viewPortSize
-	maxLinesAfterCursor := viewPortSize * 2 / 3 // should be 4
-	if currLineI >= len(lines)-1-maxLinesAfterCursor {
-		viewPortEnd = len(lines)
+	viewPortEnd := len(lines)
+
+	if viewPortSize > 0 {
+		maxLinesBeforeCursor := viewPortSize / 3 // should be 2
+		if currLineI > maxLinesBeforeCursor {
+			viewPortStart = currLineI - maxLinesBeforeCursor
+		}
+
+		viewPortEnd = viewPortStart + viewPortSize
+		maxLinesAfterCursor := viewPortSize * 2 / 3 // should be 4
+		if currLineI >= len(lines)-1-maxLinesAfterCursor {
+			viewPortEnd = len(lines)
+			viewPortStart = viewPortEnd - viewPortSize
+		}
 	}
 
 	viewCharI := 0
