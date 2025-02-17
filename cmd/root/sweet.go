@@ -349,7 +349,7 @@ func (m exerciseModel) exerciseTextView() (s string) {
 	lines := strings.SplitAfter(m.exercise.text, "\n")
 
 	viewPortSize := int(m.windowSize)
-	if viewPortSize == 0 {
+	if viewPortSize == 0 || viewPortSize > len(lines) {
 		viewPortSize = len(lines)
 	}
 	viewPortStart := 0
