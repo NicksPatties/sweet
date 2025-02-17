@@ -343,6 +343,7 @@ func (m exerciseModel) exerciseTextView() (s string) {
 	vignetteStyle := lg.NewStyle().Foreground(lg.Color("8"))
 	cursorStyle := lg.NewStyle().Background(lg.Color("15")).Foreground(lg.Color("0"))
 	mistakeStyle := lg.NewStyle().Background(lg.Color("1")).Foreground(lg.Color("15"))
+	vignetteMistakeStyle := lg.NewStyle().Background(lg.Color("1")).Foreground(lg.Color("8"))
 
 	cursorIndex := len(m.typedText)
 	currLineI := strings.Count(m.exercise.text[0:cursorIndex], "\n")
@@ -381,7 +382,7 @@ func (m exerciseModel) exerciseTextView() (s string) {
 			rendered := untypedStyle.Render(exerciseChar)
 			if viewCharI < cursorIndex {
 				rendered = typedStyle.Render(exerciseChar)
-				if string(m.typedText[viewCharI]) != exerciseChar {
+				if isMistake := string(m.typedText[viewCharI]) != exerciseChar; isMistake {
 					rendered = mistakeStyle.Render(exerciseChar)
 				}
 			}
@@ -391,8 +392,13 @@ func (m exerciseModel) exerciseTextView() (s string) {
 					rendered = fmt.Sprintf("%s\n", cursorStyle.Render(Arrow))
 				}
 			}
-			if lineI == 0 && vignetteFirstLine ||
-				lineI == viewPortEnd-viewPortStart-1 && vignetteLastLine {
+			if lineI == 0 && vignetteFirstLine {
+				rendered = vignetteStyle.Render(exerciseChar)
+				if isMistake := string(m.typedText[viewCharI]) != exerciseChar; isMistake {
+					rendered = vignetteMistakeStyle.Render(exerciseChar)
+				}
+			}
+			if lineI == viewPortEnd-viewPortStart-1 && vignetteLastLine {
 				rendered = vignetteStyle.Render(exerciseChar)
 			}
 			s += rendered
