@@ -367,7 +367,7 @@ func (m exerciseModel) exerciseTextView() (s string) {
 	if currLineI >= len(lines)-1-maxLinesAfterCursor {
 		viewPortEnd = len(lines)
 		vignetteLastLine = false
-		viewPortStart = viewPortEnd - viewPortSize
+		viewPortStart = viewPortEnd - viewPortSize - 1
 	}
 
 	viewCharI := 0
