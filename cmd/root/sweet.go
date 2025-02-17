@@ -59,7 +59,7 @@ var Cmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		Run(ex)
+		Run(ex, cmd)
 		return nil
 	},
 }
@@ -117,6 +117,7 @@ func setRootCmdFlags(cmd *cobra.Command) {
 	cmd.Flags().StringP("language", "l", "", "select a language by file extension")
 	cmd.Flags().UintP("start", "s", 0, "start exercise at this line")
 	cmd.Flags().UintP("end", "e", math.MaxUint, "end exercise at this line")
+	cmd.Flags().UintP("window-size", "w", 0, "set the viewport of the exercise")
 	cmd.Flags().SortFlags = false
 }
 
@@ -186,19 +187,15 @@ func runeToEventExpected(r rune) string {
 // Implements tea.Model. Stores the state of the currently running exercise.
 type exerciseModel struct {
 	exercise Exercise
-
 	// The charcters that the user has typed during this exercise.
 	typedText string
-
 	// The point in time when the user started typing.
 	startTime time.Time
-
 	// The time the user completed the exercise.
-	endTime time.Time
-
-	quitEarly bool
-
-	events []Event
+	endTime    time.Time
+	quitEarly  bool
+	windowSize uint
+	events     []Event
 }
 
 // INITIALIZATION
@@ -351,7 +348,10 @@ func (m exerciseModel) exerciseTextView() (s string) {
 	currLineI := strings.Count(m.exercise.text[0:cursorIndex], "\n")
 	lines := strings.SplitAfter(m.exercise.text, "\n")
 
-	viewPortSize := 6
+	viewPortSize := int(m.windowSize)
+	if viewPortSize == 0 {
+		viewPortSize = len(lines)
+	}
 	viewPortStart := 0
 	vignetteFirstLine := false
 	vignetteLastLine := true
@@ -409,16 +409,16 @@ func (m exerciseModel) exerciseTextView() (s string) {
 // a description of the exercise once it's done.
 func (m exerciseModel) View() (s string) {
 	if !m.finished() {
-		// currKeyI := len(m.typedText)
-		// currKey := m.exercise.text[currKeyI]
+		currKeyI := len(m.typedText)
+		currKey := m.exercise.text[currKeyI]
 		s += "\n"
 		s += m.exerciseNameView()
 		s += "\n\n"
 		s += m.exerciseTextView()
 		s += "\n"
-		// s += qwerty.render(string(currKey))
-		// s += "\n"
-		// s += fingerView(qwerty.fingersMargin, '*', rune(currKey))
+		s += qwerty.render(string(currKey))
+		s += "\n"
+		s += fingerView(qwerty.fingersMargin, '*', rune(currKey))
 	}
 	return
 }
@@ -586,8 +586,9 @@ func exerciseModelToRep(m exerciseModel) Rep {
 	}
 }
 
-func Run(exercise Exercise) {
+func Run(exercise Exercise, cmd *cobra.Command) {
 	exModel := NewExerciseModel(exercise)
+	exModel.windowSize, _ = cmd.Flags().GetUint("window-size")
 	teaModel, err := tea.NewProgram(exModel).Run()
 
 	if err != nil {
