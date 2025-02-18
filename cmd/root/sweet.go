@@ -8,7 +8,6 @@ import (
 	"math/rand"
 	"os"
 	"path"
-
 	"strings"
 	"time"
 
@@ -16,14 +15,14 @@ import (
 	"github.com/NicksPatties/sweet/cmd/add"
 	"github.com/NicksPatties/sweet/cmd/stats"
 	"github.com/NicksPatties/sweet/cmd/version"
-	. "github.com/NicksPatties/sweet/constants"
-	. "github.com/NicksPatties/sweet/db"
-	. "github.com/NicksPatties/sweet/util"
-	"github.com/spf13/cobra"
+	cnst "github.com/NicksPatties/sweet/constants"
+	db "github.com/NicksPatties/sweet/db"
+	"github.com/NicksPatties/sweet/util"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	lg "github.com/charmbracelet/lipgloss"
+	"github.com/spf13/cobra"
 )
 
 func getProductTagline() string {
@@ -195,7 +194,7 @@ type exerciseModel struct {
 	endTime    time.Time
 	quitEarly  bool
 	windowSize uint
-	events     []Event
+	events     []util.Event
 }
 
 // INITIALIZATION
@@ -206,7 +205,7 @@ func NewExerciseModel(ex Exercise) exerciseModel {
 		quitEarly: false,
 		startTime: time.Time{},
 		endTime:   time.Time{},
-		events:    []Event{},
+		events:    []util.Event{},
 	}
 }
 
@@ -217,7 +216,7 @@ func (m exerciseModel) Init() tea.Cmd {
 // UPDATE
 
 func isWhitespace(rn rune) bool {
-	return rn == Tab || rn == Space
+	return rn == cnst.Tab || rn == cnst.Space
 }
 
 func (m exerciseModel) addRuneToTypedText(rn rune) exerciseModel {
@@ -231,7 +230,7 @@ func (m exerciseModel) addRuneToTypedText(rn rune) exerciseModel {
 	// then add the Enter and the following whitespace to the typedText.
 	//
 	// This provides the appearance of auto-indentation while typing.
-	if rune(m.exercise.text[idx]) == Enter {
+	if rune(m.exercise.text[idx]) == cnst.Enter {
 		whiteSpace := []rune{}
 		for i := len(m.typedText) + 1; i < len(m.exercise.text) && isWhitespace(rune(m.exercise.text[i])); i++ {
 			whiteSpace = append(whiteSpace, rune(m.exercise.text[i]))
@@ -267,7 +266,7 @@ func (m exerciseModel) deleteRuneFromTypedText() exerciseModel {
 	for ; isWhitespace(rune(m.exercise.text[l-i])); i++ {
 	}
 	currRn = rune(m.exercise.text[l-i])
-	if currRn == Enter {
+	if currRn == cnst.Enter {
 		// remove all runes up to and including the newline rune
 		m.typedText = tex[:l-i]
 	}
@@ -306,7 +305,7 @@ func (m exerciseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			currTyped = teaKeyMsgToEventTyped(msg)
 			m = m.deleteRuneFromTypedText()
 			// Create delete event and add it to events
-			m.events = append(m.events, NewEvent("backspace", "", currI))
+			m.events = append(m.events, util.NewEvent("backspace", "", currI))
 		case tea.KeyRunes, tea.KeySpace, tea.KeyEnter:
 			currTyped = teaKeyMsgToEventTyped(msg)
 
@@ -314,11 +313,11 @@ func (m exerciseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.startTime = time.Now()
 			}
 			if msg.Type == tea.KeyEnter {
-				m = m.addRuneToTypedText(Enter)
+				m = m.addRuneToTypedText(cnst.Enter)
 			} else {
 				m = m.addRuneToTypedText(msg.Runes[0])
 			}
-			m.events = append(m.events, NewEvent(currTyped, currExpected, currI))
+			m.events = append(m.events, util.NewEvent(currTyped, currExpected, currI))
 			if m.finished() {
 				m.endTime = time.Now()
 				return m, tea.Quit
@@ -388,8 +387,8 @@ func (m exerciseModel) exerciseTextView() (s string) {
 			}
 			if viewCharI == cursorIndex {
 				rendered = cursorStyle.Render(exerciseChar)
-				if exerciseChar == string(Enter) {
-					rendered = fmt.Sprintf("%s\n", cursorStyle.Render(Arrow))
+				if exerciseChar == string(cnst.Enter) {
+					rendered = fmt.Sprintf("%s\n", cursorStyle.Render(cnst.Arrow))
 				}
 			}
 			if lineI == 0 && vignetteFirstLine {
@@ -496,7 +495,7 @@ func fromArgs(cmd *cobra.Command, args []string) (exercise Exercise, err error) 
 
 		} else {
 			var sweetConfigDir string
-			sweetConfigDir, err = SweetConfigDir()
+			sweetConfigDir, err = util.SweetConfigDir()
 			if err != nil {
 				return
 			}
@@ -575,13 +574,13 @@ func fromArgs(cmd *cobra.Command, args []string) (exercise Exercise, err error) 
 
 // Converts the exercise model to a Rep, in preparation for
 // inserting it into the database.
-func exerciseModelToRep(m exerciseModel) Rep {
-	return Rep{
-		Hash:   MD5Hash(m.exercise.text),
+func exerciseModelToRep(m exerciseModel) db.Rep {
+	return db.Rep{
+		Hash:   util.MD5Hash(m.exercise.text),
 		Start:  m.events[0].Ts,
 		End:    m.events[len(m.events)-1].Ts,
 		Name:   m.exercise.name,
-		Lang:   Lang(m.exercise.name),
+		Lang:   util.Lang(m.exercise.name),
 		Wpm:    wpm(m.events),
 		Raw:    wpmRaw(m.events),
 		Dur:    duration(m.events),
@@ -616,13 +615,13 @@ func Run(exercise Exercise, cmd *cobra.Command) {
 	printExerciseResults(rep)
 
 	// open connection to db once exercise is complete
-	statsDb, err := SweetDb()
+	statsDb, err := db.SweetDb()
 	if err != nil {
 		fmt.Println(err)
 	}
 	// insert the row into the database
 	var repId int64
-	repId, err = InsertRep(statsDb, rep)
+	repId, err = db.InsertRep(statsDb, rep)
 	if err != nil {
 		fmt.Printf("Error saving rep to the database: %v\n", err)
 	} else {
