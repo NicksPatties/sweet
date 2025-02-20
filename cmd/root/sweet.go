@@ -16,7 +16,7 @@ import (
 	"github.com/NicksPatties/sweet/cmd/stats"
 	"github.com/NicksPatties/sweet/cmd/version"
 	c "github.com/NicksPatties/sweet/constants"
-	db "github.com/NicksPatties/sweet/db"
+	"github.com/NicksPatties/sweet/db"
 	"github.com/NicksPatties/sweet/util"
 
 	tea "github.com/charmbracelet/bubbletea"
