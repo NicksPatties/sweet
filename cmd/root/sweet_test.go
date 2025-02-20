@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/NicksPatties/sweet/util"
+	"github.com/NicksPatties/sweet/util"
 	"github.com/spf13/cobra"
 )
 
@@ -478,19 +478,19 @@ func TestFromArgsWithEmptyExerciseFiles(t *testing.T) {
 }
 
 func getEventTs(s string) (t time.Time) {
-	t, _ = time.Parse(EventTsLayout, s)
+	t, _ = time.Parse(util.EventTsLayout, s)
 	return
 }
 
 func TestEventString(t *testing.T) {
 	testCases := []struct {
 		name string
-		in   Event
+		in   util.Event
 		want string
 	}{
 		{
 			name: "all fields",
-			in: Event{
+			in: util.Event{
 				Ts:       getEventTs("2024-10-07 13:46:47.679"),
 				I:        0,
 				Typed:    "a",
@@ -514,12 +514,12 @@ func TestParseEvent(t *testing.T) {
 	testCases := []struct {
 		name  string
 		input string
-		want  Event
+		want  util.Event
 	}{
 		{
 			name:  "all fields",
 			input: "2024-10-07 13:46:47.679\t0\ta\th",
-			want: Event{
+			want: util.Event{
 				Ts:       getEventTs("2024-10-07 13:46:47.679"),
 				I:        0,
 				Typed:    "a",
@@ -529,7 +529,7 @@ func TestParseEvent(t *testing.T) {
 		{
 			name:  "backspace",
 			input: "2024-10-07 13:46:47.679\t0\tbackspace",
-			want: Event{
+			want: util.Event{
 				Ts:       getEventTs("2024-10-07 13:46:47.679"),
 				I:        0,
 				Typed:    "backspace",
@@ -539,7 +539,7 @@ func TestParseEvent(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		got := ParseEvent(tc.input)
+		got := util.ParseEvent(tc.input)
 		if !got.Matches(tc.want) {
 			t.Errorf("%s: got\n%s\n\nwant:\n%s", tc.name, got, tc.want)
 		}
@@ -551,13 +551,13 @@ func TestParseEvents(t *testing.T) {
 	testCases := []struct {
 		name string
 		in   string
-		want []Event
+		want []util.Event
 	}{
 		{
 			name: "two events",
 			in: "2024-10-07 13:46:47.679\t0\ta\th\n" +
 				"2024-10-07 13:46:48.298\t1\tbackspace",
-			want: []Event{
+			want: []util.Event{
 				{
 					Ts:       getEventTs("2024-10-07 13:46:47.679"),
 					I:        0,
@@ -575,7 +575,7 @@ func TestParseEvents(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		gotEvents := ParseEvents(tc.in)
+		gotEvents := util.ParseEvents(tc.in)
 		for i, got := range gotEvents {
 			if !got.Matches(tc.want[i]) {
 				t.Errorf(

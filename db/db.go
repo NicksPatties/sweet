@@ -8,9 +8,8 @@ import (
 	"strconv"
 	"time"
 
-	. "github.com/NicksPatties/sweet/constants"
+	"github.com/NicksPatties/sweet/constants"
 	"github.com/NicksPatties/sweet/util"
-	. "github.com/NicksPatties/sweet/util"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -33,7 +32,7 @@ type Rep struct {
 	Acc    float64
 	Miss   int
 	Errs   int
-	Events []Event // one string is one event
+	Events []util.Event // one string is one event
 }
 
 func (r Rep) String() (s string) {
@@ -59,32 +58,32 @@ func (r Rep) String() (s string) {
 // an empty string is returned.
 func (r Rep) ColumnString(col string) string {
 	switch col {
-	case ID:
+	case constants.ID:
 		return strconv.Itoa(r.Id)
-	case HASH:
+	case constants.HASH:
 		return r.Hash
-	case START:
-		return r.Start.Format(EventTsLayout)
-	case END:
-		return r.End.Format(EventTsLayout)
-	case NAME:
+	case constants.START:
+		return r.Start.Format(util.EventTsLayout)
+	case constants.END:
+		return r.End.Format(util.EventTsLayout)
+	case constants.NAME:
 		return r.Name
-	case LANGUAGE:
+	case constants.LANGUAGE:
 		return r.Lang
-	case WPM:
+	case constants.WPM:
 		return fmt.Sprintf("%.f", r.Wpm)
-	case RAW_WPM:
+	case constants.RAW_WPM:
 		return fmt.Sprintf("%.f", r.Raw)
-	case DURATION:
+	case constants.DURATION:
 		return r.Dur.Round(time.Millisecond).String()
-	case ACCURACY:
+	case constants.ACCURACY:
 		return fmt.Sprintf("%.2f%%", r.Acc)
-	case MISTAKES:
+	case constants.MISTAKES:
 		return strconv.Itoa(r.Miss)
-	case UNCORRECTED_ERRORS:
+	case constants.UNCORRECTED_ERRORS:
 		return strconv.Itoa(r.Errs)
-	case EVENTS:
-		return EventsString(r.Events)
+	case constants.EVENTS:
+		return util.EventsString(r.Events)
 	default:
 		return ""
 	}
@@ -103,7 +102,7 @@ func SweetDb() (*sql.DB, error) {
 	if envDir := os.Getenv("SWEET_DB_LOCATION"); envDir != "" {
 		dbPath = envDir
 	} else {
-		sweetDir, err := SweetConfigDir()
+		sweetDir, err := util.SweetConfigDir()
 		if err != nil {
 			return nil, fmt.Errorf("failed to find user config directory: %v", err)
 		}
@@ -158,8 +157,8 @@ CREATE TABLE if not exists reps(
   -- array of events, events are separated by '\n'
   %s text not null
 );`,
-		ID, HASH, START, END, NAME, LANGUAGE, WPM, RAW_WPM,
-		DURATION, ACCURACY, MISTAKES, UNCORRECTED_ERRORS, EVENTS,
+		constants.ID, constants.HASH, constants.START, constants.END, constants.NAME, constants.LANGUAGE, constants.WPM, constants.RAW_WPM,
+		constants.DURATION, constants.ACCURACY, constants.MISTAKES, constants.UNCORRECTED_ERRORS, constants.EVENTS,
 	)
 
 	_, err = db.Exec(createTableStr)
@@ -172,7 +171,7 @@ CREATE TABLE if not exists reps(
 	return db, nil
 }
 
-func eventsStringToColumn(events []Event) (s string) {
+func eventsStringToColumn(events []util.Event) (s string) {
 	for i, event := range events {
 		s += event.String()
 		if i != len(events)-1 {
@@ -205,8 +204,8 @@ func InsertRep(db *sql.DB, rep Rep) (int64, error) {
 	   	?, ?, ?, ?, ?, ?,
 	   	?, ?, ?, ?, ?, ?
 	   );`,
-		HASH, START, END, NAME, LANGUAGE, WPM, RAW_WPM,
-		DURATION, ACCURACY, MISTAKES, UNCORRECTED_ERRORS, EVENTS,
+		constants.HASH, constants.START, constants.END, constants.NAME, constants.LANGUAGE, constants.WPM, constants.RAW_WPM,
+		constants.DURATION, constants.ACCURACY, constants.MISTAKES, constants.UNCORRECTED_ERRORS, constants.EVENTS,
 	)
 
 	result, err := db.Exec(query,
@@ -225,7 +224,7 @@ func InsertRep(db *sql.DB, rep Rep) (int64, error) {
 // and return an array of anything
 func GetReps(db *sql.DB, query string) ([]Rep, error) {
 	if query == "" {
-		query = fmt.Sprintf(`select * from reps order by %s;`, START)
+		query = fmt.Sprintf(`select * from reps order by %s;`, constants.START)
 	}
 
 	var reps []Rep
