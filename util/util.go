@@ -9,6 +9,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	c "github.com/NicksPatties/sweet/constants"
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 // Converts a string to an md5 hash. Used to
@@ -59,6 +62,10 @@ func FilterFileNames(fileNames []string, language string) (found []string) {
 		}
 	}
 	return found
+}
+
+func IsWhitespace(rn rune) bool {
+	return rn == c.Tab || rn == c.Space
 }
 
 // A recording of a keypress during the exercise.
@@ -137,5 +144,31 @@ func NewEvent(typed string, expected string, i int) Event {
 		Typed:    typed,
 		Expected: expected,
 		I:        i,
+	}
+}
+
+// Converts a bubbletea key message to a string.
+// Used to properly record key events.
+func TeaKeyMsgToEventTyped(msg tea.KeyMsg) string {
+	switch msg.Type {
+	case tea.KeyEnter:
+		return "enter"
+	case tea.KeyBackspace:
+		return "backspace"
+	case tea.KeySpace:
+		return "space"
+	default:
+		return string(msg.Runes[0])
+	}
+}
+
+func RuneToEventExpected(r rune) string {
+	switch r {
+	case '\n':
+		return "enter"
+	case ' ':
+		return "space"
+	default:
+		return string(r)
 	}
 }

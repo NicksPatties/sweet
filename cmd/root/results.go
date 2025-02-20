@@ -23,7 +23,7 @@ func requiredRunes(s string) []rune {
 	arr := []rune{}
 	foundNewline := false
 	for _, rn := range s {
-		if foundNewline && isWhitespace(rn) {
+		if foundNewline && util.IsWhitespace(rn) {
 			continue
 		}
 		foundNewline = rn == constants.Enter
