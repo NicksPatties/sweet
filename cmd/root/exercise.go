@@ -7,7 +7,9 @@ import (
 
 	c "github.com/NicksPatties/sweet/constants"
 	"github.com/NicksPatties/sweet/db"
+	"github.com/NicksPatties/sweet/event"
 	"github.com/NicksPatties/sweet/util"
+
 	tea "github.com/charmbracelet/bubbletea"
 
 	lg "github.com/charmbracelet/lipgloss"
@@ -38,7 +40,7 @@ type exerciseModel struct {
 
 	quitEarly bool
 
-	events []util.Event
+	events []event.Event
 }
 
 func (m exerciseModel) exerciseNameView() string {
@@ -198,18 +200,18 @@ func (m exerciseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		var currTyped string
 		currI := len(m.typedText)
-		currExpected := util.RuneToEventExpected(rune(m.exercise.text[currI]))
+		currExpected := event.RuneToEventExpected(rune(m.exercise.text[currI]))
 		switch msg.Type {
 		case tea.KeyCtrlC:
 			m.quitEarly = true
 			return m, tea.Quit
 		case tea.KeyBackspace:
-			currTyped = util.TeaKeyMsgToEventTyped(msg)
+			currTyped = event.TeaKeyMsgToEventTyped(msg)
 			m = m.deleteRuneFromTypedText()
 			// Create delete event and add it to events
-			m.events = append(m.events, util.NewEvent("backspace", "", currI))
+			m.events = append(m.events, event.NewEvent("backspace", "", currI))
 		case tea.KeyRunes, tea.KeySpace, tea.KeyEnter:
-			currTyped = util.TeaKeyMsgToEventTyped(msg)
+			currTyped = event.TeaKeyMsgToEventTyped(msg)
 
 			if m.startTime.IsZero() {
 				m.startTime = time.Now()
@@ -219,7 +221,7 @@ func (m exerciseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			} else {
 				m = m.addRuneToTypedText(msg.Runes[0])
 			}
-			m.events = append(m.events, util.NewEvent(currTyped, currExpected, currI))
+			m.events = append(m.events, event.NewEvent(currTyped, currExpected, currI))
 			if m.finished() {
 				m.endTime = time.Now()
 				return m, tea.Quit
@@ -264,7 +266,7 @@ func run(exercise exercise) {
 		quitEarly: false,
 		startTime: time.Time{},
 		endTime:   time.Time{},
-		events:    []util.Event{},
+		events:    []event.Event{},
 	}).Run()
 	if err != nil {
 		fmt.Printf("Error running typing exercise: %v\n", err)

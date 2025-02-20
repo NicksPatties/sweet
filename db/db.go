@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/NicksPatties/sweet/constants"
+	"github.com/NicksPatties/sweet/event"
 	"github.com/NicksPatties/sweet/util"
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -32,7 +33,7 @@ type Rep struct {
 	Acc    float64
 	Miss   int
 	Errs   int
-	Events []util.Event // one string is one event
+	Events []event.Event // one string is one event
 }
 
 func (r Rep) String() (s string) {
@@ -63,9 +64,9 @@ func (r Rep) ColumnString(col string) string {
 	case constants.HASH:
 		return r.Hash
 	case constants.START:
-		return r.Start.Format(util.EventTsLayout)
+		return r.Start.Format(event.EventTsLayout)
 	case constants.END:
-		return r.End.Format(util.EventTsLayout)
+		return r.End.Format(event.EventTsLayout)
 	case constants.NAME:
 		return r.Name
 	case constants.LANGUAGE:
@@ -83,7 +84,7 @@ func (r Rep) ColumnString(col string) string {
 	case constants.UNCORRECTED_ERRORS:
 		return strconv.Itoa(r.Errs)
 	case constants.EVENTS:
-		return util.EventsString(r.Events)
+		return event.EventsString(r.Events)
 	default:
 		return ""
 	}
@@ -171,7 +172,7 @@ CREATE TABLE if not exists reps(
 	return db, nil
 }
 
-func eventsStringToColumn(events []util.Event) (s string) {
+func eventsStringToColumn(events []event.Event) (s string) {
 	for i, event := range events {
 		s += event.String()
 		if i != len(events)-1 {
@@ -294,7 +295,7 @@ func GetReps(db *sql.DB, query string) ([]Rep, error) {
 			Acc:    acc,
 			Miss:   miss,
 			Errs:   errs,
-			Events: util.ParseEvents(events),
+			Events: event.ParseEvents(events),
 		}
 
 		reps = append(reps, r)

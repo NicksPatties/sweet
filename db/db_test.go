@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/NicksPatties/sweet/util"
+	"github.com/NicksPatties/sweet/event"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -129,7 +129,7 @@ func TestEventsToColumn(t *testing.T) {
 		"2024-10-07 16:29:27.667\t5\tl\tl\n" +
 		"2024-10-07 16:29:27.784\t6\te\te\n" +
 		"2024-10-07 16:29:31.538\t7\tenter\tenter"
-	events := util.ParseEvents(want)
+	events := event.ParseEvents(want)
 	got := eventsStringToColumn(events)
 
 	if got != want {
@@ -166,7 +166,7 @@ func TestInsertRep(t *testing.T) {
 			Acc:   98.98,
 			Miss:  2,
 			Errs:  1,
-			Events: util.ParseEvents(
+			Events: event.ParseEvents(
 				"2024-10-07 13:46:47.679\t0\th\th\n" +
 					"2024-10-07 13:46:56.521\t3\tenter\tenter",
 			),
@@ -211,7 +211,7 @@ func TestInsertRep(t *testing.T) {
 			Acc:   98.98,
 			Miss:  2,
 			Errs:  1,
-			Events: util.ParseEvents(
+			Events: event.ParseEvents(
 				"2024-10-07 13:46:47.679\t0\th\th\n" +
 					"2024-10-07 13:46:56.521\t3\tenter\tenter",
 			),
