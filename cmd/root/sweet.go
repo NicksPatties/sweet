@@ -8,7 +8,6 @@ import (
 	"math/rand"
 	"os"
 	"path"
-
 	"strings"
 	"time"
 
@@ -16,14 +15,14 @@ import (
 	"github.com/NicksPatties/sweet/cmd/add"
 	"github.com/NicksPatties/sweet/cmd/stats"
 	"github.com/NicksPatties/sweet/cmd/version"
-	. "github.com/NicksPatties/sweet/constants"
-	. "github.com/NicksPatties/sweet/db"
-	. "github.com/NicksPatties/sweet/util"
-	"github.com/spf13/cobra"
+	cnst "github.com/NicksPatties/sweet/constants"
+	db "github.com/NicksPatties/sweet/db"
+	"github.com/NicksPatties/sweet/util"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	lg "github.com/charmbracelet/lipgloss"
+	"github.com/spf13/cobra"
 )
 
 func getProductTagline() string {
@@ -59,7 +58,7 @@ var Cmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		Run(ex)
+		Run(ex, cmd)
 		return nil
 	},
 }
@@ -117,6 +116,7 @@ func setRootCmdFlags(cmd *cobra.Command) {
 	cmd.Flags().StringP("language", "l", "", "select a language by file extension")
 	cmd.Flags().UintP("start", "s", 0, "start exercise at this line")
 	cmd.Flags().UintP("end", "e", math.MaxUint, "end exercise at this line")
+	cmd.Flags().UintP("window-size", "w", 0, "set the viewport of the exercise")
 	cmd.Flags().SortFlags = false
 }
 
@@ -186,19 +186,15 @@ func runeToEventExpected(r rune) string {
 // Implements tea.Model. Stores the state of the currently running exercise.
 type exerciseModel struct {
 	exercise Exercise
-
 	// The charcters that the user has typed during this exercise.
 	typedText string
-
 	// The point in time when the user started typing.
 	startTime time.Time
-
 	// The time the user completed the exercise.
-	endTime time.Time
-
-	quitEarly bool
-
-	events []Event
+	endTime    time.Time
+	quitEarly  bool
+	windowSize uint
+	events     []util.Event
 }
 
 // INITIALIZATION
@@ -209,7 +205,7 @@ func NewExerciseModel(ex Exercise) exerciseModel {
 		quitEarly: false,
 		startTime: time.Time{},
 		endTime:   time.Time{},
-		events:    []Event{},
+		events:    []util.Event{},
 	}
 }
 
@@ -220,7 +216,7 @@ func (m exerciseModel) Init() tea.Cmd {
 // UPDATE
 
 func isWhitespace(rn rune) bool {
-	return rn == Tab || rn == Space
+	return rn == cnst.Tab || rn == cnst.Space
 }
 
 func (m exerciseModel) addRuneToTypedText(rn rune) exerciseModel {
@@ -234,7 +230,7 @@ func (m exerciseModel) addRuneToTypedText(rn rune) exerciseModel {
 	// then add the Enter and the following whitespace to the typedText.
 	//
 	// This provides the appearance of auto-indentation while typing.
-	if rune(m.exercise.text[idx]) == Enter {
+	if rune(m.exercise.text[idx]) == cnst.Enter {
 		whiteSpace := []rune{}
 		for i := len(m.typedText) + 1; i < len(m.exercise.text) && isWhitespace(rune(m.exercise.text[i])); i++ {
 			whiteSpace = append(whiteSpace, rune(m.exercise.text[i]))
@@ -270,7 +266,7 @@ func (m exerciseModel) deleteRuneFromTypedText() exerciseModel {
 	for ; isWhitespace(rune(m.exercise.text[l-i])); i++ {
 	}
 	currRn = rune(m.exercise.text[l-i])
-	if currRn == Enter {
+	if currRn == cnst.Enter {
 		// remove all runes up to and including the newline rune
 		m.typedText = tex[:l-i]
 	}
@@ -309,7 +305,7 @@ func (m exerciseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			currTyped = teaKeyMsgToEventTyped(msg)
 			m = m.deleteRuneFromTypedText()
 			// Create delete event and add it to events
-			m.events = append(m.events, NewEvent("backspace", "", currI))
+			m.events = append(m.events, util.NewEvent("backspace", "", currI))
 		case tea.KeyRunes, tea.KeySpace, tea.KeyEnter:
 			currTyped = teaKeyMsgToEventTyped(msg)
 
@@ -317,11 +313,11 @@ func (m exerciseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.startTime = time.Now()
 			}
 			if msg.Type == tea.KeyEnter {
-				m = m.addRuneToTypedText(Enter)
+				m = m.addRuneToTypedText(cnst.Enter)
 			} else {
 				m = m.addRuneToTypedText(msg.Runes[0])
 			}
-			m.events = append(m.events, NewEvent(currTyped, currExpected, currI))
+			m.events = append(m.events, util.NewEvent(currTyped, currExpected, currI))
 			if m.finished() {
 				m.endTime = time.Now()
 				return m, tea.Quit
@@ -341,54 +337,73 @@ func (m exerciseModel) exerciseNameView() string {
 }
 
 func (m exerciseModel) exerciseTextView() (s string) {
-	// typed style
-	ts := lg.NewStyle()
-	// untyped style
-	us := lg.NewStyle().Foreground(lg.Color("7"))
-	// cursor style
-	cs := lg.NewStyle().Background(lg.Color("15")).Foreground(lg.Color("0"))
-	// incorrest style
-	is := lg.NewStyle().Background(lg.Color("1")).Foreground(lg.Color("15"))
+	typedStyle := lg.NewStyle().Foreground(lg.Color("15"))
+	untypedStyle := lg.NewStyle().Foreground(lg.Color("7"))
+	vignetteStyle := lg.NewStyle().Foreground(lg.Color("8"))
+	cursorStyle := lg.NewStyle().Background(lg.Color("15")).Foreground(lg.Color("0"))
+	mistakeStyle := lg.NewStyle().Background(lg.Color("1")).Foreground(lg.Color("15"))
+	vignetteMistakeStyle := lg.NewStyle().Background(lg.Color("1")).Foreground(lg.Color("8"))
 
-	typed := m.typedText
+	cursorIndex := len(m.typedText)
+	currLineI := strings.Count(m.exercise.text[0:cursorIndex], "\n")
+	lines := strings.SplitAfter(m.exercise.text, "\n")
 
-	for i, exRune := range m.exercise.text {
-		// Has this character been typed yet?
-		if i > len(typed) {
-			s += us.Render(string(exRune))
-			continue
-		}
+	viewPortSize := int(m.windowSize)
+	if viewPortSize == 0 || viewPortSize > len(lines) {
+		viewPortSize = len(lines)
+	}
+	viewPortStart := 0
+	vignetteFirstLine := false
+	vignetteLastLine := true
 
-		// Is this the cursor?
-		if i == len(typed) {
-
-			// Is the cursor on a newline?
-			if exRune == Enter {
-				s += fmt.Sprintf("%s\n", cs.Render(Arrow))
-				continue
-			}
-
-			s += cs.Render(string(exRune))
-			continue
-		}
-
-		// There's at least a typed character at this point...
-		typedRune := rune(typed[i])
-
-		// Is it incorrect?
-		if typedRune != exRune {
-			if exRune == Enter {
-				s += fmt.Sprintf("%s\n", is.Render(Arrow))
-			} else {
-				s += is.Render(string(exRune))
-			}
-
-			continue
-		}
-
-		s += ts.Render(string(exRune))
+	maxLinesBeforeCursor := viewPortSize / 3
+	if viewPortSize < len(lines) && currLineI > maxLinesBeforeCursor {
+		viewPortStart = currLineI - maxLinesBeforeCursor
+		vignetteFirstLine = true
 	}
 
+	viewPortEnd := viewPortStart + viewPortSize // not inclusive
+	maxLinesAfterCursor := viewPortSize * 2 / 3
+	if currLineI >= len(lines)-1-maxLinesAfterCursor {
+		viewPortEnd = len(lines)
+		vignetteLastLine = false
+		viewPortStart = viewPortEnd - viewPortSize - 1
+	}
+
+	viewCharI := 0
+	for beforeLines := 0; beforeLines < viewPortStart; beforeLines++ {
+		line := lines[beforeLines]
+		viewCharI += len(line)
+	}
+	for lineI, line := range lines[viewPortStart:viewPortEnd] {
+		for _, rn := range line {
+			exerciseChar := string(rn)
+			rendered := untypedStyle.Render(exerciseChar)
+			if viewCharI < cursorIndex {
+				rendered = typedStyle.Render(exerciseChar)
+				if isMistake := string(m.typedText[viewCharI]) != exerciseChar; isMistake {
+					rendered = mistakeStyle.Render(exerciseChar)
+				}
+			}
+			if viewCharI == cursorIndex {
+				rendered = cursorStyle.Render(exerciseChar)
+				if exerciseChar == string(cnst.Enter) {
+					rendered = fmt.Sprintf("%s\n", cursorStyle.Render(cnst.Arrow))
+				}
+			}
+			if lineI == 0 && vignetteFirstLine {
+				rendered = vignetteStyle.Render(exerciseChar)
+				if isMistake := string(m.typedText[viewCharI]) != exerciseChar; isMistake {
+					rendered = vignetteMistakeStyle.Render(exerciseChar)
+				}
+			}
+			if lineI == viewPortEnd-viewPortStart-1 && vignetteLastLine {
+				rendered = vignetteStyle.Render(exerciseChar)
+			}
+			s += rendered
+			viewCharI++
+		}
+	}
 	return
 }
 
@@ -480,7 +495,7 @@ func fromArgs(cmd *cobra.Command, args []string) (exercise Exercise, err error) 
 
 		} else {
 			var sweetConfigDir string
-			sweetConfigDir, err = SweetConfigDir()
+			sweetConfigDir, err = util.SweetConfigDir()
 			if err != nil {
 				return
 			}
@@ -559,13 +574,13 @@ func fromArgs(cmd *cobra.Command, args []string) (exercise Exercise, err error) 
 
 // Converts the exercise model to a Rep, in preparation for
 // inserting it into the database.
-func exerciseModelToRep(m exerciseModel) Rep {
-	return Rep{
-		Hash:   MD5Hash(m.exercise.text),
+func exerciseModelToRep(m exerciseModel) db.Rep {
+	return db.Rep{
+		Hash:   util.MD5Hash(m.exercise.text),
 		Start:  m.events[0].Ts,
 		End:    m.events[len(m.events)-1].Ts,
 		Name:   m.exercise.name,
-		Lang:   Lang(m.exercise.name),
+		Lang:   util.Lang(m.exercise.name),
 		Wpm:    wpm(m.events),
 		Raw:    wpmRaw(m.events),
 		Dur:    duration(m.events),
@@ -576,8 +591,9 @@ func exerciseModelToRep(m exerciseModel) Rep {
 	}
 }
 
-func Run(exercise Exercise) {
+func Run(exercise Exercise, cmd *cobra.Command) {
 	exModel := NewExerciseModel(exercise)
+	exModel.windowSize, _ = cmd.Flags().GetUint("window-size")
 	teaModel, err := tea.NewProgram(exModel).Run()
 
 	if err != nil {
@@ -599,13 +615,13 @@ func Run(exercise Exercise) {
 	printExerciseResults(rep)
 
 	// open connection to db once exercise is complete
-	statsDb, err := SweetDb()
+	statsDb, err := db.SweetDb()
 	if err != nil {
 		fmt.Println(err)
 	}
 	// insert the row into the database
 	var repId int64
-	repId, err = InsertRep(statsDb, rep)
+	repId, err = db.InsertRep(statsDb, rep)
 	if err != nil {
 		fmt.Printf("Error saving rep to the database: %v\n", err)
 	} else {
