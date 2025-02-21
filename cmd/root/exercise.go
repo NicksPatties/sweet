@@ -67,21 +67,17 @@ func (m exerciseModel) renderName() string {
 }
 
 func (m exerciseModel) renderText() (s string) {
-	// typed style
-	ts := style.typedStyle
-	// untyped style
-	us := style.untypedStyle
-	// cursor style
-	cs := style.cursorStyle
-	// incorrest style
-	is := style.mistakeStyle
+	typedStyle := style.typedStyle
+	untypedStyle := style.untypedStyle
+	cursorStyle := style.cursorStyle
+	mistakeStyle := style.mistakeStyle
 
 	typed := m.typedText
 
 	for i, exRune := range m.text {
 		// Has this character been typed yet?
 		if i > len(typed) {
-			s += us.Render(string(exRune))
+			s += untypedStyle.Render(string(exRune))
 			continue
 		}
 
@@ -90,11 +86,11 @@ func (m exerciseModel) renderText() (s string) {
 
 			// Is the cursor on a newline?
 			if exRune == consts.Enter {
-				s += fmt.Sprintf("%s\n", cs.Render(consts.Arrow))
+				s += fmt.Sprintf("%s\n", cursorStyle.Render(consts.Arrow))
 				continue
 			}
 
-			s += cs.Render(string(exRune))
+			s += cursorStyle.Render(string(exRune))
 			continue
 		}
 
@@ -104,15 +100,15 @@ func (m exerciseModel) renderText() (s string) {
 		// Is it incorrect?
 		if typedRune != exRune {
 			if exRune == consts.Enter {
-				s += fmt.Sprintf("%s\n", is.Render(consts.Arrow))
+				s += fmt.Sprintf("%s\n", mistakeStyle.Render(consts.Arrow))
 			} else {
-				s += is.Render(string(exRune))
+				s += mistakeStyle.Render(string(exRune))
 			}
 
 			continue
 		}
 
-		s += ts.Render(string(exRune))
+		s += typedStyle.Render(string(exRune))
 	}
 
 	return
