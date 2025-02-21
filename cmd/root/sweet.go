@@ -23,17 +23,22 @@ import (
 	"github.com/spf13/cobra"
 )
 
+type exerciseFile struct {
+	name string
+	text string
+}
+
 var Cmd = &cobra.Command{
 	Use:     "sweet [file]",
 	Long:    fmt.Sprintf("%s.\nRuns an interactive touch typing game, and prints the results.", tagline()),
 	Args:    cobra.MaximumNArgs(1),
 	Example: examples(),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		ex, err := fromArgs(cmd, args)
+		exercise, err := fromArgs(cmd, args)
 		if err != nil {
 			return err
 		}
-		run(ex)
+		run(exercise.name, exercise.text)
 		return nil
 	},
 }
@@ -63,7 +68,7 @@ func examples() (msg string) {
 
 // Validates and returns the exercise from command line arguments.
 // If the flags are incorrect, an error is returned.
-func fromArgs(cmd *cobra.Command, args []string) (exercise exercise, err error) {
+func fromArgs(cmd *cobra.Command, args []string) (exercise exerciseFile, err error) {
 	start, _ := cmd.Flags().GetUint("start")
 	end, _ := cmd.Flags().GetUint("end")
 
@@ -193,7 +198,7 @@ func scanFileText(file *os.File, start uint, end uint) (text string) {
 	return
 }
 
-var defaultExercises = []exercise{
+var defaultExercises = []exerciseFile{
 	{
 		name: "sweet_cmd.go",
 		text: `var Cmd = &cobra.Command{

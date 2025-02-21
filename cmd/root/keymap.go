@@ -244,7 +244,7 @@ var rtfs = map[rune][]uint{
 // margin is the spacing on the left to push
 // fi is finger icon (which will actually be determined by)
 // c is character to type
-func fingerView(margin int, fIcon rune, currChar rune) (view string) {
+func renderFingers(margin int, fIcon rune, currChar rune) (view string) {
 
 	// fingers view
 	f := [][]rune{

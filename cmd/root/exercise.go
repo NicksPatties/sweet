@@ -14,19 +14,15 @@ import (
 	lg "github.com/charmbracelet/lipgloss"
 )
 
-type exercise struct {
-	// The name of the exercise. Usually the file name.
-	name string
-	// The contents of the exercise. This is what the user types
-	// during the typing game.
-	text string
-}
-
 // The exercise model used by bubbletea.
 //
 // Implements tea.Model. Stores the state of the currently running exercise.
 type exerciseModel struct {
-	exercise exercise
+	// The name of the exercise (typically a file name)
+	name string
+
+	// The text to type in the exercise (typically the file's contents)
+	text string
 
 	// The charcters that the user has typed during this exercise.
 	typedText string
@@ -58,13 +54,13 @@ var styles = struct {
 	mistakeStyle: lg.NewStyle().Background(lg.Color("1")).Foreground(lg.Color("15")),
 }
 
-func (m exerciseModel) exerciseNameView() string {
+func (m exerciseModel) renderName() string {
 	commentStyle := styles.commentStyle
 	commentPrefix := "//"
-	return commentStyle.Render(fmt.Sprintf("%s %s", commentPrefix, m.exercise.name))
+	return commentStyle.Render(fmt.Sprintf("%s %s", commentPrefix, m.name))
 }
 
-func (m exerciseModel) exerciseTextView() (s string) {
+func (m exerciseModel) renderText() (s string) {
 	// typed style
 	ts := styles.typedStyle
 	// untyped style
@@ -76,7 +72,7 @@ func (m exerciseModel) exerciseTextView() (s string) {
 
 	typed := m.typedText
 
-	for i, exRune := range m.exercise.text {
+	for i, exRune := range m.text {
 		// Has this character been typed yet?
 		if i > len(typed) {
 			s += us.Render(string(exRune))
@@ -117,7 +113,7 @@ func (m exerciseModel) exerciseTextView() (s string) {
 }
 
 func (m exerciseModel) addRuneToTypedText(rn rune) exerciseModel {
-	if len(m.typedText) == len(m.exercise.text) {
+	if len(m.typedText) == len(m.text) {
 		return m
 	}
 
@@ -127,10 +123,10 @@ func (m exerciseModel) addRuneToTypedText(rn rune) exerciseModel {
 	// then add the Enter and the following whitespace to the typedText.
 	//
 	// This provides the appearance of auto-indentation while typing.
-	if rune(m.exercise.text[idx]) == consts.Enter {
+	if rune(m.text[idx]) == consts.Enter {
 		whiteSpace := []rune{}
-		for i := len(m.typedText) + 1; i < len(m.exercise.text) && util.IsWhitespace(rune(m.exercise.text[i])); i++ {
-			whiteSpace = append(whiteSpace, rune(m.exercise.text[i]))
+		for i := len(m.typedText) + 1; i < len(m.text) && util.IsWhitespace(rune(m.text[i])); i++ {
+			whiteSpace = append(whiteSpace, rune(m.text[i]))
 		}
 		m.typedText += string(rn)
 		m.typedText += string(whiteSpace)
@@ -160,9 +156,9 @@ func (m exerciseModel) deleteRuneFromTypedText() exerciseModel {
 	l = len(m.typedText)
 	i := 1
 	// move index backwards until a non-whitespace rune is found
-	for ; util.IsWhitespace(rune(m.exercise.text[l-i])); i++ {
+	for ; util.IsWhitespace(rune(m.text[l-i])); i++ {
 	}
-	currRn = rune(m.exercise.text[l-i])
+	currRn = rune(m.text[l-i])
 	if currRn == consts.Enter {
 		// remove all runes up to and including the newline rune
 		m.typedText = typed[:l-i]
@@ -173,13 +169,13 @@ func (m exerciseModel) deleteRuneFromTypedText() exerciseModel {
 func (m exerciseModel) finished() bool {
 	// If the user hasn't reached the end of the exercise,
 	// then they're not done yet.
-	l := len(m.exercise.text)
+	l := len(m.text)
 	if len(m.typedText) < l {
 		return false
 	}
 
 	// Handle the case where the user types the last character incorrectly
-	exLast := rune(m.exercise.text[l-1])
+	exLast := rune(m.text[l-1])
 	typedLast := rune(m.typedText[l-1])
 
 	if exLast != typedLast {
@@ -192,11 +188,11 @@ func (m exerciseModel) finished() bool {
 // inserting it into the database.
 func (m exerciseModel) Rep() db.Rep {
 	return db.Rep{
-		Hash:   util.MD5Hash(m.exercise.text),
+		Hash:   util.MD5Hash(m.text),
 		Start:  m.events[0].Ts,
 		End:    m.events[len(m.events)-1].Ts,
-		Name:   m.exercise.name,
-		Lang:   util.Lang(m.exercise.name),
+		Name:   m.name,
+		Lang:   util.Lang(m.name),
 		Wpm:    wpm(m.events),
 		Raw:    wpmRaw(m.events),
 		Dur:    duration(m.events),
@@ -218,7 +214,7 @@ func (m exerciseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 	var currTyped string
 	currI := len(m.typedText)
-	currExpected := event.RuneToEventExpected(rune(m.exercise.text[currI]))
+	currExpected := event.RuneToEventExpected(rune(m.text[currI]))
 	switch keyMsg.Type {
 	case tea.KeyCtrlC:
 		m.quitEarly = true
@@ -252,16 +248,16 @@ func (m exerciseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m exerciseModel) View() (s string) {
 	if !m.finished() {
 		s += "\n"
-		s += m.exerciseNameView()
+		s += m.renderName()
 		s += "\n\n"
-		s += m.exerciseTextView()
+		s += m.renderText()
 		s += "\n"
 
 		currKeyI := len(m.typedText)
-		currKey := m.exercise.text[currKeyI]
+		currKey := m.text[currKeyI]
 		s += qwerty.render(string(currKey))
 		s += "\n"
-		s += fingerView(qwerty.fingersMargin, '*', rune(currKey))
+		s += renderFingers(qwerty.fingersMargin, '*', rune(currKey))
 	}
 	return
 }
@@ -275,9 +271,10 @@ func (m exerciseModel) View() (s string) {
 //
 // 3. If the exercise is completed, gather the results, print them, and
 // save them to the database
-func run(exercise exercise) {
+func run(name string, text string) {
 	newModel := exerciseModel{
-		exercise:  exercise,
+		name:      name,
+		text:      text,
 		typedText: "",
 		quitEarly: false,
 		startTime: time.Time{},
