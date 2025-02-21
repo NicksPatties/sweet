@@ -5,13 +5,12 @@ import (
 	"os"
 	"time"
 
-	c "github.com/NicksPatties/sweet/constants"
+	consts "github.com/NicksPatties/sweet/constants"
 	"github.com/NicksPatties/sweet/db"
 	"github.com/NicksPatties/sweet/event"
 	"github.com/NicksPatties/sweet/util"
 
 	tea "github.com/charmbracelet/bubbletea"
-
 	lg "github.com/charmbracelet/lipgloss"
 )
 
@@ -38,26 +37,42 @@ type exerciseModel struct {
 	// The time the user completed the exercise.
 	endTime time.Time
 
+	// True if the user quit before the exercise was complete
 	quitEarly bool
 
+	// The user's keystrokes during the exercise
 	events []event.Event
 }
 
+var styles = struct {
+	commentStyle lg.Style
+	untypedStyle lg.Style
+	cursorStyle  lg.Style
+	typedStyle   lg.Style
+	mistakeStyle lg.Style
+}{
+	commentStyle: lg.NewStyle().Foreground(lg.Color("7")).Italic(true),
+	untypedStyle: lg.NewStyle().Foreground(lg.Color("7")),
+	cursorStyle:  lg.NewStyle().Background(lg.Color("15")).Foreground(lg.Color("0")),
+	typedStyle:   lg.NewStyle(),
+	mistakeStyle: lg.NewStyle().Background(lg.Color("1")).Foreground(lg.Color("15")),
+}
+
 func (m exerciseModel) exerciseNameView() string {
-	commentStyle := lg.NewStyle().Foreground(lg.Color("7")).Italic(true)
+	commentStyle := styles.commentStyle
 	commentPrefix := "//"
 	return commentStyle.Render(fmt.Sprintf("%s %s", commentPrefix, m.exercise.name))
 }
 
 func (m exerciseModel) exerciseTextView() (s string) {
 	// typed style
-	ts := lg.NewStyle()
+	ts := styles.typedStyle
 	// untyped style
-	us := lg.NewStyle().Foreground(lg.Color("7"))
+	us := styles.untypedStyle
 	// cursor style
-	cs := lg.NewStyle().Background(lg.Color("15")).Foreground(lg.Color("0"))
+	cs := styles.cursorStyle
 	// incorrest style
-	is := lg.NewStyle().Background(lg.Color("1")).Foreground(lg.Color("15"))
+	is := styles.mistakeStyle
 
 	typed := m.typedText
 
@@ -72,8 +87,8 @@ func (m exerciseModel) exerciseTextView() (s string) {
 		if i == len(typed) {
 
 			// Is the cursor on a newline?
-			if exRune == c.Enter {
-				s += fmt.Sprintf("%s\n", cs.Render(c.Arrow))
+			if exRune == consts.Enter {
+				s += fmt.Sprintf("%s\n", cs.Render(consts.Arrow))
 				continue
 			}
 
@@ -86,8 +101,8 @@ func (m exerciseModel) exerciseTextView() (s string) {
 
 		// Is it incorrect?
 		if typedRune != exRune {
-			if exRune == c.Enter {
-				s += fmt.Sprintf("%s\n", is.Render(c.Arrow))
+			if exRune == consts.Enter {
+				s += fmt.Sprintf("%s\n", is.Render(consts.Arrow))
 			} else {
 				s += is.Render(string(exRune))
 			}
@@ -112,45 +127,45 @@ func (m exerciseModel) addRuneToTypedText(rn rune) exerciseModel {
 	// then add the Enter and the following whitespace to the typedText.
 	//
 	// This provides the appearance of auto-indentation while typing.
-	if rune(m.exercise.text[idx]) == c.Enter {
+	if rune(m.exercise.text[idx]) == consts.Enter {
 		whiteSpace := []rune{}
 		for i := len(m.typedText) + 1; i < len(m.exercise.text) && util.IsWhitespace(rune(m.exercise.text[i])); i++ {
 			whiteSpace = append(whiteSpace, rune(m.exercise.text[i]))
 		}
 		m.typedText += string(rn)
 		m.typedText += string(whiteSpace)
-	} else {
-		m.typedText += string(rn)
+		return m
 	}
+	m.typedText += string(rn)
 	return m
 }
 
 func (m exerciseModel) deleteRuneFromTypedText() exerciseModel {
-	tex := m.typedText
-	l := len(tex)
+	typed := m.typedText
+	l := len(typed)
 
 	if l <= 0 {
-		m.typedText = tex
+		m.typedText = typed
 		return m
 	}
 
-	currRn := rune(tex[l-1])
+	currRn := rune(typed[l-1])
 
 	if !util.IsWhitespace(currRn) {
-		m.typedText = tex[:l-1]
+		m.typedText = typed[:l-1]
 		return m
 	}
 
-	m.typedText = tex[:l-1]
+	m.typedText = typed[:l-1]
 	l = len(m.typedText)
 	i := 1
 	// move index backwards until a non-whitespace rune is found
 	for ; util.IsWhitespace(rune(m.exercise.text[l-i])); i++ {
 	}
 	currRn = rune(m.exercise.text[l-i])
-	if currRn == c.Enter {
+	if currRn == consts.Enter {
 		// remove all runes up to and including the newline rune
-		m.typedText = tex[:l-i]
+		m.typedText = typed[:l-i]
 	}
 	return m
 }
@@ -175,7 +190,7 @@ func (m exerciseModel) finished() bool {
 
 // Converts the exercise model to a Rep, in preparation for
 // inserting it into the database.
-func exerciseModelToRep(m exerciseModel) db.Rep {
+func (m exerciseModel) Rep() db.Rep {
 	return db.Rep{
 		Hash:   util.MD5Hash(m.exercise.text),
 		Start:  m.events[0].Ts,
@@ -191,41 +206,42 @@ func exerciseModelToRep(m exerciseModel) db.Rep {
 		Events: m.events,
 	}
 }
+
 func (m exerciseModel) Init() tea.Cmd {
 	return nil
 }
 
 func (m exerciseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		var currTyped string
-		currI := len(m.typedText)
-		currExpected := event.RuneToEventExpected(rune(m.exercise.text[currI]))
-		switch msg.Type {
-		case tea.KeyCtrlC:
-			m.quitEarly = true
+	keyMsg, ok := msg.(tea.KeyMsg)
+	if !ok {
+		return m, nil
+	}
+	var currTyped string
+	currI := len(m.typedText)
+	currExpected := event.RuneToEventExpected(rune(m.exercise.text[currI]))
+	switch keyMsg.Type {
+	case tea.KeyCtrlC:
+		m.quitEarly = true
+		return m, tea.Quit
+	case tea.KeyBackspace:
+		currTyped = event.TeaKeyMsgToEventTyped(keyMsg)
+		m = m.deleteRuneFromTypedText()
+		// Create delete event and add it to events
+		m.events = append(m.events, event.NewEvent("backspace", "", currI))
+	case tea.KeyRunes, tea.KeySpace, tea.KeyEnter:
+		currTyped = event.TeaKeyMsgToEventTyped(keyMsg)
+		if m.startTime.IsZero() {
+			m.startTime = time.Now()
+		}
+		if keyMsg.Type == tea.KeyEnter {
+			m = m.addRuneToTypedText(consts.Enter)
+		} else {
+			m = m.addRuneToTypedText(keyMsg.Runes[0])
+		}
+		m.events = append(m.events, event.NewEvent(currTyped, currExpected, currI))
+		if m.finished() {
+			m.endTime = time.Now()
 			return m, tea.Quit
-		case tea.KeyBackspace:
-			currTyped = event.TeaKeyMsgToEventTyped(msg)
-			m = m.deleteRuneFromTypedText()
-			// Create delete event and add it to events
-			m.events = append(m.events, event.NewEvent("backspace", "", currI))
-		case tea.KeyRunes, tea.KeySpace, tea.KeyEnter:
-			currTyped = event.TeaKeyMsgToEventTyped(msg)
-
-			if m.startTime.IsZero() {
-				m.startTime = time.Now()
-			}
-			if msg.Type == tea.KeyEnter {
-				m = m.addRuneToTypedText(c.Enter)
-			} else {
-				m = m.addRuneToTypedText(msg.Runes[0])
-			}
-			m.events = append(m.events, event.NewEvent(currTyped, currExpected, currI))
-			if m.finished() {
-				m.endTime = time.Now()
-				return m, tea.Quit
-			}
 		}
 	}
 	return m, nil
@@ -260,14 +276,15 @@ func (m exerciseModel) View() (s string) {
 // 3. If the exercise is completed, gather the results, print them, and
 // save them to the database
 func run(exercise exercise) {
-	teaModel, err := tea.NewProgram(exerciseModel{
+	newModel := exerciseModel{
 		exercise:  exercise,
 		typedText: "",
 		quitEarly: false,
 		startTime: time.Time{},
 		endTime:   time.Time{},
 		events:    []event.Event{},
-	}).Run()
+	}
+	teaModel, err := tea.NewProgram(newModel).Run()
 	if err != nil {
 		fmt.Printf("Error running typing exercise: %v\n", err)
 		os.Exit(1)
@@ -281,7 +298,7 @@ func run(exercise exercise) {
 		os.Exit(0)
 	}
 
-	rep := exerciseModelToRep(exModel)
+	rep := exModel.Rep()
 
 	printExerciseResults(rep)
 

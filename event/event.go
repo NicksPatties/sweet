@@ -57,8 +57,10 @@ func ParseEvent(line string) (e Event) {
 	return
 }
 
+type Events []Event
+
 // Same as above, but for a multi-line list of events.
-func ParseEvents(list string) (events []Event) {
+func ParseEvents(list string) (events Events) {
 	for _, line := range strings.Split(list, "\n") {
 		if line != "" {
 			events = append(events, ParseEvent(line))
@@ -68,7 +70,7 @@ func ParseEvents(list string) (events []Event) {
 }
 
 // Returns a string of an array of events.
-func EventsString(events []Event) (s string) {
+func (events Events) String() (s string) {
 	s += fmt.Sprintln("[")
 	for _, e := range events {
 		s += fmt.Sprintf("  %s\n", e)

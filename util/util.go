@@ -8,7 +8,7 @@ import (
 	"path"
 	"strings"
 
-	c "github.com/NicksPatties/sweet/constants"
+	consts "github.com/NicksPatties/sweet/constants"
 )
 
 // Converts a string to an md5 hash. Used to
@@ -62,5 +62,5 @@ func FilterFileNames(fileNames []string, language string) (found []string) {
 }
 
 func IsWhitespace(rn rune) bool {
-	return rn == c.Tab || rn == c.Space
+	return rn == consts.Tab || rn == consts.Space
 }

@@ -33,7 +33,7 @@ type Rep struct {
 	Acc    float64
 	Miss   int
 	Errs   int
-	Events []event.Event // one string is one event
+	Events event.Events // one string is one event
 }
 
 func (r Rep) String() (s string) {
@@ -84,7 +84,7 @@ func (r Rep) ColumnString(col string) string {
 	case constants.UNCORRECTED_ERRORS:
 		return strconv.Itoa(r.Errs)
 	case constants.EVENTS:
-		return event.EventsString(r.Events)
+		return fmt.Sprintf("%s", r.Events)
 	default:
 		return ""
 	}
