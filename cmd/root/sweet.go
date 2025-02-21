@@ -28,17 +28,51 @@ type exerciseFile struct {
 	text string
 }
 
+// Controls the appearance of the exercise performed
+// with this command.
+type viewOptions struct {
+	// Colors and styles for the exercise text.
+	styles styles
+
+	// The number of lines that are visible
+	// in the exericse. Default value is 0, meaning
+	// show the entire exercise.
+	windowSize uint
+}
+
+type styles struct {
+	commentStyle lg.Style
+	untypedStyle lg.Style
+	cursorStyle  lg.Style
+	typedStyle   lg.Style
+	mistakeStyle lg.Style
+}
+
+func defaultStyles() styles {
+	return styles{
+		commentStyle: lg.NewStyle().Foreground(lg.Color("7")).Italic(true),
+		untypedStyle: lg.NewStyle().Foreground(lg.Color("7")),
+		cursorStyle:  lg.NewStyle().Background(lg.Color("15")).Foreground(lg.Color("0")),
+		typedStyle:   lg.NewStyle(),
+		mistakeStyle: lg.NewStyle().Background(lg.Color("1")).Foreground(lg.Color("15")),
+	}
+}
+
 var Cmd = &cobra.Command{
 	Use:     "sweet [file]",
 	Long:    fmt.Sprintf("%s.\nRuns an interactive touch typing game, and prints the results.", tagline()),
 	Args:    cobra.MaximumNArgs(1),
 	Example: examples(),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		exercise, err := fromArgs(cmd, args)
+		exercise, err := exerciseFileFromArgs(cmd, args)
 		if err != nil {
 			return err
 		}
-		run(exercise.name, exercise.text)
+		viewOptions, err := viewOptionsFromArgs(cmd, exercise.text)
+		if err != nil {
+			return err
+		}
+		run(exercise.name, exercise.text, viewOptions)
 		return nil
 	},
 }
@@ -68,7 +102,7 @@ func examples() (msg string) {
 
 // Validates and returns the exercise from command line arguments.
 // If the flags are incorrect, an error is returned.
-func fromArgs(cmd *cobra.Command, args []string) (exercise exerciseFile, err error) {
+func exerciseFileFromArgs(cmd *cobra.Command, args []string) (exercise exerciseFile, err error) {
 	start, _ := cmd.Flags().GetUint("start")
 	end, _ := cmd.Flags().GetUint("end")
 
@@ -253,6 +287,21 @@ func addDefaultExercises(dir string) (files []os.DirEntry) {
 	return
 }
 
+func viewOptionsFromArgs(cmd *cobra.Command, exerciseText string) (*viewOptions, error) {
+	windowSize, err := cmd.Flags().GetUint("window-size")
+	if err != nil {
+		return nil, err
+	}
+	numLines := uint(len(util.Lines(exerciseText)))
+	if windowSize >= numLines {
+		windowSize = 0
+	}
+	return &viewOptions{
+		styles:     defaultStyles(),
+		windowSize: windowSize,
+	}, nil
+}
+
 func init() {
 	setRootCmdFlags(Cmd)
 	Cmd.CompletionOptions.DisableDefaultCmd = true
@@ -273,5 +322,6 @@ func setRootCmdFlags(cmd *cobra.Command) {
 	cmd.Flags().StringP("language", "l", "", "select a language by file extension")
 	cmd.Flags().UintP("start", "s", 0, "start exercise at this line")
 	cmd.Flags().UintP("end", "e", math.MaxUint, "end exercise at this line")
+	cmd.Flags().UintP("window-size", "w", 0, "set the number of visible lines for the exercise")
 	cmd.Flags().SortFlags = false
 }

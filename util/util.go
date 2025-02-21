@@ -64,3 +64,10 @@ func FilterFileNames(fileNames []string, language string) (found []string) {
 func IsWhitespace(rn rune) bool {
 	return rn == consts.Tab || rn == consts.Space
 }
+
+// Splits up a string of text by newlines.
+// The newlines are preserved, since they'll be used
+// in rendering, too.
+func Lines(text string) []string {
+	return strings.SplitAfter(text, "\n")
+}
