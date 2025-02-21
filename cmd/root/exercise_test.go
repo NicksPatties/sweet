@@ -123,7 +123,6 @@ func Test_renderText_cursorPosition(t *testing.T) {
 	if got != want {
 		t.Fatalf("got\n%s\nwant\n%s", got, want)
 	}
-
 }
 
 func Test_addRuneToTypedText(t *testing.T) {
