@@ -8,15 +8,21 @@ import (
 	"github.com/NicksPatties/sweet/event"
 )
 
+var mockViewOptions = &viewOptions{
+	styles:     defaultStyles(),
+	windowSize: 0,
+}
+
 func Test_renderName(t *testing.T) {
 	testModel := exerciseModel{
-		name:      "exercise.go",
-		text:      "",
-		typedText: "",
-		startTime: time.Time{},
-		endTime:   time.Time{},
-		quitEarly: false,
-		events:    []event.Event{},
+		name:        "exercise.go",
+		text:        "",
+		typedText:   "",
+		startTime:   time.Time{},
+		endTime:     time.Time{},
+		quitEarly:   false,
+		events:      []event.Event{},
+		viewOptions: mockViewOptions,
 	}
 	want := "// exercise.go"
 	got := testModel.renderName()
@@ -63,13 +69,14 @@ func Test_renderText(t *testing.T) {
 
 	for _, test := range tt {
 		testModel := exerciseModel{
-			name:      "",
-			text:      test.text,
-			typedText: test.typed,
-			startTime: time.Time{},
-			endTime:   time.Time{},
-			quitEarly: false,
-			events:    []event.Event{},
+			name:        "",
+			text:        test.text,
+			typedText:   test.typed,
+			startTime:   time.Time{},
+			endTime:     time.Time{},
+			quitEarly:   false,
+			events:      []event.Event{},
+			viewOptions: mockViewOptions,
 		}
 		got := testModel.renderText()
 		if got != test.want {
@@ -115,13 +122,14 @@ func Test_addRuneToTypedText(t *testing.T) {
 
 	for _, test := range tt {
 		testModel := exerciseModel{
-			name:      "",
-			text:      test.text,
-			typedText: test.typed,
-			startTime: time.Time{},
-			endTime:   time.Time{},
-			quitEarly: false,
-			events:    []event.Event{},
+			name:        "",
+			text:        test.text,
+			typedText:   test.typed,
+			startTime:   time.Time{},
+			endTime:     time.Time{},
+			quitEarly:   false,
+			events:      []event.Event{},
+			viewOptions: mockViewOptions,
 		}
 		testModel = testModel.addRuneToTypedText(test.typedRune)
 		if testModel.typedText != test.want {
@@ -161,13 +169,14 @@ func Test_deleteRuneFromTypedText(t *testing.T) {
 
 	for _, test := range tt {
 		testModel := exerciseModel{
-			name:      "",
-			text:      test.text,
-			typedText: test.typed,
-			startTime: time.Time{},
-			endTime:   time.Time{},
-			quitEarly: false,
-			events:    []event.Event{},
+			name:        "",
+			text:        test.text,
+			typedText:   test.typed,
+			startTime:   time.Time{},
+			endTime:     time.Time{},
+			quitEarly:   false,
+			events:      []event.Event{},
+			viewOptions: mockViewOptions,
 		}
 		testModel = testModel.deleteRuneFromTypedText()
 		if testModel.typedText != test.want {
@@ -205,13 +214,14 @@ func Test_finished(t *testing.T) {
 
 	for _, test := range tt {
 		testModel := exerciseModel{
-			name:      "",
-			text:      test.text,
-			typedText: test.typed,
-			startTime: time.Time{},
-			endTime:   time.Time{},
-			quitEarly: false,
-			events:    []event.Event{},
+			name:        "",
+			text:        test.text,
+			typedText:   test.typed,
+			startTime:   time.Time{},
+			endTime:     time.Time{},
+			quitEarly:   false,
+			events:      []event.Event{},
+			viewOptions: mockViewOptions,
 		}
 
 		want := test.want

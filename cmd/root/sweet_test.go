@@ -80,16 +80,16 @@ func fileToExercise(t *testing.T, fileName string) (exercise exerciseFile) {
 	return
 }
 
-type fromArgsTestCase struct {
+type fromArgsExerciseFileTestCase struct {
 	args  []string
 	check func(exerciseFile, error)
 }
 
-var mockCmd = func(tc fromArgsTestCase) *cobra.Command {
+var mockExerciseFileCmd = func(tc fromArgsExerciseFileTestCase) *cobra.Command {
 	cmd := &cobra.Command{
 		Args: cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			got, gotErr := fromArgs(cmd, args)
+			got, gotErr := exerciseFileFromArgs(cmd, args)
 			tc.check(got, gotErr)
 		},
 	}
@@ -98,7 +98,7 @@ var mockCmd = func(tc fromArgsTestCase) *cobra.Command {
 	return cmd
 }
 
-func TestFromArgs(t *testing.T) {
+func Test_exerciseFileFromArgs(t *testing.T) {
 
 	// Test environment setup
 	tmpExercisesDir := t.TempDir()
@@ -123,7 +123,7 @@ func TestFromArgs(t *testing.T) {
 	}
 	createExerciseFiles(t, tmpExercisesDir, testExercises)
 
-	testCases := []fromArgsTestCase{
+	testCases := []fromArgsExerciseFileTestCase{
 		{
 			args: []string{},
 			check: func(got exerciseFile, gotErr error) {
@@ -307,14 +307,14 @@ func TestFromArgs(t *testing.T) {
 	}
 
 	for i, tc := range testCases {
-		cmd := mockCmd(tc)
+		cmd := mockExerciseFileCmd(tc)
 		if err := cmd.Execute(); err != nil {
 			t.Fatalf("mock command no. %d failed to run: %s", i, err)
 		}
 	}
 }
 
-func TestFromArgsWithStdin(t *testing.T) {
+func Test_exerciseFileFromArgs_withStdin(t *testing.T) {
 	// Test environment setup
 	tmpExercisesDir := t.TempDir()
 	t.Setenv("SWEET_EXERCISES_DIR", tmpExercisesDir)
@@ -350,7 +350,7 @@ func TestFromArgsWithStdin(t *testing.T) {
 		os.Stdin = oldStdin
 	}()
 
-	tc := fromArgsTestCase{
+	tc := fromArgsExerciseFileTestCase{
 		args: []string{"-"},
 		check: func(got exerciseFile, gotErr error) {
 			name := "from stdin"
@@ -367,13 +367,13 @@ func TestFromArgsWithStdin(t *testing.T) {
 		},
 	}
 
-	cmd := mockCmd(tc)
+	cmd := mockExerciseFileCmd(tc)
 	if err := cmd.Execute(); err != nil {
 		t.Fatalf("mock command failed to run: %s", err)
 	}
 }
 
-func TestFromArgsWithEmptyExerciseFiles(t *testing.T) {
+func Test_exerciseFileFromArgs_withEmptyExerciseFiles(t *testing.T) {
 	type testCase struct {
 		testExercises []exerciseFile
 		args          []string
@@ -431,10 +431,8 @@ func TestFromArgsWithEmptyExerciseFiles(t *testing.T) {
 					t.Fatalf("%s wanted error, got nil\n", name)
 				}
 				if gotErr.Error() != wantErrMsg {
-
 					t.Fatalf("got error msg:\n\t%s\nwanted error msg\n\t%s", gotErr.Error(), wantErrMsg)
 				}
-
 			},
 		},
 		{
@@ -463,14 +461,99 @@ func TestFromArgsWithEmptyExerciseFiles(t *testing.T) {
 		testExercises := tc.testExercises
 		createExerciseFiles(t, tmpExercisesDir, testExercises)
 
-		fromArgsTC := fromArgsTestCase{
+		fromArgsTC := fromArgsExerciseFileTestCase{
 			args:  tc.args,
 			check: tc.check,
 		}
-		cmd := mockCmd(fromArgsTC)
+		cmd := mockExerciseFileCmd(fromArgsTC)
 		if err := cmd.Execute(); err != nil {
 			t.Fatalf("mock command failed to run: %s", err)
 		}
 	}
 
+}
+
+type fromArgsViewOptionsTestCase struct {
+	args         []string
+	exerciseText string
+	check        func(*viewOptions, error)
+}
+
+var mockViewOptionsCmd = func(tc fromArgsViewOptionsTestCase) *cobra.Command {
+	cmd := &cobra.Command{
+		Args: cobra.MaximumNArgs(1),
+		Run: func(cmd *cobra.Command, _ []string) {
+			got, gotErr := viewOptionsFromArgs(cmd, tc.exerciseText)
+			tc.check(got, gotErr)
+		},
+	}
+	setRootCmdFlags(cmd)
+	cmd.SetArgs(tc.args)
+	return cmd
+}
+
+func Test_viewOptionsFromArgs(t *testing.T) {
+	testCases := []fromArgsViewOptionsTestCase{
+		{
+			args:         []string{""},
+			exerciseText: "an exercise",
+			check: func(got *viewOptions, gotErr error) {
+				name := "default window size should be 0"
+				want := uint(0)
+				if gotErr != nil {
+					t.Fatalf("%s wanted no error, got %s\n", name, gotErr)
+				}
+				if got.windowSize != want {
+					t.Fatalf(
+						"got window size %d, wanted window size %d",
+						got.windowSize,
+						want,
+					)
+				}
+			},
+		},
+		{
+			args:         []string{"--window-size", "3"},
+			exerciseText: "one\ntwo\nthree\nfour\nfive",
+			check: func(got *viewOptions, gotErr error) {
+				name := "passing window size of 3"
+				want := uint(3)
+				if gotErr != nil {
+					t.Fatalf("%s wanted no error, got %s\n", name, gotErr)
+				}
+				if got.windowSize != want {
+					t.Fatalf(
+						"got window size %d, wanted window size %d",
+						got.windowSize,
+						want,
+					)
+				}
+			},
+		},
+		{
+			args:         []string{"--window-size", "5"},
+			exerciseText: "one\ntwo\nthree\nfour\nfive",
+			check: func(got *viewOptions, gotErr error) {
+				name := "window size greater or equal to num lines returns 0"
+				want := uint(0)
+				if gotErr != nil {
+					t.Fatalf("%s wanted no error, got %s\n", name, gotErr)
+				}
+				if got.windowSize != want {
+					t.Fatalf(
+						"got window size %d, wanted window size %d",
+						got.windowSize,
+						want,
+					)
+				}
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		cmd := mockViewOptionsCmd(tc)
+		if err := cmd.Execute(); err != nil {
+			t.Fatalf("mock command failed to run: %s", err)
+		}
+	}
 }

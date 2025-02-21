@@ -11,7 +11,6 @@ import (
 	"github.com/NicksPatties/sweet/util"
 
 	tea "github.com/charmbracelet/bubbletea"
-	lg "github.com/charmbracelet/lipgloss"
 )
 
 // The exercise model used by bubbletea.
@@ -39,39 +38,21 @@ type exerciseModel struct {
 	// The user's keystrokes during the exercise
 	events []event.Event
 
-	// Styles
-	styles styles
-}
-
-type styles struct {
-	commentStyle lg.Style
-	untypedStyle lg.Style
-	cursorStyle  lg.Style
-	typedStyle   lg.Style
-	mistakeStyle lg.Style
-}
-
-func defaultStyles() styles {
-	return styles{
-		commentStyle: lg.NewStyle().Foreground(lg.Color("7")).Italic(true),
-		untypedStyle: lg.NewStyle().Foreground(lg.Color("7")),
-		cursorStyle:  lg.NewStyle().Background(lg.Color("15")).Foreground(lg.Color("0")),
-		typedStyle:   lg.NewStyle(),
-		mistakeStyle: lg.NewStyle().Background(lg.Color("1")).Foreground(lg.Color("15")),
-	}
+	// various options to handle
+	viewOptions *viewOptions
 }
 
 func (m exerciseModel) renderName() string {
-	commentStyle := m.styles.commentStyle
+	commentStyle := m.viewOptions.styles.commentStyle
 	commentPrefix := "//"
 	return commentStyle.Render(fmt.Sprintf("%s %s", commentPrefix, m.name))
 }
 
 func (m exerciseModel) renderText() (s string) {
-	typedStyle := m.styles.typedStyle
-	untypedStyle := m.styles.untypedStyle
-	cursorStyle := m.styles.cursorStyle
-	mistakeStyle := m.styles.mistakeStyle
+	typedStyle := m.viewOptions.styles.typedStyle
+	untypedStyle := m.viewOptions.styles.untypedStyle
+	cursorStyle := m.viewOptions.styles.cursorStyle
+	mistakeStyle := m.viewOptions.styles.mistakeStyle
 
 	typed := m.typedText
 
@@ -274,16 +255,16 @@ func (m exerciseModel) View() (s string) {
 //
 // 3. If the exercise is completed, gather the results, print them, and
 // save them to the database
-func run(name string, text string) {
+func run(name string, text string, options *viewOptions) {
 	newModel := exerciseModel{
-		name:      name,
-		text:      text,
-		typedText: "",
-		quitEarly: false,
-		startTime: time.Time{},
-		endTime:   time.Time{},
-		events:    []event.Event{},
-		styles:    defaultStyles(),
+		name:        name,
+		text:        text,
+		typedText:   "",
+		quitEarly:   false,
+		startTime:   time.Time{},
+		endTime:     time.Time{},
+		events:      []event.Event{},
+		viewOptions: options,
 	}
 	teaModel, err := tea.NewProgram(newModel).Run()
 	if err != nil {
