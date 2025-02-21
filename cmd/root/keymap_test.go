@@ -34,7 +34,7 @@ func TestFingerView(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		// just passing a character because
-		got := fingerView(tc.margin, tc.icon, 'a')
+		got := renderFingers(tc.margin, tc.icon, 'a')
 		if got != tc.want {
 			t.Errorf("%s:\ngot:\n%s\n\nwant:\n%s", tc.name, got, tc.want)
 		}

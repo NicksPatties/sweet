@@ -7,17 +7,15 @@ import (
 	"os"
 	"path"
 	"testing"
-	"time"
 
-	"github.com/NicksPatties/sweet/util"
 	"github.com/spf13/cobra"
 )
 
-func (got Exercise) matches(want Exercise) bool {
+func (got exerciseFile) matches(want exerciseFile) bool {
 	return got.name == want.name && got.text == want.text
 }
 
-func (got Exercise) matchesOneOf(wants []Exercise) bool {
+func (got exerciseFile) matchesOneOf(wants []exerciseFile) bool {
 	for _, want := range wants {
 		if got.matches(want) {
 			return true
@@ -28,7 +26,7 @@ func (got Exercise) matchesOneOf(wants []Exercise) bool {
 
 // Returns the name, text, and their arrays of bytes.
 // Useful when printing out exercises when a test fails.
-func (ex Exercise) details() (m string) {
+func (ex exerciseFile) details() (m string) {
 	m = fmt.Sprintf("\tname %s\n", ex.name)
 	m += fmt.Sprintf("\tname bytes %v\n", []byte(ex.name))
 	m += fmt.Sprintf("\ttext %s\n", ex.text)
@@ -50,7 +48,7 @@ func printExerciseFiles(dir string) (m string) {
 	for _, file := range files {
 		name := file.Name()
 		textBytes, _ := os.ReadFile(path.Join(dir, file.Name()))
-		m += Exercise{
+		m += exerciseFile{
 			name: name,
 			text: string(textBytes),
 		}.details()
@@ -58,7 +56,7 @@ func printExerciseFiles(dir string) (m string) {
 	return
 }
 
-func createExerciseFiles(t *testing.T, dir string, exercises []Exercise) {
+func createExerciseFiles(t *testing.T, dir string, exercises []exerciseFile) {
 	for _, ex := range exercises {
 		tmpFile, err := os.Create(path.Join(dir, ex.name))
 		if err != nil {
@@ -72,7 +70,7 @@ func createExerciseFiles(t *testing.T, dir string, exercises []Exercise) {
 	}
 }
 
-func fileToExercise(t *testing.T, fileName string) (exercise Exercise) {
+func fileToExercise(t *testing.T, fileName string) (exercise exerciseFile) {
 	exercise.name = path.Base(fileName)
 	text, err := os.ReadFile(fileName)
 	if err != nil {
@@ -84,7 +82,7 @@ func fileToExercise(t *testing.T, fileName string) (exercise Exercise) {
 
 type fromArgsTestCase struct {
 	args  []string
-	check func(Exercise, error)
+	check func(exerciseFile, error)
 }
 
 var mockCmd = func(tc fromArgsTestCase) *cobra.Command {
@@ -105,7 +103,7 @@ func TestFromArgs(t *testing.T) {
 	// Test environment setup
 	tmpExercisesDir := t.TempDir()
 	t.Setenv("SWEET_EXERCISES_DIR", tmpExercisesDir)
-	testExercises := []Exercise{
+	testExercises := []exerciseFile{
 		{
 			name: "test.txt",
 			text: "the test\n",
@@ -128,7 +126,7 @@ func TestFromArgs(t *testing.T) {
 	testCases := []fromArgsTestCase{
 		{
 			args: []string{},
-			check: func(got Exercise, gotErr error) {
+			check: func(got exerciseFile, gotErr error) {
 				name := "random exercise, no args"
 				if gotErr != nil {
 					t.Fatalf("%s wanted no error, got %s\n", name, gotErr)
@@ -143,7 +141,7 @@ func TestFromArgs(t *testing.T) {
 		},
 		{
 			args: []string{path.Join(tmpExercisesDir, testExercises[0].name)},
-			check: func(got Exercise, gotErr error) {
+			check: func(got exerciseFile, gotErr error) {
 				name := "specific exercise, no args"
 				want := testExercises[0]
 				if gotErr != nil {
@@ -163,9 +161,9 @@ func TestFromArgs(t *testing.T) {
 				"-s",
 				"2",
 			},
-			check: func(got Exercise, gotErr error) {
+			check: func(got exerciseFile, gotErr error) {
 				name := "specific exercise, start flag"
-				want := Exercise{
+				want := exerciseFile{
 					name: testExercises[3].name,
 					text: "has three lines\nof text.\n",
 				}
@@ -186,9 +184,9 @@ func TestFromArgs(t *testing.T) {
 				"-e",
 				"2",
 			},
-			check: func(got Exercise, gotErr error) {
+			check: func(got exerciseFile, gotErr error) {
 				name := "specific exercise, end flag"
-				want := Exercise{
+				want := exerciseFile{
 					name: testExercises[3].name,
 					text: "this file\nhas three lines\n",
 				}
@@ -212,9 +210,9 @@ func TestFromArgs(t *testing.T) {
 				"-e",
 				"2",
 			},
-			check: func(got Exercise, gotErr error) {
+			check: func(got exerciseFile, gotErr error) {
 				name := "specific exercise, start and end flag"
-				want := Exercise{
+				want := exerciseFile{
 					name: testExercises[3].name,
 					text: "has three lines\n",
 				}
@@ -238,7 +236,7 @@ func TestFromArgs(t *testing.T) {
 				"-e",
 				"1",
 			},
-			check: func(got Exercise, gotErr error) {
+			check: func(got exerciseFile, gotErr error) {
 				wantErr := errors.New("start flag 2 cannot be greater than end flag 1")
 				name := "specific exercise, start and end flag, incorrect output"
 				if gotErr == nil {
@@ -256,7 +254,7 @@ func TestFromArgs(t *testing.T) {
 				"-e",
 				"2",
 			},
-			check: func(got Exercise, gotErr error) {
+			check: func(got exerciseFile, gotErr error) {
 				wantErr := errors.New("start and end should not be assigned for random exercise")
 				name := "random exercise, start and end flag"
 				if gotErr == nil {
@@ -274,7 +272,7 @@ func TestFromArgs(t *testing.T) {
 				"-l",
 				"go",
 			},
-			check: func(got Exercise, gotErr error) {
+			check: func(got exerciseFile, gotErr error) {
 				name := "random exercise, with language"
 				want := testExercises[2]
 				if gotErr != nil {
@@ -294,7 +292,7 @@ func TestFromArgs(t *testing.T) {
 				"-l",
 				"ts",
 			},
-			check: func(got Exercise, gotErr error) {
+			check: func(got exerciseFile, gotErr error) {
 				name := "random exercise, with language, but not available"
 				wantErr := errors.New("failed to find exercise matching language ts")
 				if gotErr == nil {
@@ -332,7 +330,7 @@ func TestFromArgsWithStdin(t *testing.T) {
 	}()
 
 	wantText := "Hello from stdin!\n"
-	want := Exercise{
+	want := exerciseFile{
 		name: path.Join(".", tmp.Name()),
 		text: wantText,
 	}
@@ -354,7 +352,7 @@ func TestFromArgsWithStdin(t *testing.T) {
 
 	tc := fromArgsTestCase{
 		args: []string{"-"},
-		check: func(got Exercise, gotErr error) {
+		check: func(got exerciseFile, gotErr error) {
 			name := "from stdin"
 			if gotErr != nil {
 				t.Fatalf("%s wanted no error, got %s\n", name, gotErr)
@@ -377,14 +375,14 @@ func TestFromArgsWithStdin(t *testing.T) {
 
 func TestFromArgsWithEmptyExerciseFiles(t *testing.T) {
 	type testCase struct {
-		testExercises []Exercise
+		testExercises []exerciseFile
 		args          []string
-		check         func(got Exercise, gotErr error)
+		check         func(got exerciseFile, gotErr error)
 	}
 
 	testCases := []testCase{
 		{
-			testExercises: []Exercise{
+			testExercises: []exerciseFile{
 				{
 					name: "empty.txt",
 					text: "",
@@ -395,9 +393,9 @@ func TestFromArgsWithEmptyExerciseFiles(t *testing.T) {
 				},
 			},
 			args: []string{},
-			check: func(got Exercise, gotErr error) {
+			check: func(got exerciseFile, gotErr error) {
 				name := "blank exercise file when randomly selecting should select a non-empty exercise"
-				want := Exercise{
+				want := exerciseFile{
 					name: "not-empty.txt",
 					text: "Hello!\n",
 				}
@@ -414,7 +412,7 @@ func TestFromArgsWithEmptyExerciseFiles(t *testing.T) {
 			},
 		},
 		{
-			testExercises: []Exercise{
+			testExercises: []exerciseFile{
 				{
 					name: "empty.txt",
 					text: "",
@@ -425,7 +423,7 @@ func TestFromArgsWithEmptyExerciseFiles(t *testing.T) {
 				},
 			},
 			args: []string{},
-			check: func(got Exercise, gotErr error) {
+			check: func(got exerciseFile, gotErr error) {
 				name := "multiple blank exercise files when randomly selecting, should exit if there are no remaining files"
 				dir := os.Getenv("SWEET_EXERCISES_DIR")
 				wantErrMsg := fmt.Sprintf("all files found in the following exercises directory are empty: %s\n", dir)
@@ -440,9 +438,9 @@ func TestFromArgsWithEmptyExerciseFiles(t *testing.T) {
 			},
 		},
 		{
-			testExercises: []Exercise{},
+			testExercises: []exerciseFile{},
 			args:          []string{},
-			check: func(got Exercise, gotErr error) {
+			check: func(got exerciseFile, gotErr error) {
 				name := "no exercise files, should select a default exercise"
 				dir := os.Getenv("SWEET_EXERCISES_DIR")
 				if gotErr != nil {
@@ -475,117 +473,4 @@ func TestFromArgsWithEmptyExerciseFiles(t *testing.T) {
 		}
 	}
 
-}
-
-func getEventTs(s string) (t time.Time) {
-	t, _ = time.Parse(util.EventTsLayout, s)
-	return
-}
-
-func TestEventString(t *testing.T) {
-	testCases := []struct {
-		name string
-		in   util.Event
-		want string
-	}{
-		{
-			name: "all fields",
-			in: util.Event{
-				Ts:       getEventTs("2024-10-07 13:46:47.679"),
-				I:        0,
-				Typed:    "a",
-				Expected: "b",
-			},
-			want: "2024-10-07 13:46:47.679\t0\ta\tb",
-		},
-	}
-
-	for _, tc := range testCases {
-		got := fmt.Sprint(tc.in)
-		if got != tc.want {
-			t.Errorf("%s: got\n\t%s\nwant\n\t%s", tc.name, got, tc.want)
-		}
-
-	}
-
-}
-
-func TestParseEvent(t *testing.T) {
-	testCases := []struct {
-		name  string
-		input string
-		want  util.Event
-	}{
-		{
-			name:  "all fields",
-			input: "2024-10-07 13:46:47.679\t0\ta\th",
-			want: util.Event{
-				Ts:       getEventTs("2024-10-07 13:46:47.679"),
-				I:        0,
-				Typed:    "a",
-				Expected: "h",
-			},
-		},
-		{
-			name:  "backspace",
-			input: "2024-10-07 13:46:47.679\t0\tbackspace",
-			want: util.Event{
-				Ts:       getEventTs("2024-10-07 13:46:47.679"),
-				I:        0,
-				Typed:    "backspace",
-				Expected: "",
-			},
-		},
-	}
-
-	for _, tc := range testCases {
-		got := util.ParseEvent(tc.input)
-		if !got.Matches(tc.want) {
-			t.Errorf("%s: got\n%s\n\nwant:\n%s", tc.name, got, tc.want)
-		}
-	}
-}
-
-func TestParseEvents(t *testing.T) {
-
-	testCases := []struct {
-		name string
-		in   string
-		want []util.Event
-	}{
-		{
-			name: "two events",
-			in: "2024-10-07 13:46:47.679\t0\ta\th\n" +
-				"2024-10-07 13:46:48.298\t1\tbackspace",
-			want: []util.Event{
-				{
-					Ts:       getEventTs("2024-10-07 13:46:47.679"),
-					I:        0,
-					Typed:    "a",
-					Expected: "h",
-				},
-				{
-					Ts:       getEventTs("2024-10-07 13:46:48.298"),
-					I:        1,
-					Typed:    "backspace",
-					Expected: "",
-				},
-			},
-		},
-	}
-
-	for _, tc := range testCases {
-		gotEvents := util.ParseEvents(tc.in)
-		for i, got := range gotEvents {
-			if !got.Matches(tc.want[i]) {
-				t.Errorf(
-					"%s [%d]:\ngot\n  %s\nwant\n  %s",
-					tc.name,
-					i,
-					got,
-					tc.want[i],
-				)
-			}
-		}
-	}
 }

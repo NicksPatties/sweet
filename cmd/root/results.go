@@ -8,6 +8,7 @@ import (
 
 	"github.com/NicksPatties/sweet/constants"
 	db "github.com/NicksPatties/sweet/db"
+	"github.com/NicksPatties/sweet/event"
 	"github.com/NicksPatties/sweet/util"
 	g "github.com/guptarohit/asciigraph"
 )
@@ -23,7 +24,7 @@ func requiredRunes(s string) []rune {
 	arr := []rune{}
 	foundNewline := false
 	for _, rn := range s {
-		if foundNewline && isWhitespace(rn) {
+		if foundNewline && util.IsWhitespace(rn) {
 			continue
 		}
 		foundNewline = rn == constants.Enter
@@ -35,8 +36,8 @@ func requiredRunes(s string) []rune {
 // Remove backspaces from a list of events.
 //
 // Removing backspace events simplifies wpm calculations.
-func removeBackspaces(events []util.Event) []util.Event {
-	enb := []util.Event{}
+func removeBackspaces(events []event.Event) []event.Event {
+	enb := []event.Event{}
 	for _, e := range events {
 		if e.Typed != "backspace" {
 			enb = append(enb, e)
@@ -54,7 +55,7 @@ func removeBackspaces(events []util.Event) []util.Event {
 //
 // You should avoid using this function in favor of specific wpm
 // functions, including `wpm`, `wpmRaw`, `wpmRawPerSecond`, and so on.
-func wpmBase(e []util.Event, raw bool, d time.Duration) float64 {
+func wpmBase(e []event.Event, raw bool, d time.Duration) float64 {
 	events := removeBackspaces(e)
 	// cannot calculate wpm with less than 2 events
 	if len(events) < 2 {
@@ -85,37 +86,37 @@ func wpmBase(e []util.Event, raw bool, d time.Duration) float64 {
 
 // Calculates the words per minute (wpm) based on the
 // events that occurred during the exercise.
-func wpm(events []util.Event) float64 {
+func wpm(events []event.Event) float64 {
 	return wpmBase(events, false, 0)
 }
 
 // Calculates the raw words per minute.
 // Raw wpm does not subtract mistakes from the final
 // wpm calculation
-func wpmRaw(events []util.Event) float64 {
+func wpmRaw(events []event.Event) float64 {
 	return wpmBase(events, true, 0)
 }
 
 // Calculates the wpm of a series of events that
 // lasted for `n` seconds. This is used to calculate the
 // rolling average wpm during the course of the exercise.
-func wpmForNSeconds(events []util.Event, n int) float64 {
+func wpmForNSeconds(events []event.Event, n int) float64 {
 	seconds := time.Duration(n) * time.Second
 	return wpmBase(events, false, seconds)
 }
 
 // Calculates the raw wpm for a series of events.
 // Assumes the events occurred in the same second.
-func wpmRawPerSecond(events []util.Event) float64 {
+func wpmRawPerSecond(events []event.Event) float64 {
 	return wpmBase(events, true, time.Second)
 }
 
-func wpmGraph(events []util.Event) string {
+func wpmGraph(events []event.Event) string {
 	d := events[len(events)-1].Ts.Sub(events[0].Ts)
 	seconds := int(d.Seconds()) + 1
 	wpmData := make([]float64, seconds)
 	wpmRawData := make([]float64, seconds)
-	eventBuckets := make([][]util.Event, seconds)
+	eventBuckets := make([][]event.Event, seconds)
 
 	for _, event := range events {
 		tsDiff := event.Ts.Sub(events[0].Ts)
@@ -123,7 +124,7 @@ func wpmGraph(events []util.Event) string {
 		eventBuckets[bucketId] = append(eventBuckets[bucketId], event)
 	}
 
-	var currEvents []util.Event
+	var currEvents []event.Event
 	for i, eventBucket := range eventBuckets {
 		currEvents = append(currEvents, eventBucket...)
 		currSeconds := i + 1
@@ -149,7 +150,7 @@ func wpmGraph(events []util.Event) string {
 // Note, even if all characters at the end of an exercise
 // are correct, you can have an accuracy of less than 100%
 // if you made any mistakes.
-func accuracy(events []util.Event) float64 {
+func accuracy(events []event.Event) float64 {
 	if len(events) == 0 {
 		return 0.0
 	}
@@ -175,7 +176,7 @@ func accuracy(events []util.Event) float64 {
 // backspaces, then it's assumed no uncorrected
 // errors have been made, because the user is in
 // the process of correcting the error.
-func numUncorrectedErrors(events []util.Event) int {
+func numUncorrectedErrors(events []event.Event) int {
 	if len(events) == 0 {
 		return 0
 	}
@@ -201,7 +202,7 @@ func numUncorrectedErrors(events []util.Event) int {
 // uncorrected errors.
 //
 // Backspaces do not count as mistakes.
-func numMistakes(events []util.Event) (mistakes int) {
+func numMistakes(events []event.Event) (mistakes int) {
 	for _, e := range events {
 		if e.Typed == "backspace" {
 			continue
@@ -216,7 +217,7 @@ func numMistakes(events []util.Event) (mistakes int) {
 // Returns the duration between the first event and
 // the last event of the array. If there are less than
 // two events in the list, it returns zero duration.
-func duration(events []util.Event) time.Duration {
+func duration(events []event.Event) time.Duration {
 	if len(events) < 2 {
 		return 0.0
 	}
@@ -227,7 +228,7 @@ func duration(events []util.Event) time.Duration {
 // an exercise. Missed keys are sorted alphabetically,
 // and by the number of misses. Also, sets a limit
 // of number of keys missed to avoid overflowing the line.
-func mostMissedKeys(events []util.Event) string {
+func mostMissedKeys(events []event.Event) string {
 	misses := map[string]int{}
 	for _, e := range events {
 		if e.Typed != "backspace" && e.Typed != e.Expected {
