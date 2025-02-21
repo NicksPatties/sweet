@@ -104,25 +104,46 @@ func Test_renderText_cursorPosition(t *testing.T) {
 			mistakeStyle: lg.NewStyle(),
 		},
 	}
-	testModel := exerciseModel{
-		name:        "",
-		text:        "asdf",
-		typedText:   "as",
-		startTime:   time.Time{},
-		endTime:     time.Time{},
-		quitEarly:   false,
-		events:      []event.Event{},
-		viewOptions: testViewOptions,
-	}
-
-	got := testModel.renderText()
 	escStart := "\033[31m"
 	escEnd := "\033[0m"
-	want := "as" + escStart + "d" + escEnd + "f"
 
-	if got != want {
-		t.Fatalf("got\n%s\nwant\n%s", got, want)
+	testCases := []struct {
+		testName string
+		text     string
+		typed    string
+		want     string
+	}{
+		{
+			testName: "single line",
+			text:     "asdf",
+			typed:    "as",
+			want:     "as" + escStart + "d" + escEnd + "f",
+		},
+		{
+			testName: "multiple lines",
+			text:     "def main:\n  print('hello')\n",
+			typed:    "def main:\n  ",
+			want:     "def main:\n  " + escStart + "p" + escEnd + "rint('hello')\n",
+		},
 	}
+
+	for _, tc := range testCases {
+		testModel := exerciseModel{
+			name:        "",
+			text:        tc.text,
+			typedText:   tc.typed,
+			startTime:   time.Time{},
+			endTime:     time.Time{},
+			quitEarly:   false,
+			events:      []event.Event{},
+			viewOptions: testViewOptions,
+		}
+		got := testModel.renderText()
+		if got != tc.want {
+			t.Fatalf("%s\ngot\n%s\nwant\n%s", tc.testName, got, tc.want)
+		}
+	}
+
 }
 
 func Test_addRuneToTypedText(t *testing.T) {
