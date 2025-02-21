@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	consts "github.com/NicksPatties/sweet/constants"
 	"github.com/NicksPatties/sweet/event"
 )
 
@@ -25,6 +26,7 @@ func TestRenderName(t *testing.T) {
 }
 
 func TestRenderText(t *testing.T) {
+	// TODO: if this function is indented with tabs, then this test fails
 	testText := `func main() {
     fmt.Println("hello!")
 }
@@ -49,10 +51,17 @@ func TestRenderText(t *testing.T) {
     fmt.Println("hello!")
 }
 `},
+		{
+			name:  "show arrow if there's an error on a newline",
+			text:  testText,
+			typed: "func main() {a",
+			want: `func main() {↲
+    fmt.Println("hello!")
+}
+`},
 	}
 
 	for _, test := range tt {
-		// TODO: if this function is indented with tabs, then this test fails
 		testModel := exerciseModel{
 			name:      "",
 			text:      test.text,
@@ -64,8 +73,153 @@ func TestRenderText(t *testing.T) {
 		}
 		got := testModel.renderText()
 		if got != test.want {
-			t.Fatalf("expected\n%s\ngot\n%s", test.want, got)
+			t.Fatalf("%s failed\nexpected\n%s\ngot\n%s",
+				test.name, test.want, got,
+			)
+		}
+	}
+}
+
+func TestAddRuneToTypedText(t *testing.T) {
+	tt := []struct {
+		name      string
+		text      string
+		typed     string
+		typedRune rune
+		want      string
+	}{
+		{
+			name:      "happy case",
+			text:      "asdf",
+			typed:     "",
+			typedRune: 'a',
+			want:      "a",
+		},
+		{
+			name:      "ignore if typed text is the same length of text, but is incorrect",
+			text:      "asdf",
+			typed:     "asdq",
+			typedRune: 'a',
+			want:      "asdq",
+		},
+		{
+			name: "adding a newline also adds whitespace up to rune",
+			text: `def main:
+  print("hey")
+`,
+			typed:     "def main:",
+			typedRune: consts.Enter,
+			want:      "def main:\n  ", // two whitespace indentation
+		},
+	}
+
+	for _, test := range tt {
+		testModel := exerciseModel{
+			name:      "",
+			text:      test.text,
+			typedText: test.typed,
+			startTime: time.Time{},
+			endTime:   time.Time{},
+			quitEarly: false,
+			events:    []event.Event{},
+		}
+		testModel = testModel.addRuneToTypedText(test.typedRune)
+		if testModel.typedText != test.want {
+			t.Fatalf("want %s, got %s", test.want, testModel.typedText)
+		}
+	}
+}
+
+func TestDeleteRuneFromTypedText(t *testing.T) {
+	tt := []struct {
+		name  string
+		text  string
+		typed string
+		want  string
+	}{
+		{
+			name:  "happy case",
+			text:  "asdf",
+			typed: "a",
+			want:  "",
+		},
+		{
+			name:  "no typed text yet",
+			text:  "asdf",
+			typed: "",
+			want:  "",
+		},
+		{
+			name: "remove all whitespace including the newline",
+			text: `def main:
+  print("hey")
+`,
+			typed: "def main:\n  ",
+			want:  "def main:",
+		},
+	}
+
+	for _, test := range tt {
+		testModel := exerciseModel{
+			name:      "",
+			text:      test.text,
+			typedText: test.typed,
+			startTime: time.Time{},
+			endTime:   time.Time{},
+			quitEarly: false,
+			events:    []event.Event{},
+		}
+		testModel = testModel.deleteRuneFromTypedText()
+		if testModel.typedText != test.want {
+			t.Fatalf("want\n%s\ngot\n%s\n", test.want, testModel.typedText)
+		}
+	}
+}
+
+func TestFinished(t *testing.T) {
+
+	var tt = []struct {
+		name  string
+		text  string
+		typed string
+		want  bool
+	}{
+		{
+			name:  "finished",
+			text:  "asdf",
+			typed: "asdf",
+			want:  true,
+		},
+		{
+			name:  "not finished: didn't type enough characters",
+			text:  "asdf",
+			typed: "asd",
+			want:  false,
+		},
+		{
+			name:  "not finished: last character is wrong",
+			text:  "asdf",
+			typed: "asdq",
+			want:  false,
+		},
+	}
+
+	for _, test := range tt {
+		testModel := exerciseModel{
+			name:      "",
+			text:      test.text,
+			typedText: test.typed,
+			startTime: time.Time{},
+			endTime:   time.Time{},
+			quitEarly: false,
+			events:    []event.Event{},
 		}
 
+		want := test.want
+		got := testModel.finished()
+		if got != want {
+			t.Fatalf("want %t, got %t", want, got)
+		}
 	}
+
 }
