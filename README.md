@@ -260,6 +260,12 @@ go test ./...
 go test -coverprofile coverage {{module-path}} && go tool cover -html=coverage
 ```
 
+For example, building the coverage profile, building the html page, and then running it with a browser:
+
+```sh
+go test -coverprofile c.out ./cmd/root && go tool cover -html=c.out -o c.html && brave-browser c.html
+```
+
 ## Building a release version
 
 Creates a release to GitHub, and updates the pkg.go.dev listing.

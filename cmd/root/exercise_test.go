@@ -6,6 +6,8 @@ import (
 
 	consts "github.com/NicksPatties/sweet/constants"
 	"github.com/NicksPatties/sweet/event"
+	lg "github.com/charmbracelet/lipgloss"
+	"github.com/muesli/termenv"
 )
 
 var mockViewOptions = &viewOptions{
@@ -85,6 +87,43 @@ func Test_renderText(t *testing.T) {
 			)
 		}
 	}
+}
+
+func Test_renderText_cursorPosition(t *testing.T) {
+	old := lg.ColorProfile()
+	lg.SetColorProfile(termenv.TrueColor)
+	defer lg.SetColorProfile(old)
+
+	testViewOptions := &viewOptions{
+		windowSize: 0,
+		styles: styles{
+			commentStyle: lg.NewStyle(),
+			untypedStyle: lg.NewStyle(),
+			cursorStyle:  lg.NewStyle().Foreground(lg.Color("1")),
+			typedStyle:   lg.NewStyle(),
+			mistakeStyle: lg.NewStyle(),
+		},
+	}
+	testModel := exerciseModel{
+		name:        "",
+		text:        "asdf",
+		typedText:   "as",
+		startTime:   time.Time{},
+		endTime:     time.Time{},
+		quitEarly:   false,
+		events:      []event.Event{},
+		viewOptions: testViewOptions,
+	}
+
+	got := testModel.renderText()
+	escStart := "\033[31m"
+	escEnd := "\033[0m"
+	want := "as" + escStart + "d" + escEnd + "f"
+
+	if got != want {
+		t.Fatalf("got\n%s\nwant\n%s", got, want)
+	}
+
 }
 
 func Test_addRuneToTypedText(t *testing.T) {
