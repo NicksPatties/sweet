@@ -40,35 +40,41 @@ type exerciseModel struct {
 	events []event.Event
 }
 
-var styles = struct {
+type styles struct {
 	commentStyle lg.Style
 	untypedStyle lg.Style
 	cursorStyle  lg.Style
 	typedStyle   lg.Style
 	mistakeStyle lg.Style
-}{
-	commentStyle: lg.NewStyle().Foreground(lg.Color("7")).Italic(true),
-	untypedStyle: lg.NewStyle().Foreground(lg.Color("7")),
-	cursorStyle:  lg.NewStyle().Background(lg.Color("15")).Foreground(lg.Color("0")),
-	typedStyle:   lg.NewStyle(),
-	mistakeStyle: lg.NewStyle().Background(lg.Color("1")).Foreground(lg.Color("15")),
 }
 
+func defaultStyles() styles {
+	return styles{
+		commentStyle: lg.NewStyle().Foreground(lg.Color("7")).Italic(true),
+		untypedStyle: lg.NewStyle().Foreground(lg.Color("7")),
+		cursorStyle:  lg.NewStyle().Background(lg.Color("15")).Foreground(lg.Color("0")),
+		typedStyle:   lg.NewStyle(),
+		mistakeStyle: lg.NewStyle().Background(lg.Color("1")).Foreground(lg.Color("15")),
+	}
+}
+
+var style = defaultStyles()
+
 func (m exerciseModel) renderName() string {
-	commentStyle := styles.commentStyle
+	commentStyle := style.commentStyle
 	commentPrefix := "//"
 	return commentStyle.Render(fmt.Sprintf("%s %s", commentPrefix, m.name))
 }
 
 func (m exerciseModel) renderText() (s string) {
 	// typed style
-	ts := styles.typedStyle
+	ts := style.typedStyle
 	// untyped style
-	us := styles.untypedStyle
+	us := style.untypedStyle
 	// cursor style
-	cs := styles.cursorStyle
+	cs := style.cursorStyle
 	// incorrest style
-	is := styles.mistakeStyle
+	is := style.mistakeStyle
 
 	typed := m.typedText
 
