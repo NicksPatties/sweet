@@ -8,7 +8,7 @@ import (
 	"github.com/NicksPatties/sweet/event"
 )
 
-func TestRenderName(t *testing.T) {
+func Test_renderName(t *testing.T) {
 	testModel := exerciseModel{
 		name:      "exercise.go",
 		text:      "",
@@ -25,8 +25,8 @@ func TestRenderName(t *testing.T) {
 	}
 }
 
-func TestRenderText(t *testing.T) {
-	// TODO: if this function is indented with tabs, then this test fails
+func Test_renderText(t *testing.T) {
+	// NOTE: if this function is indented with tabs, then this test fails
 	testText := `func main() {
     fmt.Println("hello!")
 }
@@ -80,7 +80,7 @@ func TestRenderText(t *testing.T) {
 	}
 }
 
-func TestAddRuneToTypedText(t *testing.T) {
+func Test_addRuneToTypedText(t *testing.T) {
 	tt := []struct {
 		name      string
 		text      string
@@ -130,7 +130,7 @@ func TestAddRuneToTypedText(t *testing.T) {
 	}
 }
 
-func TestDeleteRuneFromTypedText(t *testing.T) {
+func Test_deleteRuneFromTypedText(t *testing.T) {
 	tt := []struct {
 		name  string
 		text  string
@@ -176,8 +176,7 @@ func TestDeleteRuneFromTypedText(t *testing.T) {
 	}
 }
 
-func TestFinished(t *testing.T) {
-
+func Test_finished(t *testing.T) {
 	var tt = []struct {
 		name  string
 		text  string
@@ -221,5 +220,4 @@ func TestFinished(t *testing.T) {
 			t.Fatalf("want %t, got %t", want, got)
 		}
 	}
-
 }

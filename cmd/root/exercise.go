@@ -38,6 +38,9 @@ type exerciseModel struct {
 
 	// The user's keystrokes during the exercise
 	events []event.Event
+
+	// Styles
+	styles styles
 }
 
 type styles struct {
@@ -58,19 +61,17 @@ func defaultStyles() styles {
 	}
 }
 
-var style = defaultStyles()
-
 func (m exerciseModel) renderName() string {
-	commentStyle := style.commentStyle
+	commentStyle := m.styles.commentStyle
 	commentPrefix := "//"
 	return commentStyle.Render(fmt.Sprintf("%s %s", commentPrefix, m.name))
 }
 
 func (m exerciseModel) renderText() (s string) {
-	typedStyle := style.typedStyle
-	untypedStyle := style.untypedStyle
-	cursorStyle := style.cursorStyle
-	mistakeStyle := style.mistakeStyle
+	typedStyle := m.styles.typedStyle
+	untypedStyle := m.styles.untypedStyle
+	cursorStyle := m.styles.cursorStyle
+	mistakeStyle := m.styles.mistakeStyle
 
 	typed := m.typedText
 
@@ -282,6 +283,7 @@ func run(name string, text string) {
 		startTime: time.Time{},
 		endTime:   time.Time{},
 		events:    []event.Event{},
+		styles:    defaultStyles(),
 	}
 	teaModel, err := tea.NewProgram(newModel).Run()
 	if err != nil {
