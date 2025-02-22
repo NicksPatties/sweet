@@ -162,6 +162,72 @@ func Test_renderText_cursorPosition(t *testing.T) {
 	}
 }
 
+func reds(s string) string {
+	finished := ""
+	for _, r := range s {
+		finished += red(string(r))
+	}
+	return finished
+}
+
+func Test_renderText_typedAndUntyped(t *testing.T) {
+	oldProfile := lg.ColorProfile()
+	lg.SetColorProfile(termenv.TrueColor)
+	defer lg.SetColorProfile(oldProfile)
+
+	testViewOptions := &viewOptions{
+		windowSize: 0,
+		styles: styles{
+			commentStyle: lg.NewStyle(),
+			untypedStyle: lg.NewStyle(),
+			cursorStyle:  lg.NewStyle(),
+			typedStyle:   lg.NewStyle().Foreground(lg.Color("1")),
+			mistakeStyle: lg.NewStyle(),
+		},
+	}
+
+	testCases := []struct {
+		testName string
+		text     string
+		typed    string
+		want     string
+	}{
+		{
+			testName: "partially typed line",
+			text:     "asdf",
+			typed:    "as",
+			want:     reds("as") + "df",
+		},
+		{
+			testName: "fully typed line",
+			text:     "asdf",
+			typed:    "asdf",
+			want:     reds("asdf"),
+		},
+		// NOTE: test cases with newlines will fail
+		// because of color reset escape sequences are
+		// placed before newlines. You should
+		// **visually test these cases!!**
+	}
+
+	for _, tc := range testCases {
+		testModel := exerciseModel{
+			name:        "",
+			text:        tc.text,
+			typedText:   tc.typed,
+			startTime:   time.Time{},
+			endTime:     time.Time{},
+			quitEarly:   false,
+			events:      []event.Event{},
+			viewOptions: testViewOptions,
+		}
+		got := testModel.renderText()
+		if got != tc.want {
+			t.Fatalf("%s\ngot\n%v\n%s\nwant\n%v\n%s", tc.testName, got, renderBytes(got), tc.want, renderBytes(tc.want))
+		}
+	}
+}
+
 func Test_renderLine(t *testing.T) {
 	oldProfile := lg.ColorProfile()
 	lg.SetColorProfile(termenv.TrueColor)

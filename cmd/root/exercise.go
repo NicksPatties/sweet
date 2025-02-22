@@ -113,7 +113,6 @@ func renderLine(text string, typedP *string, style styles, vignette bool) (s str
 			} else {
 				s += mistakeStyle.Render(string(exRune))
 			}
-
 			continue
 		}
 
