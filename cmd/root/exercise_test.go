@@ -112,6 +112,7 @@ func Test_renderText_cursorPosition(t *testing.T) {
 	oldProfile := lg.ColorProfile()
 	lg.SetColorProfile(termenv.TrueColor)
 	defer lg.SetColorProfile(oldProfile)
+
 	testViewOptions := &viewOptions{
 		windowSize: 0,
 		styles: styles{
@@ -228,10 +229,13 @@ func Test_renderText_typedAndUntyped(t *testing.T) {
 }
 
 func Test_renderText_windowSize(t *testing.T) {
+	oldProfile := lg.ColorProfile()
+	lg.SetColorProfile(termenv.TrueColor)
+	defer lg.SetColorProfile(oldProfile)
 	blankStyles := styles{
 		commentStyle:         lg.NewStyle(),
 		untypedStyle:         lg.NewStyle(),
-		cursorStyle:          lg.NewStyle(),
+		cursorStyle:          lg.NewStyle().Foreground(lg.Color("1")), // red
 		typedStyle:           lg.NewStyle(),
 		mistakeStyle:         lg.NewStyle(),
 		vignetteStyle:        lg.NewStyle(),
@@ -250,35 +254,35 @@ func Test_renderText_windowSize(t *testing.T) {
 			windowSize: 0,
 			text:       mockText,
 			typed:      "",
-			want:       mockText,
+			want:       red(string(mockText[0])) + mockText[1:],
 		},
 		{
 			name:       "should only show one line",
 			windowSize: 1,
 			text:       mockText,
 			typed:      "",
-			want:       "one\n",
+			want:       red("o") + "ne\n",
 		},
 		{
 			name:       "two lines: start of exercise",
 			windowSize: 2,
 			text:       mockText,
 			typed:      "",
-			want:       "one\ntwo\n",
+			want:       red("o") + "ne\ntwo\n",
 		},
 		{
 			name:       "two lines: partway through",
 			windowSize: 2,
 			text:       mockText,
 			typed:      "one\n",
-			want:       "two\nthree\n",
+			want:       red("t") + "wo\nthree\n",
 		},
 		{
 			name:       "two lines: last line",
 			windowSize: 2,
 			text:       mockText,
 			typed:      "one\ntwo\nthree\nfour\n",
-			want:       "four\nfive",
+			want:       "four\n" + red("f") + "ive",
 		},
 	}
 
