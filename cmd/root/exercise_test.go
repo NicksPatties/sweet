@@ -228,6 +228,56 @@ func Test_renderText_typedAndUntyped(t *testing.T) {
 	}
 }
 
+func Test_renderText_windowSize(t *testing.T) {
+	mockText := "one\ntwo\nthree\nfour\nfive"
+	blankStyles := styles{
+		commentStyle:         lg.NewStyle(),
+		untypedStyle:         lg.NewStyle(),
+		cursorStyle:          lg.NewStyle(),
+		typedStyle:           lg.NewStyle(),
+		mistakeStyle:         lg.NewStyle(),
+		vignetteStyle:        lg.NewStyle(),
+		vignetteMistakeStyle: lg.NewStyle(),
+	}
+
+	testCases := []struct {
+		name       string
+		windowSize uint
+		typed      string
+		want       string
+	}{
+		{
+			name:       "zero windowSize should show the entire exercise",
+			windowSize: 0,
+			typed:      "",
+			want:       mockText,
+		},
+	}
+
+	for _, tc := range testCases {
+		mockViewOptions := &viewOptions{
+			styles:     blankStyles,
+			windowSize: tc.windowSize,
+		}
+		mockModel := exerciseModel{
+			name:        "",
+			text:        mockText,
+			typedText:   tc.typed,
+			startTime:   time.Time{},
+			endTime:     time.Time{},
+			quitEarly:   false,
+			events:      []event.Event{},
+			viewOptions: mockViewOptions,
+		}
+		got := mockModel.renderText()
+
+		if got != tc.want {
+			t.Fatalf("%s\nwindowSize: %d\ngot:\n%s\nwant:\n%s",
+				tc.name, tc.windowSize, got, tc.want)
+		}
+	}
+}
+
 func Test_renderLine(t *testing.T) {
 	oldProfile := lg.ColorProfile()
 	lg.SetColorProfile(termenv.TrueColor)
