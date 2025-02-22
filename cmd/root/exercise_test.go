@@ -112,7 +112,6 @@ func Test_renderText_cursorPosition(t *testing.T) {
 	oldProfile := lg.ColorProfile()
 	lg.SetColorProfile(termenv.TrueColor)
 	defer lg.SetColorProfile(oldProfile)
-
 	testViewOptions := &viewOptions{
 		windowSize: 0,
 		styles: styles{
@@ -229,7 +228,6 @@ func Test_renderText_typedAndUntyped(t *testing.T) {
 }
 
 func Test_renderText_windowSize(t *testing.T) {
-	mockText := "one\ntwo\nthree\nfour\nfive"
 	blankStyles := styles{
 		commentStyle:         lg.NewStyle(),
 		untypedStyle:         lg.NewStyle(),
@@ -239,18 +237,48 @@ func Test_renderText_windowSize(t *testing.T) {
 		vignetteStyle:        lg.NewStyle(),
 		vignetteMistakeStyle: lg.NewStyle(),
 	}
-
+	mockText := "one\ntwo\nthree\nfour\nfive"
 	testCases := []struct {
 		name       string
 		windowSize uint
+		text       string
 		typed      string
 		want       string
 	}{
 		{
 			name:       "zero windowSize should show the entire exercise",
 			windowSize: 0,
+			text:       mockText,
 			typed:      "",
 			want:       mockText,
+		},
+		{
+			name:       "should only show one line",
+			windowSize: 1,
+			text:       mockText,
+			typed:      "",
+			want:       "one\n",
+		},
+		{
+			name:       "two lines: start of exercise",
+			windowSize: 2,
+			text:       mockText,
+			typed:      "",
+			want:       "one\ntwo\n",
+		},
+		{
+			name:       "two lines: partway through",
+			windowSize: 2,
+			text:       mockText,
+			typed:      "one\n",
+			want:       "two\nthree\n",
+		},
+		{
+			name:       "two lines: last line",
+			windowSize: 2,
+			text:       mockText,
+			typed:      "one\ntwo\nthree\nfour\n",
+			want:       "four\nfive",
 		},
 	}
 
@@ -261,7 +289,7 @@ func Test_renderText_windowSize(t *testing.T) {
 		}
 		mockModel := exerciseModel{
 			name:        "",
-			text:        mockText,
+			text:        tc.text,
 			typedText:   tc.typed,
 			startTime:   time.Time{},
 			endTime:     time.Time{},

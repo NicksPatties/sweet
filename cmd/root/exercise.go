@@ -51,9 +51,23 @@ func (m exerciseModel) renderName() string {
 func (m exerciseModel) renderText() (s string) {
 	lines := util.Lines(m.text)
 	typedLines := util.Lines(m.typedText)
+
+	windowSize := int(m.viewOptions.windowSize)
 	windowStart := 0
 	windowEnd := len(lines)
-	for i, text := range lines[windowStart:windowEnd] {
+
+	if windowSize > 0 {
+		windowStart = len(typedLines) - 1
+		windowEnd = windowStart + windowSize
+	}
+
+	if windowEnd > len(lines) {
+		windowEnd = len(lines)
+		windowStart = windowEnd - windowSize
+	}
+
+	for i := windowStart; i < windowEnd; i++ {
+		text := lines[i]
 		var typed *string = nil
 		if i < len(typedLines) {
 			typed = &typedLines[i]
