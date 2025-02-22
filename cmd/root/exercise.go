@@ -51,23 +51,38 @@ func (m exerciseModel) renderName() string {
 func (m exerciseModel) renderText() (s string) {
 	lines := util.Lines(m.text)
 	typedLines := util.Lines(m.typedText)
-
-	for i := 0; i < len(lines); i++ {
-		line := lines[i]
-		typedLine := ""
+	for i, text := range lines {
+		var typed *string = nil
 		if i < len(typedLines) {
-			typedLine = typedLines[i]
+			typed = &typedLines[i]
 		}
-		s += m.renderLine(line, typedLine)
+		s += renderLine(text, typed, m.viewOptions.styles, false)
 	}
 	return
 }
 
-func (m exerciseModel) renderLine(text string, typed string) (s string) {
-	typedStyle := m.viewOptions.styles.typedStyle
-	untypedStyle := m.viewOptions.styles.untypedStyle
-	cursorStyle := m.viewOptions.styles.cursorStyle
-	mistakeStyle := m.viewOptions.styles.mistakeStyle
+func renderLine(text string, typedP *string, style styles, vignette bool) (s string) {
+	typedStyle := style.typedStyle
+	untypedStyle := style.untypedStyle
+	cursorStyle := style.cursorStyle
+	mistakeStyle := style.mistakeStyle
+
+	if vignette {
+		typedStyle = style.vignetteStyle
+		untypedStyle = style.vignetteStyle
+		cursorStyle = style.vignetteStyle
+		mistakeStyle = style.vignetteMistakeStyle
+	}
+
+	if typedP == nil {
+		for _, r := range text {
+			s += untypedStyle.Render(string(r))
+		}
+		return
+	}
+
+	typed := *typedP
+
 	for i, exRune := range text {
 		// Has this character been typed yet?
 		if i > len(typed) {

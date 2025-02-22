@@ -41,20 +41,24 @@ type viewOptions struct {
 }
 
 type styles struct {
-	commentStyle lg.Style
-	untypedStyle lg.Style
-	cursorStyle  lg.Style
-	typedStyle   lg.Style
-	mistakeStyle lg.Style
+	commentStyle         lg.Style
+	untypedStyle         lg.Style
+	cursorStyle          lg.Style
+	typedStyle           lg.Style
+	mistakeStyle         lg.Style
+	vignetteStyle        lg.Style
+	vignetteMistakeStyle lg.Style
 }
 
 func defaultStyles() styles {
 	return styles{
-		commentStyle: lg.NewStyle().Foreground(lg.Color("7")).Italic(true),
-		untypedStyle: lg.NewStyle().Foreground(lg.Color("7")),
-		cursorStyle:  lg.NewStyle().Background(lg.Color("15")).Foreground(lg.Color("0")),
-		typedStyle:   lg.NewStyle(),
-		mistakeStyle: lg.NewStyle().Background(lg.Color("1")).Foreground(lg.Color("15")),
+		commentStyle:         lg.NewStyle().Foreground(lg.Color("7")).Italic(true),
+		untypedStyle:         lg.NewStyle().Foreground(lg.Color("7")),
+		cursorStyle:          lg.NewStyle().Background(lg.Color("15")).Foreground(lg.Color("0")),
+		typedStyle:           lg.NewStyle(),
+		mistakeStyle:         lg.NewStyle().Background(lg.Color("1")).Foreground(lg.Color("15")),
+		vignetteStyle:        lg.NewStyle().Foreground(lg.Color("8")),
+		vignetteMistakeStyle: lg.NewStyle().Background(lg.Color("1")).Foreground(lg.Color("8")),
 	}
 }
 

@@ -104,18 +104,35 @@ func TestLang(t *testing.T) {
 }
 
 func TestLines(t *testing.T) {
-	got := Lines("one\ntwo\nthree\nfour\nfive")
-	want := []string{
-		"one\n",
-		"two\n",
-		"three\n",
-		"four\n",
-		"five",
+	testCases := []struct {
+		name  string
+		input string
+		want  []string
+	}{
+		{
+			name:  "default case",
+			input: "one\ntwo\nthree\nfour\nfive",
+			want: []string{
+				"one\n",
+				"two\n",
+				"three\n",
+				"four\n",
+				"five",
+			},
+		},
+		{
+			name:  "empty string",
+			input: "",
+			want:  []string{""},
+		},
 	}
 
-	for i := 0; i < len(want); i = i + 1 {
-		if got[i] != want[i] {
-			t.Errorf("%d got %s want %s", i, got[i], want[i])
+	for _, tc := range testCases {
+		got := Lines(tc.input)
+		for i := 0; i < len(tc.want); i = i + 1 {
+			if got[i] != tc.want[i] {
+				t.Errorf("%d got %s want %s", i, got[i], tc.want[i])
+			}
 		}
 	}
 }

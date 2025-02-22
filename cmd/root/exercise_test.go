@@ -1,6 +1,7 @@
 package root
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -89,10 +90,28 @@ func Test_renderText(t *testing.T) {
 	}
 }
 
+func red(s string) string {
+	escStart := "\033[31m"
+	escEnd := "\033[0m"
+	return escStart + s + escEnd
+}
+
+func renderBytes(str string) (s string) {
+	bytes := []byte(str)
+	for i, b := range bytes {
+		c := fmt.Sprintf("\\x%x", str[i])
+		if b >= 32 && b <= 128 {
+			c = fmt.Sprintf("%s", string(str[i]))
+		}
+		s += c
+	}
+	return
+}
+
 func Test_renderText_cursorPosition(t *testing.T) {
-	old := lg.ColorProfile()
+	oldProfile := lg.ColorProfile()
 	lg.SetColorProfile(termenv.TrueColor)
-	defer lg.SetColorProfile(old)
+	defer lg.SetColorProfile(oldProfile)
 
 	testViewOptions := &viewOptions{
 		windowSize: 0,
@@ -104,8 +123,6 @@ func Test_renderText_cursorPosition(t *testing.T) {
 			mistakeStyle: lg.NewStyle(),
 		},
 	}
-	escStart := "\033[31m"
-	escEnd := "\033[0m"
 
 	testCases := []struct {
 		testName string
@@ -117,13 +134,13 @@ func Test_renderText_cursorPosition(t *testing.T) {
 			testName: "single line",
 			text:     "asdf",
 			typed:    "as",
-			want:     "as" + escStart + "d" + escEnd + "f",
+			want:     "as" + red("d") + "f",
 		},
 		{
 			testName: "multiple lines",
-			text:     "def main:\n  print('hello')\n",
+			text:     "def main:\n  print('hello')\nfunc yeah",
 			typed:    "def main:\n  ",
-			want:     "def main:\n  " + escStart + "p" + escEnd + "rint('hello')\n",
+			want:     "def main:\n  " + red("p") + "rint('hello')\nfunc yeah",
 		},
 	}
 
@@ -140,10 +157,58 @@ func Test_renderText_cursorPosition(t *testing.T) {
 		}
 		got := testModel.renderText()
 		if got != tc.want {
-			t.Fatalf("%s\ngot\n%s\nwant\n%s", tc.testName, got, tc.want)
+			t.Fatalf("%s\ngot\n%v\n%s\nwant\n%v\n%s", tc.testName, got, renderBytes(got), tc.want, renderBytes(tc.want))
 		}
 	}
+}
 
+func Test_renderLine(t *testing.T) {
+	oldProfile := lg.ColorProfile()
+	lg.SetColorProfile(termenv.TrueColor)
+	defer lg.SetColorProfile(oldProfile)
+
+	testCaseStyles := styles{
+		commentStyle:         lg.NewStyle().Reverse(true),
+		untypedStyle:         lg.NewStyle().Reverse(true),
+		cursorStyle:          lg.NewStyle().Reverse(true),
+		typedStyle:           lg.NewStyle().Reverse(true),
+		mistakeStyle:         lg.NewStyle().Reverse(true),
+		vignetteStyle:        lg.NewStyle(),
+		vignetteMistakeStyle: lg.NewStyle().Foreground(lg.Color("1")),
+	}
+
+	testCases := []struct {
+		name     string
+		text     string
+		typed    string
+		style    styles
+		vignette bool
+		want     string
+	}{
+		{
+			name:     "vignette correctly",
+			text:     "my text",
+			typed:    "",
+			style:    testCaseStyles,
+			vignette: true,
+			want:     "my text",
+		},
+		{
+			name:     "vignette with mistakes",
+			text:     "my text",
+			typed:    "my next",
+			style:    testCaseStyles,
+			vignette: true,
+			want:     "my " + red("t") + "ext",
+		},
+	}
+	for _, tc := range testCases {
+		got := renderLine(tc.text, &tc.typed, tc.style, tc.vignette)
+		want := tc.want
+		if got != want {
+			t.Fatalf("%s\ngot:  %s\nwant: %s", tc.name, got, want)
+		}
+	}
 }
 
 func Test_addRuneToTypedText(t *testing.T) {
