@@ -53,17 +53,26 @@ func (m exerciseModel) renderText() (s string) {
 	typedLines := util.Lines(m.typedText)
 
 	windowSize := int(m.viewOptions.windowSize)
-	windowStart := 0
-	windowEnd := len(lines)
+	currLine := len(typedLines) - 1
+	linesBefore := windowSize / 3
+	linesAfter := windowSize * 2 / 3
+	var windowStart, windowEnd int
 
-	if windowSize > 0 {
+	switch {
+	case currLine < linesBefore:
 		windowStart = len(typedLines) - 1
 		windowEnd = windowStart + windowSize
-	}
-
-	if windowEnd > len(lines) {
+	case currLine >= linesBefore && currLine < len(lines)-linesAfter:
+		windowStart = currLine - linesBefore
+		windowEnd = windowStart + windowSize
+	case currLine >= len(lines)-linesAfter:
 		windowEnd = len(lines)
 		windowStart = windowEnd - windowSize
+	}
+
+	if windowSize == 0 {
+		windowStart = 0
+		windowEnd = len(lines)
 	}
 
 	for i := windowStart; i < windowEnd; i++ {
