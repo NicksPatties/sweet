@@ -69,5 +69,37 @@ func IsWhitespace(rn rune) bool {
 // The newlines are preserved, since they'll be used
 // in rendering, too.
 func Lines(text string) []string {
-	return strings.SplitAfter(text, "\n")
+	arr := strings.SplitAfter(text, "\n")
+	if arr[len(arr)-1] == "" {
+		arr = arr[:len(arr)-1]
+	}
+	return arr
+}
+
+// Renders either the base 16 byte code of a byte,
+// or it's visual representation. Useful for debugging
+// rendering errors.
+func RenderBytes(str string) (s string) {
+	bytes := []byte(str)
+	for i, b := range bytes {
+		c := fmt.Sprintf("\\x%x", str[i])
+		if b >= 32 && b <= 128 {
+			c = fmt.Sprintf("%s", string(str[i]))
+		}
+		s += c
+	}
+	return
+}
+
+func RemoveLastNewline(str string) string {
+	n := '\n'
+	i := len(str) - 1
+	for ; i >= 0 && rune(str[i]) != n; i = i - 1 {
+	}
+
+	if i < 0 {
+		return str
+	}
+
+	return fmt.Sprintf("%s%s", str[:i], str[i+1:])
 }

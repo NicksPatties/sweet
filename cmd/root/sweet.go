@@ -135,7 +135,7 @@ func exerciseFileFromArgs(cmd *cobra.Command, args []string) (exercise exerciseF
 			return
 		}
 	} else { // get a random exercise
-		if start != 0 || end != math.MaxUint {
+		if start != 1 || end != math.MaxUint {
 			err = errors.New("start and end should not be assigned for random exercise")
 			return
 		}

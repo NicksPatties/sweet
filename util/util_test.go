@@ -4,6 +4,8 @@ import (
 	"os"
 	"path"
 	"testing"
+
+	lg "github.com/charmbracelet/lipgloss"
 )
 
 func TestFilterFileNames(t *testing.T) {
@@ -121,18 +123,70 @@ func TestLines(t *testing.T) {
 			},
 		},
 		{
+			name:  "additional newline?",
+			input: "one\ntwo\nthree\nfour\nfive\n",
+			want: []string{
+				"one\n",
+				"two\n",
+				"three\n",
+				"four\n",
+				"five\n",
+			},
+		},
+		{
 			name:  "empty string",
 			input: "",
-			want:  []string{""},
+			want:  []string{},
 		},
 	}
 
 	for _, tc := range testCases {
 		got := Lines(tc.input)
 		for i := 0; i < len(tc.want); i = i + 1 {
+			if len(got) != len(tc.want) {
+				t.Fatalf("Lengths don't match. Got %d, want %d\n", len(got), len(tc.want))
+			}
+
 			if got[i] != tc.want[i] {
 				t.Errorf("%d got %s want %s", i, got[i], tc.want[i])
 			}
+		}
+	}
+}
+
+func TestRemoveLastNewline(t *testing.T) {
+	style := lg.NewStyle().Foreground(lg.Color("8"))
+	testCases := []struct {
+		name string
+		str  string
+		want string
+	}{
+		{
+			name: "default",
+			str:  "I am a string\n",
+			want: "I am a string",
+		},
+		{
+			name: "in the middle",
+			str:  "I am a string\nin the middle",
+			want: "I am a stringin the middle",
+		},
+		{
+			name: "with styles",
+			str:  "I am a string" + style.Render("\n") + "in the middle",
+			want: "I am a string" + style.Render("") + "in the middle",
+		},
+		{
+			name: "no newline",
+			str:  "I am a string",
+			want: "I am a string",
+		},
+	}
+
+	for _, tc := range testCases {
+		got := RemoveLastNewline(tc.str)
+		if tc.want != got {
+			t.Errorf("want\n%s\n%q\ngot\n%s\n%q", tc.want, tc.want, got, got)
 		}
 	}
 }

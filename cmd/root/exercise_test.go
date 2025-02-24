@@ -1,15 +1,17 @@
 package root
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
 	consts "github.com/NicksPatties/sweet/constants"
 	"github.com/NicksPatties/sweet/event"
+	"github.com/NicksPatties/sweet/util"
 	lg "github.com/charmbracelet/lipgloss"
 	"github.com/muesli/termenv"
 )
+
+var renderBytes = util.RenderBytes
 
 var mockViewOptions = &viewOptions{
 	styles:     defaultStyles(),
@@ -47,10 +49,15 @@ func Test_renderText(t *testing.T) {
 		want  string
 	}{
 		{
-			name:  "default test",
-			text:  testText,
+			name: "do not render the last newline",
+			text: `f()
+  a()
+end
+`,
 			typed: "",
-			want:  testText,
+			want: `f()
+  a()
+end`,
 		},
 		{
 			name:  "add newline character at end of line",
@@ -58,16 +65,14 @@ func Test_renderText(t *testing.T) {
 			typed: "func main() {",
 			want: `func main() {↲
     fmt.Println("hello!")
-}
-`},
+}`},
 		{
-			name:  "show arrow if there's an error on a newline",
+			name:  "show arrow if there's a mistake on a newline",
 			text:  testText,
 			typed: "func main() {a",
 			want: `func main() {↲
     fmt.Println("hello!")
-}
-`},
+}`},
 	}
 
 	for _, test := range tt {
@@ -83,8 +88,8 @@ func Test_renderText(t *testing.T) {
 		}
 		got := testModel.renderText()
 		if got != test.want {
-			t.Fatalf("%s failed\nexpected\n%s\ngot\n%s",
-				test.name, test.want, got,
+			t.Fatalf("%s failed\nwant\n%s\n%q\ngot\n%s\n%q\n",
+				test.name, test.want, test.want, got, got,
 			)
 		}
 	}
@@ -94,18 +99,6 @@ func red(s string) string {
 	escStart := "\033[31m"
 	escEnd := "\033[0m"
 	return escStart + s + escEnd
-}
-
-func renderBytes(str string) (s string) {
-	bytes := []byte(str)
-	for i, b := range bytes {
-		c := fmt.Sprintf("\\x%x", str[i])
-		if b >= 32 && b <= 128 {
-			c = fmt.Sprintf("%s", string(str[i]))
-		}
-		s += c
-	}
-	return
 }
 
 func Test_renderText_cursorPosition(t *testing.T) {
@@ -261,21 +254,21 @@ func Test_renderText_windowSize(t *testing.T) {
 			windowSize: 1,
 			text:       mockText,
 			typed:      "",
-			want:       red("o") + "ne\n",
+			want:       red("o") + "ne",
 		},
 		{
 			name:       "two lines: start of exercise",
 			windowSize: 2,
 			text:       mockText,
 			typed:      "",
-			want:       red("o") + "ne\ntwo\n",
+			want:       red("o") + "ne\ntwo",
 		},
 		{
 			name:       "two lines: partway through",
 			windowSize: 2,
 			text:       mockText,
 			typed:      "one\n",
-			want:       red("t") + "wo\nthree\n",
+			want:       red("t") + "wo\nthree",
 		},
 		{
 			name:       "two lines: last line",
@@ -289,14 +282,14 @@ func Test_renderText_windowSize(t *testing.T) {
 			windowSize: 3,
 			text:       mockText,
 			typed:      "",
-			want:       red("o") + "ne\ntwo\nthree\n",
+			want:       red("o") + "ne\ntwo\nthree",
 		},
 		{
 			name:       "three lines: partway",
 			windowSize: 3,
 			text:       mockText,
 			typed:      "one\ntwo\n",
-			want:       "two\n" + red("t") + "hree\nfour\n",
+			want:       "two\n" + red("t") + "hree\nfour",
 		},
 		{
 			name:       "three lines: end",
@@ -313,7 +306,7 @@ func Test_renderText_windowSize(t *testing.T) {
 			want:       "two\nthree\nfour\n" + red("f") + "ive",
 		},
 		{
-			name:       "four lines: end with newline",
+			name:       "four lines: prevent content shift with final newline",
 			windowSize: 4,
 			text:       mockText + "\n",
 			typed:      "one\ntwo\nthree\nfour\n",
@@ -343,6 +336,16 @@ func Test_renderText_windowSize(t *testing.T) {
 				tc.name, tc.windowSize, got, tc.want)
 		}
 	}
+}
+
+func Test_renderText_mistakes(t *testing.T) {
+	// TODO test case where I make a mistake on a newline
+	// If I make a mistake on a newline, then I have to let
+	// the next line know to render a cursor on the next line,
+	// which is totally cancerous.
+	//
+	// This may be why I counted indeces instead of splitting
+	// my typed lines by newlines, since they may not be there!
 }
 
 func Test_renderLine(t *testing.T) {

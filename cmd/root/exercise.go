@@ -50,6 +50,8 @@ func (m exerciseModel) renderName() string {
 
 func (m exerciseModel) renderText() (s string) {
 	lines := util.Lines(m.text)
+	// NOTE: This line below **smells**.
+	// What if you make a mistake on a newline?
 	typedLines := util.Lines(m.typedText)
 
 	windowSize := int(m.viewOptions.windowSize)
@@ -60,8 +62,8 @@ func (m exerciseModel) renderText() (s string) {
 
 	switch {
 	case currLine < linesBefore:
-		windowStart = len(typedLines) - 1
-		windowEnd = windowStart + windowSize
+		windowStart = 0
+		windowEnd = windowSize
 	case currLine >= linesBefore && currLine < len(lines)-linesAfter:
 		windowStart = currLine - linesBefore
 		windowEnd = windowStart + windowSize
@@ -81,7 +83,11 @@ func (m exerciseModel) renderText() (s string) {
 		if i < len(typedLines) {
 			typed = &typedLines[i]
 		}
-		s += renderLine(text, typed, m.viewOptions.styles, false)
+		line := renderLine(text, typed, m.viewOptions.styles, false)
+		if lastLine := i == windowEnd-1; lastLine {
+			line = util.RemoveLastNewline(line)
+		}
+		s += line
 	}
 	return
 }
@@ -285,7 +291,7 @@ func (m exerciseModel) View() (s string) {
 		s += m.renderName()
 		s += "\n\n"
 		s += m.renderText()
-		s += "\n"
+		s += "\n\n"
 
 		currKeyI := len(m.typedText)
 		currKey := m.text[currKeyI]
