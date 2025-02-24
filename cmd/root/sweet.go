@@ -228,12 +228,15 @@ func exerciseFileFromArgs(cmd *cobra.Command, args []string) (exercise exerciseF
 // If the file is empty, it returns an empty string.
 func scanFileText(file *os.File, start uint, end uint) (text string) {
 	scanner := bufio.NewScanner(file)
-	for line := uint(1); line <= end && scanner.Scan(); line++ {
-		if line >= start {
-			text += scanner.Text() + "\n"
-		}
+	scanner.Split(bufio.ScanBytes)
+	for scanner.Scan() {
+		text += scanner.Text()
 	}
-	return
+	lines := util.Lines(text)
+	if end >= uint(len(lines)) {
+		end = uint(len(lines))
+	}
+	return strings.Join(lines[start-1:end], "")
 }
 
 var defaultExercises = []exerciseFile{
@@ -324,7 +327,7 @@ func init() {
 
 func setRootCmdFlags(cmd *cobra.Command) {
 	cmd.Flags().StringP("language", "l", "", "select a language by file extension")
-	cmd.Flags().UintP("start", "s", 0, "start exercise at this line")
+	cmd.Flags().UintP("start", "s", 1, "start exercise at this line")
 	cmd.Flags().UintP("end", "e", math.MaxUint, "end exercise at this line")
 	cmd.Flags().UintP("window-size", "w", 0, "set the number of visible lines for the exercise")
 	cmd.Flags().SortFlags = false

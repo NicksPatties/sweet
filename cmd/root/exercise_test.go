@@ -298,6 +298,27 @@ func Test_renderText_windowSize(t *testing.T) {
 			typed:      "one\ntwo\n",
 			want:       "two\n" + red("t") + "hree\nfour\n",
 		},
+		{
+			name:       "three lines: end",
+			windowSize: 3,
+			text:       mockText,
+			typed:      "one\ntwo\nthree\nfour\n",
+			want:       "three\nfour\n" + red("f") + "ive",
+		},
+		{
+			name:       "four lines: end",
+			windowSize: 4,
+			text:       mockText,
+			typed:      "one\ntwo\nthree\nfour\n",
+			want:       "two\nthree\nfour\n" + red("f") + "ive",
+		},
+		{
+			name:       "four lines: end with newline",
+			windowSize: 4,
+			text:       mockText + "\n",
+			typed:      "one\ntwo\nthree\nfour\n",
+			want:       "two\nthree\nfour\n" + red("f") + "ive",
+		},
 	}
 
 	for _, tc := range testCases {
