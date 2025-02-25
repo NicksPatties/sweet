@@ -110,6 +110,9 @@ func renderLine(text string, typedP *string, style styles, vignette bool, currLi
 			currChar := untypedStyle.Render(string(c))
 			if i == 0 && currLine {
 				currChar = cursorStyle.Render(string(c))
+				if c == '\n' {
+					currChar = fmt.Sprintf("%s\n", cursorStyle.Render(consts.Arrow))
+				}
 			}
 			s += currChar
 		}

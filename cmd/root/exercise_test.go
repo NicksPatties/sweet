@@ -145,7 +145,7 @@ func Test_renderText_cursorPosition(t *testing.T) {
 			testName: "multiple lines: blank line",
 			text:     "#!/bin/bash\n\necho hello",
 			typed:    "#!/bin/bash\n",
-			want:     "#!/bin/bash\n" + red(consts.Arrow),
+			want:     "#!/bin/bash\n" + red(consts.Arrow) + "\necho hello",
 		},
 		{
 			testName: "multiple lines: last line",
