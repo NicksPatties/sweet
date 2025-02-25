@@ -4,8 +4,6 @@ import (
 	"os"
 	"path"
 	"testing"
-
-	lg "github.com/charmbracelet/lipgloss"
 )
 
 func TestFilterFileNames(t *testing.T) {
@@ -101,43 +99,6 @@ func TestLang(t *testing.T) {
 		got := Lang(tc.in)
 		if got != tc.want {
 			t.Errorf("got %s, want %s", got, tc.want)
-		}
-	}
-}
-
-func TestRemoveLastNewline(t *testing.T) {
-	style := lg.NewStyle().Foreground(lg.Color("8"))
-	testCases := []struct {
-		name string
-		str  string
-		want string
-	}{
-		{
-			name: "default",
-			str:  "I am a string\n",
-			want: "I am a string",
-		},
-		{
-			name: "in the middle",
-			str:  "I am a string\nin the middle",
-			want: "I am a stringin the middle",
-		},
-		{
-			name: "with styles",
-			str:  "I am a string" + style.Render("\n") + "in the middle",
-			want: "I am a string" + style.Render("") + "in the middle",
-		},
-		{
-			name: "no newline",
-			str:  "I am a string",
-			want: "I am a string",
-		},
-	}
-
-	for _, tc := range testCases {
-		got := RemoveLastNewline(tc.str)
-		if tc.want != got {
-			t.Errorf("want\n%s\n%q\ngot\n%s\n%q", tc.want, tc.want, got, got)
 		}
 	}
 }

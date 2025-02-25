@@ -64,31 +64,3 @@ func FilterFileNames(fileNames []string, language string) (found []string) {
 func IsWhitespace(rn rune) bool {
 	return rn == consts.Tab || rn == consts.Space
 }
-
-// Renders either the base 16 byte code of a byte,
-// or it's visual representation. Useful for debugging
-// rendering errors.
-func RenderBytes(str string) (s string) {
-	bytes := []byte(str)
-	for i, b := range bytes {
-		c := fmt.Sprintf("\\x%x", str[i])
-		if b >= 32 && b <= 128 {
-			c = fmt.Sprintf("%s", string(str[i]))
-		}
-		s += c
-	}
-	return
-}
-
-func RemoveLastNewline(str string) string {
-	n := '\n'
-	i := len(str) - 1
-	for ; i >= 0 && rune(str[i]) != n; i = i - 1 {
-	}
-
-	if i < 0 {
-		return str
-	}
-
-	return fmt.Sprintf("%s%s", str[:i], str[i+1:])
-}

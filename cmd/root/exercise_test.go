@@ -95,12 +95,6 @@ end`,
 	}
 }
 
-func red(s string) string {
-	escStart := "\033[31m"
-	escEnd := "\033[0m"
-	return escStart + s + escEnd
-}
-
 func Test_renderText_cursorPosition(t *testing.T) {
 	oldProfile := lg.ColorProfile()
 	lg.SetColorProfile(termenv.TrueColor)
@@ -127,31 +121,31 @@ func Test_renderText_cursorPosition(t *testing.T) {
 			testName: "single line: first character",
 			text:     "asdf",
 			typed:    "",
-			want:     red("a") + "sdf",
+			want:     util.Red("a") + "sdf",
 		},
 		{
 			testName: "single line",
 			text:     "asdf",
 			typed:    "as",
-			want:     "as" + red("d") + "f",
+			want:     "as" + util.Red("d") + "f",
 		},
 		{
 			testName: "multiple lines",
 			text:     "def main:\n  print('hello')\nfunc yeah",
 			typed:    "def main:\n  ",
-			want:     "def main:\n  " + red("p") + "rint('hello')\nfunc yeah",
+			want:     "def main:\n  " + util.Red("p") + "rint('hello')\nfunc yeah",
 		},
 		{
 			testName: "multiple lines: blank line",
 			text:     "#!/bin/bash\n\necho hello",
 			typed:    "#!/bin/bash\n",
-			want:     "#!/bin/bash\n" + red(consts.Arrow) + "\necho hello",
+			want:     "#!/bin/bash\n" + util.Red(consts.Arrow) + "\necho hello",
 		},
 		{
 			testName: "multiple lines: last line",
 			text:     "def main:\n  print('hello')\nfunc yeah",
 			typed:    "def main:\n  print('hello')\n",
-			want:     "def main:\n  print('hello')\n" + red("f") + "unc yeah",
+			want:     "def main:\n  print('hello')\n" + util.Red("f") + "unc yeah",
 		},
 	}
 
@@ -171,14 +165,6 @@ func Test_renderText_cursorPosition(t *testing.T) {
 			t.Errorf("%s\ngot\n%v\n%s\nwant\n%v\n%s", tc.testName, got, renderBytes(got), tc.want, renderBytes(tc.want))
 		}
 	}
-}
-
-func reds(s string) string {
-	finished := ""
-	for _, r := range s {
-		finished += red(string(r))
-	}
-	return finished
 }
 
 func Test_renderText_typedAndUntyped(t *testing.T) {
@@ -207,13 +193,13 @@ func Test_renderText_typedAndUntyped(t *testing.T) {
 			testName: "partially typed line",
 			text:     "asdf",
 			typed:    "as",
-			want:     reds("as") + "df",
+			want:     util.Reds("as") + "df",
 		},
 		{
 			testName: "fully typed line",
 			text:     "asdf",
 			typed:    "asdf",
-			want:     reds("asdf"),
+			want:     util.Reds("asdf"),
 		},
 		// NOTE: test cases with newlines will fail
 		// because of color reset escape sequences are
@@ -265,70 +251,70 @@ func Test_renderText_windowSize(t *testing.T) {
 			windowSize: 0,
 			text:       mockText,
 			typed:      "",
-			want:       red(string(mockText[0])) + mockText[1:],
+			want:       util.Red(string(mockText[0])) + mockText[1:],
 		},
 		{
 			name:       "should only show one line",
 			windowSize: 1,
 			text:       mockText,
 			typed:      "",
-			want:       red("o") + "ne",
+			want:       util.Red("o") + "ne",
 		},
 		{
 			name:       "two lines: start of exercise",
 			windowSize: 2,
 			text:       mockText,
 			typed:      "",
-			want:       red("o") + "ne\ntwo",
+			want:       util.Red("o") + "ne\ntwo",
 		},
 		{
 			name:       "two lines: partway through",
 			windowSize: 2,
 			text:       mockText,
 			typed:      "one\n",
-			want:       red("t") + "wo\nthree",
+			want:       util.Red("t") + "wo\nthree",
 		},
 		{
 			name:       "two lines: last line",
 			windowSize: 2,
 			text:       mockText,
 			typed:      "one\ntwo\nthree\nfour\n",
-			want:       "four\n" + red("f") + "ive",
+			want:       "four\n" + util.Red("f") + "ive",
 		},
 		{
 			name:       "three lines: exercise start",
 			windowSize: 3,
 			text:       mockText,
 			typed:      "",
-			want:       red("o") + "ne\ntwo\nthree",
+			want:       util.Red("o") + "ne\ntwo\nthree",
 		},
 		{
 			name:       "three lines: partway",
 			windowSize: 3,
 			text:       mockText,
 			typed:      "one\ntwo\n",
-			want:       "two\n" + red("t") + "hree\nfour",
+			want:       "two\n" + util.Red("t") + "hree\nfour",
 		},
 		{
 			name:       "three lines: end",
 			windowSize: 3,
 			text:       mockText,
 			typed:      "one\ntwo\nthree\nfour\n",
-			want:       "three\nfour\n" + red("f") + "ive",
+			want:       "three\nfour\n" + util.Red("f") + "ive",
 		},
 		{
 			name:       "four lines: end",
 			windowSize: 4,
 			text:       mockText,
 			typed:      "one\ntwo\nthree\nfour\n",
-			want:       "two\nthree\nfour\n" + red("f") + "ive",
+			want:       "two\nthree\nfour\n" + util.Red("f") + "ive",
 		},
 		{
 			name:       "four lines: prevent content shift with final newline",
 			windowSize: 4,
 			text:       mockText + "\n",
 			typed:      "one\ntwo\nthree\nfour\n",
-			want:       "two\nthree\nfour\n" + red("f") + "ive",
+			want:       "two\nthree\nfour\n" + util.Red("f") + "ive",
 		},
 	}
 
@@ -383,7 +369,7 @@ func Test_renderText_vignetting(t *testing.T) {
 			text:       "one\ntwo\nthree\nfour\nfive\n",
 			typed:      "",
 			windowSize: 3,
-			want:       "one\ntwo\n" + reds("three"),
+			want:       "one\ntwo\n" + util.Reds("three"),
 		},
 		{
 			name:       "don't vignette last line when the window has reached the end",
@@ -471,7 +457,7 @@ func Test_renderLine(t *testing.T) {
 			typed:    "my next",
 			style:    testCaseStyles,
 			vignette: true,
-			want:     "my " + red("t") + "ext",
+			want:     "my " + util.Red("t") + "ext",
 		},
 	}
 	for _, tc := range testCases {
@@ -516,7 +502,7 @@ func Test_lines(t *testing.T) {
 			},
 		},
 		{
-			name:  "empty string",
+			name:  "empty string should return empty array",
 			input: "",
 			want:  []string{},
 		},
@@ -598,7 +584,7 @@ func Test_typedLines(t *testing.T) {
 	}
 }
 
-func Test_currentLine(t *testing.T) {
+func Test_currentLineI(t *testing.T) {
 	testCases := []struct {
 		name  string
 		text  string
@@ -621,9 +607,45 @@ func Test_currentLine(t *testing.T) {
 
 	for _, tc := range testCases {
 		lines := lines(tc.text)
-		got := currentLine(lines, tc.typed)
+		got := currentLineI(lines, tc.typed)
 		if got != tc.want {
 			t.Errorf("%s: got: %d, want: %d", tc.name, got, tc.want)
+		}
+	}
+}
+func Test_removeLastNewline(t *testing.T) {
+	style := lg.NewStyle().Foreground(lg.Color("8"))
+	testCases := []struct {
+		name string
+		str  string
+		want string
+	}{
+		{
+			name: "default",
+			str:  "I am a string\n",
+			want: "I am a string",
+		},
+		{
+			name: "in the middle",
+			str:  "I am a string\nin the middle",
+			want: "I am a stringin the middle",
+		},
+		{
+			name: "with styles",
+			str:  "I am a string" + style.Render("\n") + "in the middle",
+			want: "I am a string" + style.Render("") + "in the middle",
+		},
+		{
+			name: "no newline",
+			str:  "I am a string",
+			want: "I am a string",
+		},
+	}
+
+	for _, tc := range testCases {
+		got := removeLastNewline(tc.str)
+		if tc.want != got {
+			t.Errorf("want\n%s\n%q\ngot\n%s\n%q", tc.want, tc.want, got, got)
 		}
 	}
 }

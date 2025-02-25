@@ -12,6 +12,7 @@ import (
 	"github.com/NicksPatties/sweet/util"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 // The exercise model used by bubbletea.
@@ -48,7 +49,7 @@ func (m exerciseModel) renderText() (s string) {
 	typedLines := typedLines(lines, m.typedText)
 
 	windowSize := int(m.viewOptions.windowSize)
-	currLine := currentLine(lines, m.typedText)
+	currLine := currentLineI(lines, m.typedText)
 	linesBefore := windowSize / 3
 	linesAfter := windowSize * 2 / 3
 	var windowStart, windowEnd int
@@ -88,7 +89,7 @@ func (m exerciseModel) renderText() (s string) {
 		}
 		line := renderLine(text, typed, m.viewOptions.styles, shouldVignette, isCurrLine)
 		if lastLine := i == windowEnd-1; lastLine {
-			line = util.RemoveLastNewline(line)
+			line = removeLastNewline(line)
 		}
 		s += line
 	}
@@ -100,8 +101,8 @@ func (m exerciseModel) renderText() (s string) {
 // in rendering, too.
 func lines(text string) []string {
 	arr := strings.SplitAfter(text, "\n")
-	if arr[len(arr)-1] == "" {
-		arr = arr[:len(arr)-1]
+	if last := len(arr) - 1; arr[last] == "" {
+		arr = arr[:last]
 	}
 	return arr
 }
@@ -128,7 +129,7 @@ func typedLines(lines []string, typed string) []string {
 	return typedLines
 }
 
-func currentLine(lines []string, typed string) int {
+func currentLineI(lines []string, typed string) int {
 	typedLen := len(typed)
 	for i := range lines {
 		for range lines[i] {
@@ -139,6 +140,19 @@ func currentLine(lines []string, typed string) int {
 		}
 	}
 	return 0
+}
+
+func removeLastNewline(str string) string {
+	n := '\n'
+	i := len(str) - 1
+	for ; i >= 0 && rune(str[i]) != n; i = i - 1 {
+	}
+
+	if i < 0 {
+		return str
+	}
+
+	return fmt.Sprintf("%s%s", str[:i], str[i+1:])
 }
 
 func renderLine(text string, typedP *string, style styles, vignette bool, currLine bool) (s string) {
@@ -154,8 +168,6 @@ func renderLine(text string, typedP *string, style styles, vignette bool, currLi
 		mistakeStyle = style.vignetteMistakeStyle
 	}
 
-	var typed string
-	// This happens at the beginning of a line
 	if typedP == nil {
 		for i, c := range text {
 			currChar := string(c)
@@ -163,17 +175,14 @@ func renderLine(text string, typedP *string, style styles, vignette bool, currLi
 				currChar = untypedStyle.Render(string(c))
 			}
 			if i == 0 && currLine {
-				currChar = cursorStyle.Render(string(c))
-				if c == '\n' {
-					currChar = fmt.Sprintf("%s\n", cursorStyle.Render(consts.Arrow))
-				}
+				currChar = renderVisibleRune(cursorStyle, c)
 			}
 			s += currChar
 		}
 		return
-	} else {
-		typed = *typedP
 	}
+
+	typed := *typedP
 
 	for i, exRune := range text {
 		// Has this character been typed yet?
@@ -184,14 +193,7 @@ func renderLine(text string, typedP *string, style styles, vignette bool, currLi
 
 		// Is this the cursor?
 		if i == len(typed) && currLine {
-
-			// Is the cursor on a newline?
-			if exRune == consts.Enter {
-				s += fmt.Sprintf("%s\n", cursorStyle.Render(consts.Arrow))
-				continue
-			}
-
-			s += cursorStyle.Render(string(exRune))
+			s += renderVisibleRune(cursorStyle, exRune)
 			continue
 		}
 
@@ -200,15 +202,21 @@ func renderLine(text string, typedP *string, style styles, vignette bool, currLi
 
 		// Is it incorrect?
 		if typedRune != exRune {
-			if exRune == consts.Enter {
-				s += fmt.Sprintf("%s\n", mistakeStyle.Render(consts.Arrow))
-			} else {
-				s += mistakeStyle.Render(string(exRune))
-			}
+			s += renderVisibleRune(mistakeStyle, exRune)
 			continue
 		}
 
 		s += typedStyle.Render(string(exRune))
+	}
+	return
+}
+
+// If the rune is a newline, and it needs to be visible
+// (i.e. it's a cursor character, or a mistake), then use this function
+func renderVisibleRune(style lipgloss.Style, exRune rune) (s string) {
+	s = style.Render(string(exRune))
+	if exRune == '\n' {
+		s = fmt.Sprintf("%s\n", style.Render(consts.Arrow))
 	}
 	return
 }
