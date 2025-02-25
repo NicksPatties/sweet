@@ -50,12 +50,10 @@ func (m exerciseModel) renderName() string {
 
 func (m exerciseModel) renderText() (s string) {
 	lines := util.Lines(m.text)
-	// NOTE: This line below **smells**.
-	// What if you make a mistake on a newline?
-	typedLines := util.Lines(m.typedText)
+	typedLines := util.TypedLines(lines, m.typedText)
 
 	windowSize := int(m.viewOptions.windowSize)
-	currLine := len(typedLines) - 1
+	currLine := len(typedLines)
 	linesBefore := windowSize / 3
 	linesAfter := windowSize * 2 / 3
 	var windowStart, windowEnd int

@@ -154,6 +154,29 @@ func TestLines(t *testing.T) {
 	}
 }
 
+func TestTypedLines(t *testing.T) {
+	lines := []string{
+		"one\n",
+		"two\n",
+		"three\n",
+	}
+	typed := "on\n"
+	wantArr := []string{
+		"on\n",
+	}
+
+	got := TypedLines(lines, typed)
+
+	for i, want := range wantArr {
+		if len(got) != len(wantArr) {
+			t.Errorf("len got: %d len(want): %d", len(got), len(wantArr))
+		}
+		if got[i] != want {
+			t.Errorf("got: %s\n want: %s", got[i], want)
+		}
+	}
+}
+
 func TestRemoveLastNewline(t *testing.T) {
 	style := lg.NewStyle().Foreground(lg.Color("8"))
 	testCases := []struct {

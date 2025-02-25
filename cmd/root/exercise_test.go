@@ -124,6 +124,12 @@ func Test_renderText_cursorPosition(t *testing.T) {
 		want     string
 	}{
 		{
+			testName: "single line: first character",
+			text:     "asdf",
+			typed:    "",
+			want:     red("a") + "sdf",
+		},
+		{
 			testName: "single line",
 			text:     "asdf",
 			typed:    "as",

@@ -76,6 +76,28 @@ func Lines(text string) []string {
 	return arr
 }
 
+// Returns an array of strings that map the typed characters
+// to the exercise characters. If no characters have been typed
+// on a current line, the typedLine will be nil.
+func TypedLines(lines []string, typed string) []string {
+	typedLines := []string{}
+	i := 0
+	for _, line := range lines {
+		str := ""
+		for range line {
+			if i >= len(typed) {
+				continue
+			}
+			str = str + string(typed[i])
+			i = i + 1
+		}
+		if str != "" {
+			typedLines = append(typedLines, str)
+		}
+	}
+	return typedLines
+}
+
 // Renders either the base 16 byte code of a byte,
 // or it's visual representation. Useful for debugging
 // rendering errors.
