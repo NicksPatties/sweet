@@ -232,7 +232,7 @@ func scanFileText(file *os.File, start uint, end uint) (text string) {
 	for scanner.Scan() {
 		text += scanner.Text()
 	}
-	lines := util.Lines(text)
+	lines := lines(text)
 	if end >= uint(len(lines)) {
 		end = uint(len(lines))
 	}
@@ -299,7 +299,7 @@ func viewOptionsFromArgs(cmd *cobra.Command, exerciseText string) (*viewOptions,
 	if err != nil {
 		return nil, err
 	}
-	numLines := uint(len(util.Lines(exerciseText)))
+	numLines := uint(len(lines(exerciseText)))
 	if windowSize >= numLines {
 		windowSize = 0
 	}
