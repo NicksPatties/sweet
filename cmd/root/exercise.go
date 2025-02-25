@@ -53,7 +53,7 @@ func (m exerciseModel) renderText() (s string) {
 	typedLines := util.TypedLines(lines, m.typedText)
 
 	windowSize := int(m.viewOptions.windowSize)
-	currLine := len(typedLines)
+	currLine := util.CurrentLine(lines, m.typedText)
 	linesBefore := windowSize / 3
 	linesAfter := windowSize * 2 / 3
 	var windowStart, windowEnd int
@@ -75,13 +75,13 @@ func (m exerciseModel) renderText() (s string) {
 		windowEnd = len(lines)
 	}
 
-	for i := windowStart; i < windowEnd; i++ {
+	for i := windowStart; i < windowEnd; i = i + 1 {
 		text := lines[i]
 		var typed *string = nil
 		if i < len(typedLines) {
 			typed = &typedLines[i]
 		}
-		line := renderLine(text, typed, m.viewOptions.styles, false)
+		line := renderLine(text, typed, m.viewOptions.styles, false, i == currLine)
 		if lastLine := i == windowEnd-1; lastLine {
 			line = util.RemoveLastNewline(line)
 		}
@@ -90,7 +90,7 @@ func (m exerciseModel) renderText() (s string) {
 	return
 }
 
-func renderLine(text string, typedP *string, style styles, vignette bool) (s string) {
+func renderLine(text string, typedP *string, style styles, vignette bool, currLine bool) (s string) {
 	typedStyle := style.typedStyle
 	untypedStyle := style.untypedStyle
 	cursorStyle := style.cursorStyle
@@ -103,14 +103,20 @@ func renderLine(text string, typedP *string, style styles, vignette bool) (s str
 		mistakeStyle = style.vignetteMistakeStyle
 	}
 
+	var typed string
+	// This happens at the beginning of a line
 	if typedP == nil {
-		for _, r := range text {
-			s += untypedStyle.Render(string(r))
+		for i, c := range text {
+			currChar := untypedStyle.Render(string(c))
+			if i == 0 && currLine {
+				currChar = cursorStyle.Render(string(c))
+			}
+			s += currChar
 		}
 		return
+	} else {
+		typed = *typedP
 	}
-
-	typed := *typedP
 
 	for i, exRune := range text {
 		// Has this character been typed yet?
@@ -120,7 +126,7 @@ func renderLine(text string, typedP *string, style styles, vignette bool) (s str
 		}
 
 		// Is this the cursor?
-		if i == len(typed) {
+		if i == len(typed) && currLine {
 
 			// Is the cursor on a newline?
 			if exRune == consts.Enter {

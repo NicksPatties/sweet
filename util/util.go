@@ -98,6 +98,19 @@ func TypedLines(lines []string, typed string) []string {
 	return typedLines
 }
 
+func CurrentLine(lines []string, typed string) int {
+	typedLen := len(typed)
+	for i := range lines {
+		for range lines[i] {
+			if typedLen == 0 {
+				return i
+			}
+			typedLen = typedLen - 1
+		}
+	}
+	return 0
+}
+
 // Renders either the base 16 byte code of a byte,
 // or it's visual representation. Useful for debugging
 // rendering errors.

@@ -141,6 +141,18 @@ func Test_renderText_cursorPosition(t *testing.T) {
 			typed:    "def main:\n  ",
 			want:     "def main:\n  " + red("p") + "rint('hello')\nfunc yeah",
 		},
+		{
+			testName: "multiple lines: blank line",
+			text:     "#!/bin/bash\n\necho hello",
+			typed:    "#!/bin/bash\n",
+			want:     "#!/bin/bash\n" + red(consts.Arrow),
+		},
+		{
+			testName: "multiple lines: last line",
+			text:     "def main:\n  print('hello')\nfunc yeah",
+			typed:    "def main:\n  print('hello')\n",
+			want:     "def main:\n  print('hello')\n" + red("f") + "unc yeah",
+		},
 	}
 
 	for _, tc := range testCases {
@@ -156,7 +168,7 @@ func Test_renderText_cursorPosition(t *testing.T) {
 		}
 		got := testModel.renderText()
 		if got != tc.want {
-			t.Fatalf("%s\ngot\n%v\n%s\nwant\n%v\n%s", tc.testName, got, renderBytes(got), tc.want, renderBytes(tc.want))
+			t.Errorf("%s\ngot\n%v\n%s\nwant\n%v\n%s", tc.testName, got, renderBytes(got), tc.want, renderBytes(tc.want))
 		}
 	}
 }
@@ -370,12 +382,13 @@ func Test_renderLine(t *testing.T) {
 	}
 
 	testCases := []struct {
-		name     string
-		text     string
-		typed    string
-		style    styles
-		vignette bool
-		want     string
+		name      string
+		text      string
+		typed     string
+		style     styles
+		vignette  bool
+		hasCursor bool
+		want      string
 	}{
 		{
 			name:     "vignette correctly",
@@ -395,7 +408,11 @@ func Test_renderLine(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-		got := renderLine(tc.text, &tc.typed, tc.style, tc.vignette)
+		typed := &tc.typed
+		if tc.typed == "" {
+			typed = nil
+		}
+		got := renderLine(tc.text, typed, tc.style, tc.vignette, false)
 		want := tc.want
 		if got != want {
 			t.Fatalf("%s\ngot:  %s\nwant: %s", tc.name, got, want)

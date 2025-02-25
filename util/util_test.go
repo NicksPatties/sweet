@@ -155,24 +155,93 @@ func TestLines(t *testing.T) {
 }
 
 func TestTypedLines(t *testing.T) {
-	lines := []string{
-		"one\n",
-		"two\n",
-		"three\n",
-	}
-	typed := "on\n"
-	wantArr := []string{
-		"on\n",
+	testCases := []struct {
+		name  string
+		lines []string
+		typed string
+		want  []string
+	}{
+		{
+			name: "typed newline before end of line",
+			lines: []string{
+				"one\n",
+				"two\n",
+				"three\n",
+			},
+			typed: "on\n",
+			want:  []string{"on\n"},
+		},
+		{
+			name: "haven't started the exercise yet",
+			lines: []string{
+				"one\n",
+				"two\n",
+				"three\n",
+			},
+			typed: "",
+			want:  []string{},
+		},
+		{
+			name: "finished first line of the exercise",
+			lines: []string{
+				"one\n",
+				"two\n",
+				"three\n",
+			},
+			typed: "one\n",
+			want:  []string{"one\n"},
+		},
+		{
+			name: "finished two lines of the exercise",
+			lines: []string{
+				"one\n",
+				"two\n",
+				"three\n",
+			},
+			typed: "one\ntw",
+			want:  []string{"one\n", "tw"},
+		},
 	}
 
-	got := TypedLines(lines, typed)
-
-	for i, want := range wantArr {
-		if len(got) != len(wantArr) {
-			t.Errorf("len got: %d len(want): %d", len(got), len(wantArr))
+	for _, tc := range testCases {
+		got := TypedLines(tc.lines, tc.typed)
+		for i, wantStr := range tc.want {
+			if len(got) != len(tc.want) {
+				t.Errorf("len got: %d len(want): %d", len(got), len(tc.want))
+			}
+			if got[i] != wantStr {
+				t.Errorf("got: %s\n want: %s", got[i], wantStr)
+			}
 		}
-		if got[i] != want {
-			t.Errorf("got: %s\n want: %s", got[i], want)
+	}
+}
+
+func TestCurrentLine(t *testing.T) {
+	testCases := []struct {
+		name  string
+		text  string
+		typed string
+		want  int
+	}{
+		{
+			name:  "no typed text",
+			text:  "one\ntwo\nthree",
+			typed: "",
+			want:  0,
+		},
+		{
+			name:  "one line of typed text",
+			text:  "one\ntwo\nthree",
+			typed: "one\n",
+			want:  1,
+		},
+	}
+
+	for _, tc := range testCases {
+		lines := Lines(tc.text)
+		got := CurrentLine(lines, tc.typed)
+		if got != tc.want {
+			t.Errorf("%s: got: %d, want: %d", tc.name, got, tc.want)
 		}
 	}
 }
