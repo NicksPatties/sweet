@@ -356,14 +356,81 @@ func Test_renderText_windowSize(t *testing.T) {
 	}
 }
 
-func Test_renderText_mistakes(t *testing.T) {
-	// TODO test case where I make a mistake on a newline
-	// If I make a mistake on a newline, then I have to let
-	// the next line know to render a cursor on the next line,
-	// which is totally cancerous.
-	//
-	// This may be why I counted indeces instead of splitting
-	// my typed lines by newlines, since they may not be there!
+func Test_renderText_vignetting(t *testing.T) {
+	oldProfile := lg.ColorProfile()
+	lg.SetColorProfile(termenv.TrueColor)
+	defer lg.SetColorProfile(oldProfile)
+
+	testCaseStyles := styles{
+		commentStyle:         lg.NewStyle(),
+		untypedStyle:         lg.NewStyle(),
+		cursorStyle:          lg.NewStyle(),
+		typedStyle:           lg.NewStyle(),
+		mistakeStyle:         lg.NewStyle(),
+		vignetteStyle:        lg.NewStyle().Foreground(lg.Color("1")),
+		vignetteMistakeStyle: lg.NewStyle(),
+	}
+
+	testCases := []struct {
+		name       string
+		text       string
+		typed      string
+		windowSize uint
+		want       string
+	}{
+		{
+			name:       "vignette last line when the window hasn't reached the last line, yet",
+			text:       "one\ntwo\nthree\nfour\nfive\n",
+			typed:      "",
+			windowSize: 3,
+			want:       "one\ntwo\n" + reds("three"),
+		},
+		{
+			name:       "don't vignette last line when the window has reached the end",
+			text:       "one\ntwo\nthree\nfour\nfive\n",
+			typed:      "one\ntwo\nthree\n",
+			windowSize: 3,
+			want:       "three\nfour\nfive",
+		},
+		{
+			name:       "don't vignette last line when the window has reached the end",
+			text:       "one\ntwo\nthree\nfour\nfive\n",
+			typed:      "one\ntwo\n",
+			windowSize: 4,
+			want:       "two\nthree\nfour\nfive",
+		},
+		{
+			name:       "don't vignette when windowSize is only 1",
+			text:       "one\ntwo\nthree\nfour\nfive\n",
+			typed:      "one\ntwo\n",
+			windowSize: 1,
+			want:       "three",
+		},
+	}
+
+	for _, tc := range testCases {
+		testViewOptions := &viewOptions{
+			styles:     testCaseStyles,
+			windowSize: tc.windowSize,
+		}
+		mockViewModel := exerciseModel{
+			name:        "",
+			text:        tc.text,
+			typedText:   tc.typed,
+			startTime:   time.Time{},
+			endTime:     time.Time{},
+			quitEarly:   false,
+			events:      []event.Event{},
+			viewOptions: testViewOptions,
+		}
+
+		got := mockViewModel.renderText()
+
+		if got != tc.want {
+			t.Errorf("%s\ngot:\n%s\n%q\nwant:\n%s\n%q\n", tc.name, got, got, tc.want, tc.want)
+		}
+	}
+
 }
 
 func Test_renderLine(t *testing.T) {

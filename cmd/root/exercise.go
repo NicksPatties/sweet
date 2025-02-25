@@ -27,19 +27,13 @@ type exerciseModel struct {
 	// The charcters that the user has typed during this exercise.
 	typedText string
 
-	// The point in time when the user started typing.
 	startTime time.Time
-
-	// The time the user completed the exercise.
-	endTime time.Time
-
-	// True if the user quit before the exercise was complete
+	endTime   time.Time
 	quitEarly bool
 
 	// The user's keystrokes during the exercise
 	events []event.Event
 
-	// various options to handle
 	viewOptions *viewOptions
 }
 
@@ -58,7 +52,6 @@ func (m exerciseModel) renderText() (s string) {
 	linesBefore := windowSize / 3
 	linesAfter := windowSize * 2 / 3
 	var windowStart, windowEnd int
-
 	switch {
 	case currLine < linesBefore:
 		windowStart = 0
@@ -71,9 +64,15 @@ func (m exerciseModel) renderText() (s string) {
 		windowStart = windowEnd - windowSize
 	}
 
+	// should show the whole exercise
 	if windowSize == 0 {
 		windowStart = 0
 		windowEnd = len(lines)
+	}
+
+	vignetteLastLine := true
+	if windowEnd == len(lines) {
+		vignetteLastLine = false
 	}
 
 	for i := windowStart; i < windowEnd; i = i + 1 {
@@ -82,7 +81,12 @@ func (m exerciseModel) renderText() (s string) {
 		if i < len(typedLines) {
 			typed = &typedLines[i]
 		}
-		line := renderLine(text, typed, m.viewOptions.styles, false, i == currLine)
+		isCurrLine := i == currLine
+		shouldVignette := false
+		if vignetteLastLine && i == windowEnd-1 && i != windowStart {
+			shouldVignette = true
+		}
+		line := renderLine(text, typed, m.viewOptions.styles, shouldVignette, isCurrLine)
 		if lastLine := i == windowEnd-1; lastLine {
 			line = util.RemoveLastNewline(line)
 		}
@@ -154,7 +158,10 @@ func renderLine(text string, typedP *string, style styles, vignette bool, currLi
 	// This happens at the beginning of a line
 	if typedP == nil {
 		for i, c := range text {
-			currChar := untypedStyle.Render(string(c))
+			currChar := string(c)
+			if c != '\n' {
+				currChar = untypedStyle.Render(string(c))
+			}
 			if i == 0 && currLine {
 				currChar = cursorStyle.Render(string(c))
 				if c == '\n' {
