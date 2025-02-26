@@ -8,76 +8,86 @@ package add
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
-	l "log"
 	"math"
 	"os"
 	"path"
+	"strings"
 
+	"github.com/NicksPatties/sweet/util"
 	"github.com/spf13/cobra"
 )
 
 var Cmd = &cobra.Command{
 	Use:   "add [flags] path",
 	Short: "Add an exercise",
-	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) == 0 {
-			l.Fatalf("No path specified. Exiting.")
-		} else if len(args) > 1 {
-			l.Printf("Multiple paths specified. Ignoring paths %s", args[1:])
-		}
-		path := args[0]
-		start, _ := cmd.Flags().GetInt("start")
-		end, _ := cmd.Flags().GetInt("end")
-
-		// ... the rest of the command
-		addExercise(path, start, end)
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return addExercise(cmd, args)
 	},
 }
 
-func init() {
-	Cmd.Flags().IntP("start", "s", 1, "The start line number to extract the sample")
-	Cmd.Flags().IntP("end", "e", math.MaxUint32, "The end line number to extract the sample")
-}
+func addExercise(cmd *cobra.Command, args []string) (err error) {
+	if len(args) != 1 {
+		return errors.New("Incorrect number of args")
+	}
+	pathName := args[0]
+	start, _ := cmd.Flags().GetUint("start")
+	end, _ := cmd.Flags().GetUint("end")
 
-// Adds an exercise to sweet's configured exercises directory.
-func addExercise(pathName string, start int, end int) {
-	// Open the exercise from the given path.
+	if start > end {
+		fmt.Printf("YOU ARE BEING BAD!!!!")
+		return errors.New("start flag cannot be greater than end flag")
+	}
+
 	inputFile, err := os.Open(pathName)
 	if err != nil {
-		fmt.Println(err)
-		fmt.Println("Exiting.")
-		os.Exit(1)
+		return
 	}
 	defer inputFile.Close()
 
 	// Create the new exercise file in the configuration directory.
-	newExercisePath := path.Join("/home/nick/.config/sweet/exercises", path.Base(pathName))
+	sweetConfigDir, err := util.SweetConfigDir()
+	if err != nil {
+		return
+	}
+	exercisesDir := path.Join(sweetConfigDir, "exercises")
+	if envDir := os.Getenv("SWEET_EXERCISES_DIR"); envDir != "" {
+		exercisesDir = envDir
+	}
+	newExercisePath := path.Join(exercisesDir, path.Base(pathName))
 	newExerciseFile, err := os.Create(newExercisePath)
 	if err != nil {
-		fmt.Println(err)
-		fmt.Println("Exiting.")
-		os.Exit(1)
+		return
 	}
 	defer newExerciseFile.Close()
 
 	// Scan the input file and add the lines to the new exercise file.
 	scanner := bufio.NewScanner(inputFile)
-	i := 1
+	scanner.Split(bufio.ScanBytes)
+	text := ""
 	for scanner.Scan() {
-		currLine := scanner.Text()
-		if i >= start && i <= end {
-			fmt.Printf("Adding line %d:\t%s\n", i, currLine)
-			// Need to add the newline back in,
-			// since the scanner splits the file
-			newExerciseFile.WriteString(currLine + "\n")
-		} else {
-			fmt.Printf("Ignoring line %d:\t%s\n", i, currLine)
-		}
-		i++
+		text += scanner.Text()
 	}
+	lines := util.Lines(text)
+	if end > uint(len(lines)) {
+		end = uint(len(lines))
+	}
+	newExerciseFileString := strings.Join(lines[start-1:end], "")
+	newExerciseFile.WriteString(newExerciseFileString)
 
-	if err := scanner.Err(); err != nil {
-		fmt.Printf("Problem with scanning the file. %s", err)
+	if err = scanner.Err(); err != nil {
+		return
 	}
+	return nil
+}
+
+func init() {
+	setAddCmdFlags(Cmd)
+}
+
+func setAddCmdFlags(cmd *cobra.Command) {
+	cmd.Flags().UintP("start", "s", 1, "The start line number to extract the sample")
+	cmd.Flags().UintP("end", "e", math.MaxUint32, "The end line number to extract the sample")
 }

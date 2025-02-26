@@ -3,7 +3,6 @@ package root
 import (
 	"fmt"
 	"os"
-	"strings"
 	"time"
 
 	consts "github.com/NicksPatties/sweet/constants"
@@ -45,7 +44,7 @@ func (m exerciseModel) renderName() string {
 }
 
 func (m exerciseModel) renderText() (s string) {
-	lines := lines(m.text)
+	lines := util.Lines(m.text)
 	typedLines := typedLines(lines, m.typedText)
 
 	windowSize := int(m.viewOptions.windowSize)
@@ -94,17 +93,6 @@ func (m exerciseModel) renderText() (s string) {
 		s += line
 	}
 	return
-}
-
-// Splits up a string of text by newlines.
-// The newlines are preserved, since they'll be used
-// in rendering, too.
-func lines(text string) []string {
-	arr := strings.SplitAfter(text, "\n")
-	if last := len(arr) - 1; arr[last] == "" {
-		arr = arr[:last]
-	}
-	return arr
 }
 
 // Returns an array of strings that map the typed characters

@@ -455,7 +455,7 @@ func Test_lines(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		got := lines(tc.input)
+		got := util.Lines(tc.input)
 		for i := 0; i < len(tc.want); i = i + 1 {
 			if len(got) != len(tc.want) {
 				t.Errorf("Lengths don't match. Got %d, want %d\n", len(got), len(tc.want))
@@ -558,7 +558,7 @@ func Test_currentLineI(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		lines := lines(tc.text)
+		lines := util.Lines(tc.text)
 		got := currentLineI(lines, tc.typed)
 		if got != tc.want {
 			t.Errorf("%s: got: %d, want: %d", tc.name, got, tc.want)

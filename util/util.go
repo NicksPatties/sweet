@@ -84,3 +84,14 @@ func GetVersion() string {
 	}
 	return version
 }
+
+// Splits up a string of text by newlines.
+// The newlines are preserved, since they'll be used
+// in rendering, too.
+func Lines(text string) []string {
+	arr := strings.SplitAfter(text, "\n")
+	if last := len(arr) - 1; arr[last] == "" {
+		arr = arr[:last]
+	}
+	return arr
+}
