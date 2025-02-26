@@ -102,20 +102,3 @@ func TestLang(t *testing.T) {
 		}
 	}
 }
-
-func TestLines(t *testing.T) {
-	got := Lines("one\ntwo\nthree\nfour\nfive")
-	want := []string{
-		"one\n",
-		"two\n",
-		"three\n",
-		"four\n",
-		"five",
-	}
-
-	for i := 0; i < len(want); i = i + 1 {
-		if got[i] != want[i] {
-			t.Errorf("%d got %s want %s", i, got[i], want[i])
-		}
-	}
-}

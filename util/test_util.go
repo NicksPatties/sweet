@@ -2,6 +2,7 @@ package util
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"os"
 	"testing"
@@ -36,4 +37,33 @@ func GetWantFile(wantFile string, t *testing.T) string {
 		t.Errorf("Error opening file %s", wantFile)
 	}
 	return string(f)
+}
+
+func Red(s string) string {
+	escStart := "\033[31m"
+	escEnd := "\033[0m"
+	return escStart + s + escEnd
+}
+
+func Reds(s string) string {
+	finished := ""
+	for _, r := range s {
+		finished += Red(string(r))
+	}
+	return finished
+}
+
+// Renders either the base 16 byte code of a byte,
+// or it's visual representation. Useful for debugging
+// rendering errors.
+func RenderBytes(str string) (s string) {
+	bytes := []byte(str)
+	for i, b := range bytes {
+		c := fmt.Sprintf("\\x%x", str[i])
+		if b >= 32 && b <= 128 {
+			c = fmt.Sprintf("%s", string(str[i]))
+		}
+		s += c
+	}
+	return
 }

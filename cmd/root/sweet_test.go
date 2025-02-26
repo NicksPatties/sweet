@@ -4,10 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"math"
 	"os"
 	"path"
 	"testing"
 
+	"github.com/NicksPatties/sweet/util"
 	"github.com/spf13/cobra"
 )
 
@@ -99,7 +101,6 @@ var mockExerciseFileCmd = func(tc fromArgsExerciseFileTestCase) *cobra.Command {
 }
 
 func Test_exerciseFileFromArgs(t *testing.T) {
-
 	// Test environment setup
 	tmpExercisesDir := t.TempDir()
 	t.Setenv("SWEET_EXERCISES_DIR", tmpExercisesDir)
@@ -554,6 +555,79 @@ func Test_viewOptionsFromArgs(t *testing.T) {
 		cmd := mockViewOptionsCmd(tc)
 		if err := cmd.Execute(); err != nil {
 			t.Fatalf("mock command failed to run: %s", err)
+		}
+	}
+}
+
+func Test_scanFileText(t *testing.T) {
+	// see sweet.go#setRootCmdFlags
+	defaultStart := uint(1)
+	var defaultEnd uint = math.MaxUint
+
+	testCases := []struct {
+		name     string
+		start    uint
+		end      uint
+		contents string
+		want     string
+	}{
+		{
+			name:     "default case",
+			start:    defaultStart,
+			end:      defaultEnd,
+			contents: "This is a test file.",
+			want:     "This is a test file.",
+		},
+		{
+			name:     "multiple lines, no flags",
+			start:    defaultStart,
+			end:      defaultEnd,
+			contents: "This is a test file\nthat has two lines!",
+			want:     "This is a test file\nthat has two lines!",
+		},
+		{
+			name:     "multiple lines, start only",
+			start:    2,
+			end:      defaultEnd,
+			contents: "one\ntwo\nthree",
+			want:     "two\nthree",
+		},
+		{
+			name:     "multiple lines, end only",
+			start:    defaultStart,
+			end:      2,
+			contents: "one\ntwo\nthree",
+			want:     "one\ntwo\n",
+		},
+		{
+			name:     "both variables",
+			start:    2,
+			end:      3,
+			contents: "one\ntwo\nthree",
+			want:     "two\nthree",
+		},
+		{
+			name:     "both variables, but one line lol",
+			start:    2,
+			end:      2,
+			contents: "one\ntwo\nthree",
+			want:     "two\n",
+		},
+	}
+
+	for _, tc := range testCases {
+		// Create a temporary file for testing
+		tempFile, err := os.CreateTemp("", "")
+		defer tempFile.Close()
+		_, err = tempFile.WriteString(tc.contents)
+		_, err = tempFile.Seek(0, 0)
+		if err != nil {
+			t.Fatalf("something went wrong with creating the tmp file")
+		}
+
+		got := scanFileText(tempFile, tc.start, tc.end)
+		if got != tc.want {
+			t.Fatalf("%s\nwant: \n%q\n(%v)\ngot:\n%q\n(%v)", tc.name, tc.contents, util.RenderBytes(tc.contents), got, util.RenderBytes(got))
 		}
 	}
 }

@@ -3,6 +3,7 @@ package root
 import (
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	consts "github.com/NicksPatties/sweet/constants"
@@ -11,6 +12,7 @@ import (
 	"github.com/NicksPatties/sweet/util"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 // The exercise model used by bubbletea.
@@ -26,19 +28,13 @@ type exerciseModel struct {
 	// The charcters that the user has typed during this exercise.
 	typedText string
 
-	// The point in time when the user started typing.
 	startTime time.Time
-
-	// The time the user completed the exercise.
-	endTime time.Time
-
-	// True if the user quit before the exercise was complete
+	endTime   time.Time
 	quitEarly bool
 
 	// The user's keystrokes during the exercise
 	events []event.Event
 
-	// various options to handle
 	viewOptions *viewOptions
 }
 
@@ -49,50 +45,173 @@ func (m exerciseModel) renderName() string {
 }
 
 func (m exerciseModel) renderText() (s string) {
-	typedStyle := m.viewOptions.styles.typedStyle
-	untypedStyle := m.viewOptions.styles.untypedStyle
-	cursorStyle := m.viewOptions.styles.cursorStyle
-	mistakeStyle := m.viewOptions.styles.mistakeStyle
+	lines := lines(m.text)
+	typedLines := typedLines(lines, m.typedText)
 
-	typed := m.typedText
-
-	for i, exRune := range m.text {
-		// Has this character been typed yet?
-		if i > len(typed) {
-			s += untypedStyle.Render(string(exRune))
-			continue
-		}
-
-		// Is this the cursor?
-		if i == len(typed) {
-
-			// Is the cursor on a newline?
-			if exRune == consts.Enter {
-				s += fmt.Sprintf("%s\n", cursorStyle.Render(consts.Arrow))
-				continue
-			}
-
-			s += cursorStyle.Render(string(exRune))
-			continue
-		}
-
-		// There's at least a typed character at this point...
-		typedRune := rune(typed[i])
-
-		// Is it incorrect?
-		if typedRune != exRune {
-			if exRune == consts.Enter {
-				s += fmt.Sprintf("%s\n", mistakeStyle.Render(consts.Arrow))
-			} else {
-				s += mistakeStyle.Render(string(exRune))
-			}
-
-			continue
-		}
-
-		s += typedStyle.Render(string(exRune))
+	windowSize := int(m.viewOptions.windowSize)
+	currLine := currentLineI(lines, m.typedText)
+	linesBefore := windowSize / 3
+	linesAfter := windowSize * 2 / 3
+	var windowStart, windowEnd int
+	switch {
+	case currLine < linesBefore:
+		windowStart = 0
+		windowEnd = windowSize
+	case currLine >= linesBefore && currLine < len(lines)-linesAfter:
+		windowStart = currLine - linesBefore
+		windowEnd = windowStart + windowSize
+	case currLine >= len(lines)-linesAfter:
+		windowEnd = len(lines)
+		windowStart = windowEnd - windowSize
 	}
 
+	// should show the whole exercise
+	if windowSize == 0 {
+		windowStart = 0
+		windowEnd = len(lines)
+	}
+
+	vignetteLastLine := true
+	if windowEnd == len(lines) {
+		vignetteLastLine = false
+	}
+
+	for i := windowStart; i < windowEnd; i = i + 1 {
+		text := lines[i]
+		var typed *string = nil
+		if i < len(typedLines) {
+			typed = &typedLines[i]
+		}
+		isCurrLine := i == currLine
+		shouldVignette := false
+		if vignetteLastLine && i == windowEnd-1 && i != windowStart {
+			shouldVignette = true
+		}
+		line := renderLine(text, typed, m.viewOptions.styles, shouldVignette, isCurrLine)
+		if lastLine := i == windowEnd-1; lastLine {
+			line = removeLastNewline(line)
+		}
+		s += line
+	}
+	return
+}
+
+// Splits up a string of text by newlines.
+// The newlines are preserved, since they'll be used
+// in rendering, too.
+func lines(text string) []string {
+	arr := strings.SplitAfter(text, "\n")
+	if last := len(arr) - 1; arr[last] == "" {
+		arr = arr[:last]
+	}
+	return arr
+}
+
+// Returns an array of strings that map the typed characters
+// to the exercise characters. If no characters have been typed
+// on a current line, the typedLine will be nil.
+func typedLines(lines []string, typed string) []string {
+	typedLines := []string{}
+	i := 0
+	for _, line := range lines {
+		str := ""
+		for range line {
+			if i >= len(typed) {
+				continue
+			}
+			str = str + string(typed[i])
+			i = i + 1
+		}
+		if str != "" {
+			typedLines = append(typedLines, str)
+		}
+	}
+	return typedLines
+}
+
+func currentLineI(lines []string, typed string) int {
+	typedLen := len(typed)
+	for i := range lines {
+		for range lines[i] {
+			if typedLen == 0 {
+				return i
+			}
+			typedLen = typedLen - 1
+		}
+	}
+	return 0
+}
+
+func removeLastNewline(str string) string {
+	n := '\n'
+	i := len(str) - 1
+	for ; i >= 0 && rune(str[i]) != n; i = i - 1 {
+	}
+
+	if i < 0 {
+		return str
+	}
+
+	return str[:i] + str[i+1:]
+}
+
+func renderLine(text string, typedP *string, style styles, vignette bool, currLine bool) (s string) {
+	typedStyle := style.typedStyle
+	untypedStyle := style.untypedStyle
+	cursorStyle := style.cursorStyle
+	mistakeStyle := style.mistakeStyle
+
+	if vignette {
+		typedStyle = style.vignetteStyle
+		untypedStyle = style.vignetteStyle
+		cursorStyle = style.vignetteStyle
+	}
+
+	if typedP == nil {
+		for i, c := range text {
+			currChar := string(c)
+			if c != '\n' {
+				currChar = untypedStyle.Render(string(c))
+			}
+			if i == 0 && currLine {
+				currChar = renderVisibleRune(cursorStyle, c)
+			}
+			s += currChar
+		}
+		return
+	}
+
+	typed := *typedP
+
+	for i, exRune := range text {
+		typedYet := i > len(typed)
+		isCursor := i == len(typed) && currLine
+		isMistake := false
+		if i < len(typed) {
+			typedRune := rune(typed[i])
+			isMistake = typedRune != exRune
+		}
+		switch {
+		case typedYet:
+			s += untypedStyle.Render(string(exRune))
+		case isCursor:
+			s += renderVisibleRune(cursorStyle, exRune)
+		case isMistake:
+			s += renderVisibleRune(mistakeStyle, exRune)
+		default:
+			s += typedStyle.Render(string(exRune))
+		}
+	}
+	return
+}
+
+// If the rune is a newline, and it needs to be visible
+// (i.e. it's a cursor character, or a mistake), then use this function
+func renderVisibleRune(style lipgloss.Style, exRune rune) (s string) {
+	s = style.Render(string(exRune))
+	if exRune == '\n' {
+		s = fmt.Sprintf("%s\n", style.Render(consts.Arrow))
+	}
 	return
 }
 
@@ -235,7 +354,7 @@ func (m exerciseModel) View() (s string) {
 		s += m.renderName()
 		s += "\n\n"
 		s += m.renderText()
-		s += "\n"
+		s += "\n\n"
 
 		currKeyI := len(m.typedText)
 		currKey := m.text[currKeyI]
