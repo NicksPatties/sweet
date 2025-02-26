@@ -6,10 +6,14 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"runtime/debug"
 	"strings"
 
 	consts "github.com/NicksPatties/sweet/constants"
 )
+
+// i.e. go build -ldflags "-X github.com/NicksPatties/sweet/util.version=v0.1.0" .
+var version string
 
 // Converts a string to an md5 hash. Used to
 // convert the contents of an exercise into a string
@@ -63,4 +67,20 @@ func FilterFileNames(fileNames []string, language string) (found []string) {
 
 func IsWhitespace(rn rune) bool {
 	return rn == consts.Tab || rn == consts.Space
+}
+
+func GetVersion() string {
+	if version == "" {
+		info, ok := debug.ReadBuildInfo()
+		gitHash := ""
+		if ok {
+			for _, setting := range info.Settings {
+				if setting.Key == "vcs.revision" {
+					gitHash = "-" + setting.Value[:6]
+				}
+			}
+		}
+		return "dev" + gitHash
+	}
+	return version
 }
