@@ -152,7 +152,7 @@ func removeLastNewline(str string) string {
 		return str
 	}
 
-	return fmt.Sprintf("%s%s", str[:i], str[i+1:])
+	return str[:i] + str[i+1:]
 }
 
 func renderLine(text string, typedP *string, style styles, vignette bool, currLine bool) (s string) {
@@ -165,7 +165,6 @@ func renderLine(text string, typedP *string, style styles, vignette bool, currLi
 		typedStyle = style.vignetteStyle
 		untypedStyle = style.vignetteStyle
 		cursorStyle = style.vignetteStyle
-		mistakeStyle = style.vignetteMistakeStyle
 	}
 
 	if typedP == nil {
@@ -185,28 +184,23 @@ func renderLine(text string, typedP *string, style styles, vignette bool, currLi
 	typed := *typedP
 
 	for i, exRune := range text {
-		// Has this character been typed yet?
-		if i > len(typed) {
+		typedYet := i > len(typed)
+		isCursor := i == len(typed) && currLine
+		isMistake := false
+		if i < len(typed) {
+			typedRune := rune(typed[i])
+			isMistake = typedRune != exRune
+		}
+		switch {
+		case typedYet:
 			s += untypedStyle.Render(string(exRune))
-			continue
-		}
-
-		// Is this the cursor?
-		if i == len(typed) && currLine {
+		case isCursor:
 			s += renderVisibleRune(cursorStyle, exRune)
-			continue
-		}
-
-		// There's at least a typed character at this point...
-		typedRune := rune(typed[i])
-
-		// Is it incorrect?
-		if typedRune != exRune {
+		case isMistake:
 			s += renderVisibleRune(mistakeStyle, exRune)
-			continue
+		default:
+			s += typedStyle.Render(string(exRune))
 		}
-
-		s += typedStyle.Render(string(exRune))
 	}
 	return
 }

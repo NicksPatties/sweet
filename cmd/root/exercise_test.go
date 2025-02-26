@@ -7,6 +7,7 @@ import (
 	consts "github.com/NicksPatties/sweet/constants"
 	"github.com/NicksPatties/sweet/event"
 	"github.com/NicksPatties/sweet/util"
+
 	lg "github.com/charmbracelet/lipgloss"
 	"github.com/muesli/termenv"
 )
@@ -32,7 +33,7 @@ func Test_renderName(t *testing.T) {
 	want := "// exercise.go"
 	got := testModel.renderName()
 	if got != want {
-		t.Fatalf("expected %s, got %s", want, got)
+		t.Errorf("expected %s, got %s", want, got)
 	}
 }
 
@@ -88,7 +89,7 @@ end`,
 		}
 		got := testModel.renderText()
 		if got != test.want {
-			t.Fatalf("%s failed\nwant\n%s\n%q\ngot\n%s\n%q\n",
+			t.Errorf("%s failed\nwant\n%s\n%q\ngot\n%s\n%q\n",
 				test.name, test.want, test.want, got, got,
 			)
 		}
@@ -220,7 +221,7 @@ func Test_renderText_typedAndUntyped(t *testing.T) {
 		}
 		got := testModel.renderText()
 		if got != tc.want {
-			t.Fatalf("%s\ngot\n%v\n%s\nwant\n%v\n%s", tc.testName, got, renderBytes(got), tc.want, renderBytes(tc.want))
+			t.Errorf("%s\ngot\n%v\n%s\nwant\n%v\n%s", tc.testName, got, renderBytes(got), tc.want, renderBytes(tc.want))
 		}
 	}
 }
@@ -229,14 +230,14 @@ func Test_renderText_windowSize(t *testing.T) {
 	oldProfile := lg.ColorProfile()
 	lg.SetColorProfile(termenv.TrueColor)
 	defer lg.SetColorProfile(oldProfile)
+
 	blankStyles := styles{
-		commentStyle:         lg.NewStyle(),
-		untypedStyle:         lg.NewStyle(),
-		cursorStyle:          lg.NewStyle().Foreground(lg.Color("1")), // red
-		typedStyle:           lg.NewStyle(),
-		mistakeStyle:         lg.NewStyle(),
-		vignetteStyle:        lg.NewStyle(),
-		vignetteMistakeStyle: lg.NewStyle(),
+		commentStyle:  lg.NewStyle(),
+		untypedStyle:  lg.NewStyle(),
+		cursorStyle:   lg.NewStyle().Foreground(lg.Color("1")), // red
+		typedStyle:    lg.NewStyle(),
+		mistakeStyle:  lg.NewStyle(),
+		vignetteStyle: lg.NewStyle(),
 	}
 	mockText := "one\ntwo\nthree\nfour\nfive"
 	testCases := []struct {
@@ -336,7 +337,7 @@ func Test_renderText_windowSize(t *testing.T) {
 		got := mockModel.renderText()
 
 		if got != tc.want {
-			t.Fatalf("%s\nwindowSize: %d\ngot:\n%s\nwant:\n%s",
+			t.Errorf("%s\nwindowSize: %d\ngot:\n%s\nwant:\n%s",
 				tc.name, tc.windowSize, got, tc.want)
 		}
 	}
@@ -348,13 +349,12 @@ func Test_renderText_vignetting(t *testing.T) {
 	defer lg.SetColorProfile(oldProfile)
 
 	testCaseStyles := styles{
-		commentStyle:         lg.NewStyle(),
-		untypedStyle:         lg.NewStyle(),
-		cursorStyle:          lg.NewStyle(),
-		typedStyle:           lg.NewStyle(),
-		mistakeStyle:         lg.NewStyle(),
-		vignetteStyle:        lg.NewStyle().Foreground(lg.Color("1")),
-		vignetteMistakeStyle: lg.NewStyle(),
+		commentStyle:  lg.NewStyle(),
+		untypedStyle:  lg.NewStyle(),
+		cursorStyle:   lg.NewStyle(),
+		typedStyle:    lg.NewStyle(),
+		mistakeStyle:  lg.NewStyle(),
+		vignetteStyle: lg.NewStyle().Foreground(lg.Color("1")),
 	}
 
 	testCases := []struct {
@@ -419,60 +419,6 @@ func Test_renderText_vignetting(t *testing.T) {
 
 }
 
-func Test_renderLine(t *testing.T) {
-	oldProfile := lg.ColorProfile()
-	lg.SetColorProfile(termenv.TrueColor)
-	defer lg.SetColorProfile(oldProfile)
-
-	testCaseStyles := styles{
-		commentStyle:         lg.NewStyle().Reverse(true),
-		untypedStyle:         lg.NewStyle().Reverse(true),
-		cursorStyle:          lg.NewStyle().Reverse(true),
-		typedStyle:           lg.NewStyle().Reverse(true),
-		mistakeStyle:         lg.NewStyle().Reverse(true),
-		vignetteStyle:        lg.NewStyle(),
-		vignetteMistakeStyle: lg.NewStyle().Foreground(lg.Color("1")),
-	}
-
-	testCases := []struct {
-		name      string
-		text      string
-		typed     string
-		style     styles
-		vignette  bool
-		hasCursor bool
-		want      string
-	}{
-		{
-			name:     "vignette correctly",
-			text:     "my text",
-			typed:    "",
-			style:    testCaseStyles,
-			vignette: true,
-			want:     "my text",
-		},
-		{
-			name:     "vignette with mistakes",
-			text:     "my text",
-			typed:    "my next",
-			style:    testCaseStyles,
-			vignette: true,
-			want:     "my " + util.Red("t") + "ext",
-		},
-	}
-	for _, tc := range testCases {
-		typed := &tc.typed
-		if tc.typed == "" {
-			typed = nil
-		}
-		got := renderLine(tc.text, typed, tc.style, tc.vignette, false)
-		want := tc.want
-		if got != want {
-			t.Fatalf("%s\ngot:  %s\nwant: %s", tc.name, got, want)
-		}
-	}
-}
-
 func Test_lines(t *testing.T) {
 	testCases := []struct {
 		name  string
@@ -512,7 +458,7 @@ func Test_lines(t *testing.T) {
 		got := lines(tc.input)
 		for i := 0; i < len(tc.want); i = i + 1 {
 			if len(got) != len(tc.want) {
-				t.Fatalf("Lengths don't match. Got %d, want %d\n", len(got), len(tc.want))
+				t.Errorf("Lengths don't match. Got %d, want %d\n", len(got), len(tc.want))
 			}
 
 			if got[i] != tc.want[i] {
@@ -601,6 +547,12 @@ func Test_currentLineI(t *testing.T) {
 			name:  "one line of typed text",
 			text:  "one\ntwo\nthree",
 			typed: "one\n",
+			want:  1,
+		},
+		{
+			name:  "one line, but all newlines",
+			text:  "one\ntwo\nthree",
+			typed: "\n\n\n\n",
 			want:  1,
 		},
 	}
@@ -696,7 +648,7 @@ func Test_addRuneToTypedText(t *testing.T) {
 		}
 		testModel = testModel.addRuneToTypedText(test.typedRune)
 		if testModel.typedText != test.want {
-			t.Fatalf("want %s, got %s", test.want, testModel.typedText)
+			t.Errorf("want %s, got %s", test.want, testModel.typedText)
 		}
 	}
 }
@@ -743,7 +695,7 @@ func Test_deleteRuneFromTypedText(t *testing.T) {
 		}
 		testModel = testModel.deleteRuneFromTypedText()
 		if testModel.typedText != test.want {
-			t.Fatalf("want\n%s\ngot\n%s\n", test.want, testModel.typedText)
+			t.Errorf("want\n%s\ngot\n%s\n", test.want, testModel.typedText)
 		}
 	}
 }
@@ -790,7 +742,7 @@ func Test_finished(t *testing.T) {
 		want := test.want
 		got := testModel.finished()
 		if got != want {
-			t.Fatalf("want %t, got %t", want, got)
+			t.Errorf("want %t, got %t", want, got)
 		}
 	}
 }
