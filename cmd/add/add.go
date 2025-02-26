@@ -37,7 +37,6 @@ func addExercise(cmd *cobra.Command, args []string) (err error) {
 	end, _ := cmd.Flags().GetUint("end")
 
 	if start > end {
-		fmt.Printf("YOU ARE BEING BAD!!!!")
 		return errors.New("start flag cannot be greater than end flag")
 	}
 
@@ -74,12 +73,14 @@ func addExercise(cmd *cobra.Command, args []string) (err error) {
 	if end > uint(len(lines)) {
 		end = uint(len(lines))
 	}
-	newExerciseFileString := strings.Join(lines[start-1:end], "")
+	selectedLines := lines[start-1 : end]
+	newExerciseFileString := strings.Join(selectedLines, "")
 	newExerciseFile.WriteString(newExerciseFileString)
 
 	if err = scanner.Err(); err != nil {
 		return
 	}
+	fmt.Printf("added %s (%d lines)\n", newExerciseFile.Name(), len(selectedLines))
 	return nil
 }
 
