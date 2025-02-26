@@ -70,7 +70,7 @@ func addExercise(cmd *cobra.Command, args []string) (err error) {
 	for scanner.Scan() {
 		text += scanner.Text()
 	}
-	lines := util.Lines(text)
+	lines := util.DedentLines(util.Lines(text))
 	if end > uint(len(lines)) {
 		end = uint(len(lines))
 	}

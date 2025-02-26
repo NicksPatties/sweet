@@ -68,6 +68,13 @@ func TestAddCmd(t *testing.T) {
 			wantErr:      true,
 			wantAdded:    "",
 		},
+		{
+			name:         "dedent input if it's already indented",
+			args:         []string{testFileName},
+			fileContents: "  one\n  two\n  three\n",
+			wantErr:      false,
+			wantAdded:    "one\ntwo\nthree\n",
+		},
 	}
 
 	tmpExercisesDir := t.TempDir()

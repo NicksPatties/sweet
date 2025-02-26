@@ -124,3 +124,78 @@ func TestGetVersion(t *testing.T) {
 		}
 	}
 }
+
+func TestDedentLines(t *testing.T) {
+	testCases := []struct {
+		name  string
+		lines []string
+		want  []string
+	}{
+		{
+			name: "do nothing if already dedented",
+			lines: []string{
+				"one\n",
+				"two\n",
+				"three\n",
+			},
+			want: []string{
+				"one\n",
+				"two\n",
+				"three\n",
+			},
+		},
+		{
+			name: "dedent evenly dedented lines",
+			lines: []string{
+				"  one\n",
+				"  two\n",
+				"  three\n",
+			},
+			want: []string{
+				"one\n",
+				"two\n",
+				"three\n",
+			},
+		},
+		{
+			name: "dedent a function",
+			lines: []string{
+				"  def main:\n",
+				"    print('what')",
+				"  end\n",
+			},
+			want: []string{
+				"def main:\n",
+				"  print('what')",
+				"end\n",
+			},
+		},
+		{
+			name: "last line is already",
+			lines: []string{
+				"  def main:\n",
+				"    print('what')",
+				"  end\n",
+				"end\n",
+			},
+			want: []string{
+				"  def main:\n",
+				"    print('what')",
+				"  end\n",
+				"end\n",
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		gotLines := DedentLines(tc.lines)
+		for i, got := range gotLines {
+			want := tc.want[i]
+			if got != want {
+				t.Errorf("%s:\ngot\n%s\nwant\n%s", tc.name, got, want)
+			}
+		}
+
+	}
+
+}
