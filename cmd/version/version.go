@@ -10,24 +10,14 @@ package version
 import (
 	"fmt"
 
+	"github.com/NicksPatties/sweet/util"
 	"github.com/spf13/cobra"
 )
-
-// Included via a compiler flag.
-// i.e. go build -ldflags "-X github.com/NicksPatties/sweet/cmd/version.version=v0.1.0" .
-var version string
 
 var Cmd = &cobra.Command{
 	Use:   "version",
 	Short: "prints the version",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Print(getVersion(version))
+		fmt.Print(util.GetVersion())
 	},
-}
-
-func getVersion(v string) string {
-	if v == "" {
-		return "dev"
-	}
-	return v
 }

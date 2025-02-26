@@ -7,13 +7,11 @@ package about
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
 	"os"
-)
 
-// used to fill in the version number
-// i.e. go build -ldflags "-X github.com/NicksPatties/sweet/cmd/about.version=v0.1.0" .
-var version string
+	"github.com/NicksPatties/sweet/util"
+	"github.com/spf13/cobra"
+)
 
 var Cmd = &cobra.Command{
 	Use:   "about",
@@ -24,9 +22,7 @@ var Cmd = &cobra.Command{
 		// but for now this will do.
 		supportLink := "https://liberapay.com/NicksPatties/"
 		executableName := os.Args[0]
-		if version == "" {
-			version = "dev"
-		}
+		version := util.GetVersion()
 		printAbout(version, issueLink, supportLink, executableName)
 	},
 }

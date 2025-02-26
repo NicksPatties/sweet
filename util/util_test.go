@@ -102,3 +102,25 @@ func TestLang(t *testing.T) {
 		}
 	}
 }
+
+func TestGetVersion(t *testing.T) {
+	type testCase struct {
+		input string
+		want  string
+	}
+
+	testCases := []testCase{
+		{
+			input: "",
+			want:  "dev",
+		},
+		// manually verified that version build vars work
+	}
+
+	for _, tc := range testCases {
+		got := GetVersion()
+		if got != tc.want {
+			t.Fatalf("getVersion: got %s, wanted %s", got, tc.want)
+		}
+	}
+}
