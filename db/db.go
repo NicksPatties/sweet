@@ -11,7 +11,8 @@ import (
 	"github.com/NicksPatties/sweet/constants"
 	"github.com/NicksPatties/sweet/event"
 	"github.com/NicksPatties/sweet/util"
-	_ "github.com/mattn/go-sqlite3"
+
+	_ "modernc.org/sqlite"
 )
 
 // Column names
@@ -116,7 +117,7 @@ func SweetDb() (*sql.DB, error) {
 	}
 
 	// Open a connection to the SQLite database
-	db, err := sql.Open("sqlite3", path.Join(dbPath, "sweet.db"))
+	db, err := sql.Open("sqlite", path.Join(dbPath, "sweet.db"))
 	if err != nil {
 		db.Close()
 		return nil, fmt.Errorf("failed to open database: %v", err)
