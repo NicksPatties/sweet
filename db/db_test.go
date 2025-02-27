@@ -7,7 +7,8 @@ import (
 	"time"
 
 	"github.com/NicksPatties/sweet/event"
-	_ "github.com/mattn/go-sqlite3"
+
+	_ "modernc.org/sqlite"
 )
 
 func TestGetStatsDb(t *testing.T) {
