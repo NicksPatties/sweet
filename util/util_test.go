@@ -124,3 +124,125 @@ func TestGetVersion(t *testing.T) {
 		}
 	}
 }
+
+func TestLines(t *testing.T) {
+	testCases := []struct {
+		name  string
+		input string
+		want  []string
+	}{
+		{
+			name:  "default case",
+			input: "one\ntwo\nthree\nfour\nfive",
+			want: []string{
+				"one\n",
+				"two\n",
+				"three\n",
+				"four\n",
+				"five",
+			},
+		},
+		{
+			name:  "additional newline?",
+			input: "one\ntwo\nthree\nfour\nfive\n",
+			want: []string{
+				"one\n",
+				"two\n",
+				"three\n",
+				"four\n",
+				"five\n",
+			},
+		},
+		{
+			name:  "empty string should return empty array",
+			input: "",
+			want:  []string{},
+		},
+	}
+
+	for _, tc := range testCases {
+		got := Lines(tc.input)
+		for i := 0; i < len(tc.want); i = i + 1 {
+			if len(got) != len(tc.want) {
+				t.Errorf("Lengths don't match. Got %d, want %d\n", len(got), len(tc.want))
+			}
+
+			if got[i] != tc.want[i] {
+				t.Errorf("%d got %s want %s", i, got[i], tc.want[i])
+			}
+		}
+	}
+}
+
+func TestDedentLines(t *testing.T) {
+	testCases := []struct {
+		name  string
+		lines []string
+		want  []string
+	}{
+		{
+			name: "do nothing if already dedented",
+			lines: []string{
+				"one\n",
+				"two\n",
+				"three\n",
+			},
+			want: []string{
+				"one\n",
+				"two\n",
+				"three\n",
+			},
+		},
+		{
+			name: "dedent evenly dedented lines",
+			lines: []string{
+				"  one\n",
+				"  two\n",
+				"  three\n",
+			},
+			want: []string{
+				"one\n",
+				"two\n",
+				"three\n",
+			},
+		},
+		{
+			name: "dedent a function",
+			lines: []string{
+				"  def main:\n",
+				"    print('what')",
+				"  end\n",
+			},
+			want: []string{
+				"def main:\n",
+				"  print('what')",
+				"end\n",
+			},
+		},
+		{
+			name: "last line is already",
+			lines: []string{
+				"  def main:\n",
+				"    print('what')",
+				"  end\n",
+				"end\n",
+			},
+			want: []string{
+				"  def main:\n",
+				"    print('what')",
+				"  end\n",
+				"end\n",
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		gotLines := DedentLines(tc.lines)
+		for i, got := range gotLines {
+			want := tc.want[i]
+			if got != want {
+				t.Errorf("%s:\ngot\n%s\nwant\n%s", tc.name, got, want)
+			}
+		}
+	}
+}

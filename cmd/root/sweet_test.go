@@ -471,7 +471,6 @@ func Test_exerciseFileFromArgs_withEmptyExerciseFiles(t *testing.T) {
 			t.Fatalf("mock command failed to run: %s", err)
 		}
 	}
-
 }
 
 type fromArgsViewOptionsTestCase struct {

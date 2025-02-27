@@ -419,55 +419,6 @@ func Test_renderText_vignetting(t *testing.T) {
 
 }
 
-func Test_lines(t *testing.T) {
-	testCases := []struct {
-		name  string
-		input string
-		want  []string
-	}{
-		{
-			name:  "default case",
-			input: "one\ntwo\nthree\nfour\nfive",
-			want: []string{
-				"one\n",
-				"two\n",
-				"three\n",
-				"four\n",
-				"five",
-			},
-		},
-		{
-			name:  "additional newline?",
-			input: "one\ntwo\nthree\nfour\nfive\n",
-			want: []string{
-				"one\n",
-				"two\n",
-				"three\n",
-				"four\n",
-				"five\n",
-			},
-		},
-		{
-			name:  "empty string should return empty array",
-			input: "",
-			want:  []string{},
-		},
-	}
-
-	for _, tc := range testCases {
-		got := lines(tc.input)
-		for i := 0; i < len(tc.want); i = i + 1 {
-			if len(got) != len(tc.want) {
-				t.Errorf("Lengths don't match. Got %d, want %d\n", len(got), len(tc.want))
-			}
-
-			if got[i] != tc.want[i] {
-				t.Errorf("%d got %s want %s", i, got[i], tc.want[i])
-			}
-		}
-	}
-}
-
 func Test_typedLines(t *testing.T) {
 	testCases := []struct {
 		name  string
@@ -558,7 +509,7 @@ func Test_currentLineI(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		lines := lines(tc.text)
+		lines := util.Lines(tc.text)
 		got := currentLineI(lines, tc.typed)
 		if got != tc.want {
 			t.Errorf("%s: got: %d, want: %d", tc.name, got, tc.want)

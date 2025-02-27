@@ -4,6 +4,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
+	"math"
 	"os"
 	"path"
 	"runtime/debug"
@@ -83,4 +84,34 @@ func GetVersion() string {
 		return "dev" + gitHash
 	}
 	return version
+}
+
+// Splits up a string of text by newlines.
+// The newlines are preserved, since they'll be used
+// in rendering, too.
+func Lines(text string) []string {
+	arr := strings.SplitAfter(text, "\n")
+	if last := len(arr) - 1; arr[last] == "" {
+		arr = arr[:last]
+	}
+	return arr
+}
+
+// Removes indentation from lines of strings
+func DedentLines(lines []string) []string {
+	minIndentLength := math.MaxInt
+	for _, line := range lines {
+		var indentLength int = 0
+		for ; IsWhitespace(rune(line[indentLength])); indentLength = indentLength + 1 {
+		}
+		if indentLength < minIndentLength {
+			minIndentLength = indentLength
+		}
+	}
+
+	var dedented []string
+	for _, line := range lines {
+		dedented = append(dedented, line[minIndentLength:])
+	}
+	return dedented
 }
