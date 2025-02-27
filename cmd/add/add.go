@@ -56,7 +56,8 @@ func addExercise(cmd *cobra.Command, args []string) (err error) {
 		exercisesDir = envDir
 	}
 	newExercisePath := path.Join(exercisesDir, path.Base(pathName))
-	newExerciseFile, err := os.Create(newExercisePath)
+	// if a file exists at newExercisePath, then I should error
+	newExerciseFile, err := os.OpenFile(newExercisePath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0666)
 	if err != nil {
 		return
 	}

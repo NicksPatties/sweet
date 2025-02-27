@@ -8,27 +8,28 @@ import (
 	"github.com/spf13/cobra"
 )
 
+type addOptionsTestCase struct {
+	name         string
+	args         []string
+	fileContents string
+	wantErr      bool
+	wantAdded    string
+}
+
+var mockAddCmd = func(args []string) *cobra.Command {
+	cmd := &cobra.Command{
+		Args: cobra.MaximumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return addExercise(cmd, args)
+		},
+	}
+	setAddCmdFlags(cmd)
+	cmd.SetArgs(args)
+	return cmd
+}
+
 func TestAddCmd(t *testing.T) {
 	testFileName := "add-me-please"
-	type addOptionsTestCase struct {
-		name         string
-		args         []string
-		fileContents string
-		wantErr      bool
-		wantAdded    string
-	}
-	var mockAddCmd = func(tc addOptionsTestCase) *cobra.Command {
-		cmd := &cobra.Command{
-			Args: cobra.MaximumNArgs(1),
-			RunE: func(cmd *cobra.Command, args []string) error {
-				return addExercise(cmd, args)
-			},
-		}
-		setAddCmdFlags(cmd)
-		cmd.SetArgs(tc.args)
-		return cmd
-	}
-
 	testCases := []addOptionsTestCase{
 		{
 			name:         "no flags",
@@ -77,10 +78,10 @@ func TestAddCmd(t *testing.T) {
 		},
 	}
 
-	tmpExercisesDir := t.TempDir()
-	t.Setenv("SWEET_EXERCISES_DIR", tmpExercisesDir)
-
 	for _, tc := range testCases {
+		tmpExercisesDir := t.TempDir()
+		t.Setenv("SWEET_EXERCISES_DIR", tmpExercisesDir)
+
 		// create the test file
 		testFile, err := os.Create(testFileName)
 		defer os.Remove(testFileName)
@@ -93,7 +94,7 @@ func TestAddCmd(t *testing.T) {
 			t.Fatalf("failed to close temporary file %s", testFile.Name())
 		}
 
-		cmd := mockAddCmd(tc)
+		cmd := mockAddCmd(tc.args)
 		err = cmd.Execute()
 		if tc.wantErr && err == nil {
 			t.Fatalf("%s: wanted error, got nil", tc.name)
@@ -114,5 +115,28 @@ func TestAddCmd(t *testing.T) {
 				t.Errorf("%s:\nExpected to add:\n%s\n\n Added:\n%s", tc.name, tc.wantAdded, got)
 			}
 		}
+	}
+}
+
+func TestAddCmd_addingSameFile(t *testing.T) {
+
+	tmpExercisesDir := t.TempDir()
+	t.Setenv("SWEET_EXERCISES_DIR", tmpExercisesDir)
+
+	// create the test file
+	testFileName := "add-me-please"
+	testFile, err := os.Create(testFileName)
+	defer os.Remove(testFile.Name())
+	if err != nil {
+		t.Fatal("failed to create exercise file")
+	}
+	testFile.WriteString("file\ncontents\n")
+
+	cmd := mockAddCmd([]string{testFile.Name()})
+	err = cmd.Execute()
+	err = cmd.Execute()
+
+	if err == nil {
+		t.Errorf("expected error, got nil")
 	}
 }
