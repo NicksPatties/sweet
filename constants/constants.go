@@ -2,11 +2,12 @@ package constants
 
 // Typing exercise game symbols
 const (
-	Enter   = '\n'
-	Tab     = '\t'
-	Space   = ' '
-	Percent = '%'
-	Arrow   = `↲`
+	Enter       = '\n'
+	Tab         = '\t'
+	Space       = ' '
+	Percent     = '%'
+	Arrow       = `↲`
+	ANSI_Escape = '\033'
 )
 
 // Used for words per minute (WPM) calculations.
