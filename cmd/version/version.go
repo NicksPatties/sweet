@@ -15,6 +15,7 @@ import (
 	"github.com/NicksPatties/sweet/util"
 	"github.com/alecthomas/chroma/v2/lexers"
 	"github.com/alecthomas/chroma/v2/quick"
+	lg "github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
 )
 
@@ -34,25 +35,28 @@ func Red(s string) string {
 }
 
 func codeSnippet() error {
-	code := `function calculateSum(a, b) {`
+	code := `function calculateSum(a, b) {
 
-	//   // This is a comment
-	//   const result = a + b;
-	//   if (result > 10) {
-	//     console.log("Result is greater than 10");
-	//     return true;
-	//   } else {
-	//     return false;
-	//   }
-	// }
+  // This is a comment
+  const result = a + b;
+  if (result > 10) {
+    console.log("Result is greater than 10");
+    return true;
+  } else {
+    return false;
+  }
+}
 
-	// function add(a, b) {
-	// 	return a + b
-	// }
-	// `
+function add(a, b) {
+  return a + b
+}
+`
 
+	missRow := 2
+	missCol := 3
+	render := lg.NewStyle().Background(lg.Color("1")).Foreground(lg.Color("15")).Render
 	lexer := lexers.Match("source.js")
-	for _, line := range util.Lines(code) {
+	for row, line := range util.Lines(code) {
 		var buf bytes.Buffer
 		err := quick.Highlight(
 			&buf, line, lexer.Config().Name, "terminal", "vim",
@@ -60,6 +64,7 @@ func codeSnippet() error {
 		if err != nil {
 			return err
 		}
+		// render the individual line
 		bts := buf.Bytes()
 		currEscape := ""
 		col := 0
@@ -74,11 +79,12 @@ func codeSnippet() error {
 				currEscape = string(bts[start : i+1])
 				fmt.Printf("%s", currEscape)
 			}
-			if b >= 32 && b <= 128 {
-				// mistake 3
+			if b >= 32 && b <= 128 ||
+				b == constants.Enter ||
+				b == constants.Tab {
 				char := string(b)
-				if col == 3 {
-					char = Red(char)
+				if col == missCol && row == missRow {
+					char = render(char)
 				}
 				fmt.Printf("%s", char)
 				col = col + 1

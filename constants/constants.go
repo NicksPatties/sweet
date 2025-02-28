@@ -7,7 +7,7 @@ const (
 	Space       = ' '
 	Percent     = '%'
 	Arrow       = `↲`
-	ANSI_Escape = '\033'
+	ANSI_Escape = '\x1b'
 )
 
 // Used for words per minute (WPM) calculations.
