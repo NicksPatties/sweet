@@ -34,14 +34,22 @@ func Red(s string) string {
 }
 
 func codeSnippet() error {
-	code := `function calculateSum(a, b) {
-`
+	code := `function calculateSum(a, b) {`
 
-	// mistakePoint := struct {
-	// 	col int
-	// }{
-	// 	col: 3, // first "c" in "function"
+	//   // This is a comment
+	//   const result = a + b;
+	//   if (result > 10) {
+	//     console.log("Result is greater than 10");
+	//     return true;
+	//   } else {
+	//     return false;
+	//   }
 	// }
+
+	// function add(a, b) {
+	// 	return a + b
+	// }
+	// `
 
 	lexer := lexers.Match("source.js")
 	for _, line := range util.Lines(code) {
@@ -54,6 +62,7 @@ func codeSnippet() error {
 		}
 		bts := buf.Bytes()
 		currEscape := ""
+		col := 0
 		for i := 0; i < len(bts); i = i + 1 {
 			b := bts[i]
 			// If it's an escape, gather the escape character
@@ -63,10 +72,16 @@ func codeSnippet() error {
 				for ; bts[i] != 'm' && i < len(bts); i = i + 1 {
 				}
 				currEscape = string(bts[start : i+1])
-				fmt.Printf("currEscape: %#v %s\n", bts[start:i+1], currEscape)
+				fmt.Printf("%s", currEscape)
 			}
 			if b >= 32 && b <= 128 {
-				fmt.Printf("%#U\n", b)
+				// mistake 3
+				char := string(b)
+				if col == 3 {
+					char = Red(char)
+				}
+				fmt.Printf("%s", char)
+				col = col + 1
 			}
 		}
 	}
