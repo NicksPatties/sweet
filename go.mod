@@ -10,16 +10,15 @@ require (
 )
 
 require (
+	github.com/alecthomas/chroma/v2 v2.15.0
 	github.com/olekukonko/tablewriter v0.0.5
-	github.com/tree-sitter/go-tree-sitter v0.25.0
-	github.com/tree-sitter/tree-sitter-javascript v0.23.1
 	modernc.org/sqlite v1.36.0
 )
 
 require (
+	github.com/dlclark/regexp2 v1.11.4 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/mattn/go-pointer v0.0.1 // indirect
 	github.com/ncruces/go-strftime v0.1.9 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	golang.org/x/exp v0.0.0-20230315142452-642cacee5cc0 // indirect
