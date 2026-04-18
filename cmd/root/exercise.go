@@ -127,7 +127,7 @@ func currentLineI(lines []string, typed string) int {
 			typedLen = typedLen - 1
 		}
 	}
-	return 0
+	return len(lines) - 1
 }
 
 func removeLastNewline(str string) string {
@@ -305,7 +305,10 @@ func (m exerciseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 	var currTyped string
 	currI := len(m.typedText)
-	currExpected := event.RuneToEventExpected(rune(m.text[currI]))
+	var currExpected string
+	if currI < len(m.text) {
+		currExpected = event.RuneToEventExpected(rune(m.text[currI]))
+	}
 	switch keyMsg.Type {
 	case tea.KeyCtrlC:
 		m.quitEarly = true
@@ -345,10 +348,16 @@ func (m exerciseModel) View() (s string) {
 		s += "\n\n"
 
 		currKeyI := len(m.typedText)
-		currKey := m.text[currKeyI]
-		s += qwerty.render(string(currKey))
-		s += "\n"
-		s += renderFingers(qwerty.fingersMargin, '*', rune(currKey))
+		if currKeyI < len(m.text) {
+			currKey := m.text[currKeyI]
+			s += qwerty.render(string(currKey))
+			s += "\n"
+			s += renderFingers(qwerty.fingersMargin, '*', rune(currKey))
+		} else {
+			s += qwerty.render("\b")
+			s += "\n"
+			s += renderFingers(qwerty.fingersMargin, '*', '\b')
+		}
 	}
 	return
 }
