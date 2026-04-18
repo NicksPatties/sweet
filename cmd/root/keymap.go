@@ -15,7 +15,7 @@ type keymap struct {
 var qwerty = keymap{
 	keys: [][]string{
 		{
-			"`", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "=",
+			"`", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "=", "bksp",
 		},
 		{
 			"q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "[", "]", "\\",
@@ -34,7 +34,7 @@ var qwerty = keymap{
 	},
 	modifiedKeys: [][]string{
 		{
-			"~", "!", "@", "#", "$", "%", "^", "&", "*", "(", ")", "_", "+",
+			"~", "!", "@", "#", "$", "%", "^", "&", "*", "(", ")", "_", "+", "bksp",
 		},
 		{
 			"Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P", "{", "}", "|",
@@ -61,6 +61,10 @@ func (k keymap) findKeyCombo(char string) (combo []string) {
 
 	if char == " " {
 		return []string{"space"}
+	}
+
+	if char == "\b" {
+		return []string{"bksp"}
 	}
 
 	for _, row := range k.keys {
@@ -226,6 +230,7 @@ var rtfs = map[rune][]uint{
 	':': {rpinky, lpinky},
 	'?': {rpinky, lpinky},
 
+	'\b': {rpinky},
 	'-':  {rpinky},
 	'[':  {rpinky},
 	'\'': {rpinky},
