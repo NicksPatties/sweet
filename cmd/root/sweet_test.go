@@ -612,6 +612,20 @@ func Test_scanFileText(t *testing.T) {
 			contents: "one\ntwo\nthree",
 			want:     "two\n",
 		},
+		{
+			name:     "dedented output from indented input",
+			start:    defaultStart,
+			end:      defaultEnd,
+			contents: "    func main() {\n        fmt.Println(\"hello\")\n    }\n",
+			want:     "func main() {\n    fmt.Println(\"hello\")\n}\n",
+		},
+		{
+			name:     "dedented output with start/end line flags",
+			start:    2,
+			end:      2,
+			contents: "    var x = 1\n        fmt.Println(x)\n    }\n",
+			want:     "    fmt.Println(x)\n",
+		},
 	}
 
 	for _, tc := range testCases {

@@ -224,13 +224,14 @@ func exerciseFileFromArgs(cmd *cobra.Command, args []string) (exercise exerciseF
 // Scans a file and returns its text as a string.
 // If start or end is defined, only returns the lines between start and end.
 // If the file is empty, it returns an empty string.
-func scanFileText(file *os.File, start uint, end uint) (text string) {
-	scanner := bufio.NewScanner(file)
+func scanFileText(f *os.File, start uint, end uint) (text string) {
+	scanner := bufio.NewScanner(f)
 	scanner.Split(bufio.ScanBytes)
 	for scanner.Scan() {
 		text += scanner.Text()
 	}
 	lines := util.Lines(text)
+	lines = util.DedentLines(lines)
 	if end >= uint(len(lines)) {
 		end = uint(len(lines))
 	}
